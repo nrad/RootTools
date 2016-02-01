@@ -109,8 +109,20 @@ class Reader():
                 self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
 
     def __start(self):
+
+        # Turn on everything for flexibility with the selectionString
+        self.sample.chain.SetBranchStatus("*", 1)
         self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
+
+        # Mute all branches that are not needed
+        self.sample.chain.SetBranchStatus("*", 0)
+        for s in self.scalars:
+            self.sample.chain.SetBranchStatus(s['name'], 1)
+        for v in self.vectors:
+            for c in v['variables']:
+                self.sample.chain.SetBranchStatus("%s_%s"%(v['name'],c['name']), 1)
+
         return
 
     def run(self):

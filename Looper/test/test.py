@@ -29,7 +29,7 @@ s1 = SampleFromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples
 vectors   =    [ {'name':'Jet', 'nMax':100, 'variables': ['pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F'] } ]
 scalars   =    [ 'met_pt/F', 'met_phi/F', 'run/I', 'lumi/I', 'evt/l', 'nVert/I' ]
 
-r = s1.reader( scalars = scalars, vectors = vectors )
+r = s1.reader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
 
 h=ROOT.TH1F('met','met',100,0,0)
 while r.run():
