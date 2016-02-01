@@ -6,6 +6,7 @@ import os, subprocess
 
 # Logging
 import logging
+logger = logging.getLogger(__name__)
 
 # Base class
 from  RootTools.Sample.SampleBase import SampleBase, EmptySampleError
@@ -22,11 +23,10 @@ def readNormalization(filename):
 
 class CMGOutput( SampleBase ):
 
+
     def __init__(self, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None):
 
         super(CMGOutput, self).__init__(name=name, treeName = treeName)
-
-        self.__logger = logging.getLogger("Logger."+__name__)
 
         self.baseDirectory = baseDirectory
         self.chunkString = chunkString
@@ -38,7 +38,7 @@ class CMGOutput( SampleBase ):
             if not chunkString or (x[0].startswith(chunkString) and x[0].endswith('_Chunk')) or x[0]==chunkString:
                 chunkDirectories.append(x[0])
 
-        self.__logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
+        logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
                            len(chunkDirectories), chunkString, baseDirectory )
 
         self.sumWeights = 0
@@ -47,7 +47,7 @@ class CMGOutput( SampleBase ):
 
         for i, chunkDirectory in enumerate( chunkDirectories ):
             success = False
-            self.__logger.debug("Reading chunk %s", chunkDirectory)
+            logger.debug("Reading chunk %s", chunkDirectory)
 
             for root, subFolders, filenames in os.walk( chunkDirectory ):
                 sumW = None
@@ -58,7 +58,7 @@ class CMGOutput( SampleBase ):
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
                     sumW = readNormalization( skimReportFilename )
                     if not sumW:
-                        self.__logger.warning( "Read chunk %s and found report '%s' but could not read normalization.", 
+                        logger.warning( "Read chunk %s and found report '%s' but could not read normalization.", 
                                              chunkDirectory, skimReportFilename )
  
                 # Load tree file 
@@ -66,13 +66,13 @@ class CMGOutput( SampleBase ):
                     treeFile = os.path.join(root, treeFilename)
                     # Checking whether root file is OG and contains a tree
                     if not helpers.checkRootFile(treeFile, checkForObjects=[treeName] ):
-                        self.__logger.warning( "Read chunk %s and found tree file '%s' but file looks broken.",  chunkDirectory, treeFile )
+                        logger.warning( "Read chunk %s and found tree file '%s' but file looks broken.",  chunkDirectory, treeFile )
                 
                 # If both, normalization and treefile are OK call it successful. 
                 if sumW and treeFile:
                     self.files.append( treeFile )
                     self.sumWeights += sumW
-                    self.__logger.debug( "Successfully read chunk %s and incremented sumWeights by %7.2f",  chunkDirectory, sumW )
+                    logger.debug( "Successfully read chunk %s and incremented sumWeights by %7.2f",  chunkDirectory, sumW )
                     success = True
                     self.goodChunks.append( chunkDirectory )
                     break
@@ -87,7 +87,7 @@ class CMGOutput( SampleBase ):
 
         # Log statements
         eff = 100*len(self.failedChunks)/float( len(chunkDirectories) )
-        self.__logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
+        logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
                           self.name, len(chunkDirectories), self.sumWeights, len(self.failedChunks), eff)
 
         for chunk in self.failedChunks:
