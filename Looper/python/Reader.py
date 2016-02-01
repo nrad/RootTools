@@ -106,7 +106,8 @@ class Reader():
             self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.entry, s['name']))
         for v in self.vectors:
             for c in v['variables']:
-                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
+                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), \
+                ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
 
     def __start(self):
 
@@ -136,7 +137,8 @@ class Reader():
             self.position += 1
         if self.position == self.nEvents: return 0
 
-        if (self.position % 1000)==0: logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
+        if (self.position % 1000)==0: 
+            logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
         
         # point to the position in the chain (or the eList if there is one) 
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)

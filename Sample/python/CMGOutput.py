@@ -82,7 +82,7 @@ class CMGOutput( SampleBase ):
 
         # Don't allow empty samples
         if len(self.goodChunks) == 0: 
-            raise EmptySampleError("Could not find any good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
+            raise EmptySampleError("Could not find good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
                   .format(self.name, len(chunkDirectories), baseDirectory))
 
         # Log statements

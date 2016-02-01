@@ -41,16 +41,19 @@ def getCDefaultString(typeString):
         raise Exception( "Can not determine C type for type '%s'"%typeString )
 
 def createClassString(scalars, vectors):
-
+    '''Create class string from scalar and vector variables
+    '''
     scalarDeclaration = "".join(["  %15s %s;\n"% ( getCTypeString(scalar['type']), scalar['name'] ) for scalar in scalars])
     scalarInitString  = "".join(["  %15s = %s;\n"%( scalar['name'], getCDefaultString(scalar['type']) ) for scalar in scalars]) 
     vectorDeclaration = ""
     for vector in vectors:
-        vectorDeclaration += "".join([ "  %15s %s_%s[%3i];\n"%( getCTypeString(c['type']), vector['name'], c['name'], vector['nMax']) for c in vector['variables']])
+        vectorDeclaration += "".join([ "  %15s %s_%s[%3i];\n" % \
+            ( getCTypeString(c['type']), vector['name'], c['name'], vector['nMax']) for c in vector['variables']])
     vectorInitString=""
     for vector in vectors:
-        vectorInitString  += """  for(UInt_t i=0;i<{nMax};i++){{\n{vecCompString}     }}; //End for loop""".format(nMax = vector['nMax'], vecCompString =\
-             "".join([ "  %15s_%s[i] = %15s;\n"%(vector['name'], c['name'], getCDefaultString(c['type'])) for c in vector['variables'] ] ) 
+        vectorInitString  += """  for(UInt_t i=0;i<{nMax};i++){{\n{vecCompString}     }}; //End for loop"""\
+            .format(nMax = vector['nMax'], vecCompString =\
+             "".join([ "  %15s_%s[i] = %15s;\n"%(vector['name'], c['name'], getCDefaultString(c['type'])) for c in vector['variables']]) 
         )
 
     return \
