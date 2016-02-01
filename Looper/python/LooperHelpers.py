@@ -30,7 +30,7 @@ def getCTypeString(typeString):
     if typeString in cStringTypeDict.keys():
         return cStringTypeDict[typeString]
     else:
-        raise Exception( "Cannot determine C type for '%s'"%typeString )
+        raise Exception( "Cann ot determine C type for type '%s'"%typeString )
 
 def getCDefaultString(typeString):
     '''Get default string from ROOT branch description shortcut
@@ -38,7 +38,7 @@ def getCDefaultString(typeString):
     if typeString in defaultTypeDict.keys():
         return defaultTypeDict[typeString]
     else:
-        raise Exception( "Cannot determine C type for '%s'"%typeString )
+        raise Exception( "Can not determine C type for type '%s'"%typeString )
 
 def createClassString(scalars, vectors):
 

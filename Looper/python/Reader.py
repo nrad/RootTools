@@ -17,7 +17,7 @@ from RootTools.Looper.LooperHelpers import createClassString
 
 class Reader():
     
-    def __init__(self, sample, scalars, vectors):
+    def __init__(self, sample, scalars, vectors, selectionString = None):
         if not isinstance(sample, SampleBase):
             raise ValueError( "Need instance of SampleBase to initialize Reader" )
 
@@ -35,6 +35,12 @@ class Reader():
             self.addVector(v)
 
         self.makeClass()
+            
+        # Internal state for running
+        self.selectionString = selectionString
+        self.eList = None
+        self.position = -1
+        self.nEvents = None
 
     def addScalar(self, scalarname):
         '''Add a scalar variable with syntax 'Var/Type'.
@@ -46,7 +52,8 @@ class Reader():
         self.scalars.append({'name':scalarname, 'type':varType})
 
     def addVector(self, vector):
-        '''Add vector variable as a dictionary e.g. {'name':Jet, 'nMax':100, 'variables':['pt/F']}.
+        '''Add vector variable as a dictionary e.g. {'name':Jet, 'nMax':100, 'variables':['pt/F']} 
+           N.B. This will be added as {'name':Jet, 'nMax':100, 'variables':[{'name':'pt', 'type':'F'}]}.
         '''
         vector_ = copy.deepcopy(vector)
         if vector_.has_key('name') and vector_.has_key('nMax') and vector_.has_key('variables'):
@@ -68,14 +75,58 @@ class Reader():
             raise Exception("Don't know what to do with vector %r"%s)
 
     def makeClass(self):
-        if not os.path.exists(self.tmpDir): os.path.makedirs(self.tmpDir)
+
+        if not os.path.exists(self.tmpDir): 
+            logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
+            os.path.makedirs(self.tmpDir)
+
         uniqueString = str(uuid.uuid4()).replace('-','_')
         tmpFileName = os.path.join(self.tmpDir, uniqueString+'.C')
         className = "Class_"+uniqueString
         with file( tmpFileName, 'w' ) as f:
+            logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
             f.write( createClassString( scalars = self.scalars, vectors=self.vectors).replace( "className", className ) )
 
         # A less dirty solution possible?
+        logger.debug("Compiling file %s", tmpFileName)
         ROOT.gROOT.ProcessLine('.L %s+'%tmpFileName )
+
+        logger.debug("Importing class %s", className)
         exec( "from ROOT import %s" % className )
+
+        logger.debug("Creating instance of class %s", className)
         setattr(self, "entry", eval("%s()" % className) )
+
+        self.setAddresses()
+
+        return self
+
+    def setAddresses(self):
+        for s in self.scalars:
+            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.entry, s['name']))
+        for v in self.vectors:
+            for c in v['variables']:
+                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
+
+    def __start(self):
+        self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
+        self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
+        return
+
+    def run(self):
+        ''' Load event into self.entry. Return 0, if last event has been reached
+        '''
+        if self.position < 0:
+            logger.debug("Starting Reader for sample %s", self.sample.name)
+            self.__start()
+            self.position = 0 
+        else:
+            self.position += 1
+        if self.position == self.nEvents: return 0
+
+        if (self.position % 1000)==0: logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
+        
+        # point to the position in the chain (or the eList if there is one) 
+        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)
+
+        return 1

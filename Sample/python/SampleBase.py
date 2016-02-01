@@ -10,6 +10,7 @@ import ROOT
 import uuid
 import numbers
 from math import sqrt
+
 # Logging
 import logging
 logger = logging.getLogger(__name__)
@@ -75,18 +76,25 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
             self.chain = None
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
 
+    def reader(self, **kwargs):
+        ''' Return a reader of the sample
+        '''
+        from RootTools.Looper.Reader import Reader
+        logger.debug("Creating Reader object for sample '%s'.", self.name)
+        self.reader = Reader( self, **kwargs )
+        return self.reader
 
 #    def __del__(self): #Will be executed when the refrence count is zero
 #        '''Calling the TChain Destructor.
 #        '''
 #        self.clear()
 
-    def getEList(self, cutString=None, name=None):
-        ''' Get a TEventList from a cutString
+    def getEList(self, selectionString=None, name=None):
+        ''' Get a TEventList from a selectionString
         '''
 
         tmp=str(uuid.uuid4())
-        self.chain.Draw('>>'+tmp, cutString if cutString else "(1)")
+        self.chain.Draw('>>'+tmp, selectionString if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
         if not name:
@@ -96,12 +104,12 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
             del elistTMP_t
             return elistTMP
 
-    def getYieldFromLoop(self, cutString=None, cutFunc = None, weightVar = None, weightFunc = None):
-        ''' Get yield from self.chain according to a cut, a cutString, a cutFunc, 
+    def getYieldFromLoop(self, selectionString=None, cutFunc = None, weightVar = None, weightFunc = None):
+        ''' Get yield from self.chain according to a cut, a selectionString, a cutFunc, 
             a weight variable (must be a TLeafElement) and a weight function.
             This is deprecated and very slow.
         '''
-        eList = self.getEList(cutString)
+        eList = self.getEList(selectionString)
         res = 0.
         resVar=0.
 
@@ -117,22 +125,22 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
         del eList
         return u_float.u_float(res, sqrt(resVar) )
 
-    def getYieldFromDraw(self, cutString = None, weightString = None):
-        ''' Get yield from self.chain according to a cutString and a weightString
+    def getYieldFromDraw(self, selectionString = None, weightString = None):
+        ''' Get yield from self.chain according to a selectionString and a weightString
         ''' 
         tmp=str(uuid.uuid4())
         h = ROOT.TH1D(tmp, tmp, 1,0,2)
         h.Sumw2()
         weight = weightString if weightString else "1"
-        cut = cutString if cutString else "1"
+        cut = selectionString if selectionString else "1"
         self.chain.Draw("1>>"+tmp, "("+weight+")*("+cut+")", 'goff')
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)
         del h
         return u_float.u_float( res, resErr )
 
-    def getHistoFromDraw(self, variableString, binning, cutString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None):
-        ''' Get TH1D/TH2D from draw command using cutString, weight. If binningIsExplicit is true, 
+    def getHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None):
+        ''' Get TH1D/TH2D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a list) is translated into variable bin widths. 
             addOverFlowBin can be 'upper', 'lower', 'both' and will add 
             the corresponding overflow bin to the last bin of a 1D histogram'''
@@ -146,7 +154,7 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
             else:
                 res = ROOT.TH1D(tmp, tmp, *binning)
         weight = weightString if weightString else "1"
-        self.chain.Draw(variableString+">>"+tmp, weight+"*("+cutString+")", 'goff')
+        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString+")", 'goff')
 
         if not is2D:
             if addOverFlowBin.lower() == "upper" or addOverFlowBin.lower() == "both":
