@@ -10,7 +10,7 @@ logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+ch.setLevel(logging.DEBUG)
 fh = logging.FileHandler('out.txt')
 fh.setLevel(logging.DEBUG)
 

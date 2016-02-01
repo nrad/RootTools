@@ -40,4 +40,5 @@ class SampleFromFiles( SampleBase ):
         if len(self.files) == 0: 
             raise EmptySampleError("No valid file found for sample {0}.".format(self.name) )
 
-        logger.info("Loaded SampleFromFiles %s. Total number of files : %i. Bad files: %i.", self.name, len(files), len(files)-len(self.files) ) 
+        logger.info("Loaded SampleFromFiles %s. Total number of files : %i. Bad files: %i.", \
+                     self.name, len(files), len(files)-len(self.files) ) 
