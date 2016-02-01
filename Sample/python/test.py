@@ -1,17 +1,16 @@
 import sys
 import logging
 import ROOT
-import Sample
+import CMGOutput
+import SampleFromFiles
 
 # create logger
 logger = logging.getLogger("Logger")
 logger.setLevel(logging.DEBUG)
 
-logging.getLogger("Sample").setLevel(logging.DEBUG)
-
 # create console handler and set level to debug
 ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+ch.setLevel(logging.INFO)
 fh = logging.FileHandler('out.txt')
 fh.setLevel(logging.DEBUG)
 
@@ -26,6 +25,10 @@ fh.setFormatter(formatter)
 logger.addHandler(ch)
 logger.addHandler(fh)
 
-s = Sample.Sample("data", treeName = "tree")
-s.files=['/data/rschoefbeck/cmgTuples/Run2015B/50ns_0l/JetHT_Run2015B-17Jul2015-v1/tree.root']
-s.chain
+td = "/data/rschoefbeck/cmgTuples/MC25ns_v2_1l_151218/TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2_ext1-v1/"
+
+s2 = CMGOutput.CMGOutput("TTJets", baseDirectory = td, treeName = "tree")
+s2.chain
+
+s3 = SampleFromFiles.SampleFromFiles("test2", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples/postProcessed_mAODv2/dilep/TTZToQQ/TTZToQQ_0.root"])
+s3.chain

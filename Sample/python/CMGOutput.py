@@ -1,46 +1,95 @@
 '''Handling cmg output chunks.'''
 
-from  Roottools.Sample.Sample import Sample
+# Standard imports
+import ROOT
 import os, subprocess
 
-class CMGOutput( Sample ):
-    def __init__(name, baseDirectory, chunkString, treeName = 'tree', maxN = -1):
+# Logging
+import logging
+
+# Base class
+from  RootTools.Sample.SampleBase import SampleBase, EmptySampleError
+
+# Helpers
+import RootTools.tools.helpers as helpers
+
+def readNormalization(filename):
+    with open(filename, 'r') as fin:
+        for line in fin:
+            if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
+                sumW = float(line.split()[2])
+                return sumW
+
+class CMGOutput( SampleBase ):
+
+    def __init__(self, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None):
+
         super(CMGOutput, self).__init__(name=name, treeName = treeName)
+
+        self.__logger = logging.getLogger("Logger."+__name__)
+
         self.baseDirectory = baseDirectory
         self.chunkString = chunkString
-        self.maxN = maxN 
-        
-        chunks = [{'name':x} for x in os.listdir(baseDirectory) \
-                        if x.startswith(chunkString) and x.endswith('_Chunk') or x==sample.chunkString]
+        self.maxN = maxN if not (maxN and maxN<0) else None 
 
-        chunks=chunks[:maxN] if maxN>0 else chunks
-    sumWeights=0
-    failedChunks=[]
-    goodChunks  =[]
-    const = 'All Events' if sample.isData else 'Sum Weights'
-    for i, s in enumerate(chunks):
-            logfile = "/".join([sample.path, s['name'], sample.skimAnalyzerDir,'SkimReport.txt'])
-#      print logfile
-            if os.path.isfile(logfile):
-                line = [x for x in subprocess.check_output(["cat", logfile]).split('\n') if x.count(const)]
-                assert len(line)==1,"Didn't find normalization constant '%s' in  number in file %s"%(const, logfile)
-                n = int(float(line[0].split()[2]))
-                sumW = float(line[0].split()[2])
-                inputFilename = '/'.join([sample.path, s['name'], sample.rootFileLocation])
-#        print sumW, inputFilename
-                if os.path.isfile(inputFilename) and checkRootFile(inputFilename):
-                    sumWeights+=sumW
-                    s['file']=inputFilename
-                    goodChunks.append(s)
-                else:
-                    failedChunks.append(chunks[i])
-            else:
-                print "log file not found:  ", logfile
-                failedChunks.append(chunks[i])
-#    except: print "Chunk",s,"could not be added"
-    eff = round(100*len(failedChunks)/float(len(chunks)),3)
-    print "Chunks: %i total, %i good (normalization constant %f), %i bad. Inefficiency: %f"%(len(chunks),len(goodChunks),sumWeights,len(failedChunks), eff)
-    for s in failedChunks:
-        print "Failed:",s
-    return goodChunks, sumWeights
-         
+        # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
+        chunkDirectories = []
+        for x in os.walk(baseDirectory):
+            if not chunkString or (x[0].startswith(chunkString) and x[0].endswith('_Chunk')) or x[0]==chunkString:
+                chunkDirectories.append(x[0])
+
+        self.__logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
+                           len(chunkDirectories), chunkString, baseDirectory )
+
+        self.sumWeights = 0
+        self.failedChunks=[]
+        self.goodChunks  =[]
+
+        for i, chunkDirectory in enumerate( chunkDirectories ):
+            success = False
+            self.__logger.debug("Reading chunk %s", chunkDirectory)
+
+            for root, subFolders, filenames in os.walk( chunkDirectory ):
+                sumW = None
+                treeFile = None
+
+                # Determine normalization constant
+                if 'SkimReport.txt' in filenames:
+                    skimReportFilename = os.path.join(root, 'SkimReport.txt')
+                    sumW = readNormalization( skimReportFilename )
+                    if not sumW:
+                        self.__logger.warning( "Read chunk %s and found report '%s' but could not read normalization.", 
+                                             chunkDirectory, skimReportFilename )
+ 
+                # Load tree file 
+                if treeFilename in filenames:
+                    treeFile = os.path.join(root, treeFilename)
+                    # Checking whether root file is OG and contains a tree
+                    if not helpers.checkRootFile(treeFile, checkForObjects=[treeName] ):
+                        self.__logger.warning( "Read chunk %s and found tree file '%s' but file looks broken.",  chunkDirectory, treeFile )
+                
+                # If both, normalization and treefile are OK call it successful. 
+                if sumW and treeFile:
+                    self.files.append( treeFile )
+                    self.sumWeights += sumW
+                    self.__logger.debug( "Successfully read chunk %s and incremented sumWeights by %7.2f",  chunkDirectory, sumW )
+                    success = True
+                    self.goodChunks.append( chunkDirectory )
+                    break
+
+            if not success:
+                self.failedChunks.append( chunkDirectory  )
+
+        # Don't allow empty samples
+        if len(self.goodChunks) == 0: 
+            raise EmptySampleError("Could not find any good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
+                  .format(self.name, len(chunkDirectories), baseDirectory))
+
+        # Log statements
+        eff = 100*len(self.failedChunks)/float( len(chunkDirectories) )
+        self.__logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
+                          self.name, len(chunkDirectories), self.sumWeights, len(self.failedChunks), eff)
+
+        for chunk in self.failedChunks:
+            logger.debug( "Failed to load chunk %s", chunk)
+
