@@ -1,4 +1,4 @@
-''' Base class for a sample.
+''' Abstract base class for a sample.
     Implements definition and handling of the TChain.
 '''
 
@@ -77,23 +77,32 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
 
     def reader(self, **kwargs):
-        ''' Return a reader of the sample
+        ''' Return a Reader class for the sample
         '''
         from RootTools.Looper.Reader import Reader
         logger.debug("Creating Reader object for sample '%s'.", self.name)
-        self.reader = Reader( self, **kwargs )
-        return self.reader
+        return Reader( self, **kwargs )
+
+    def converter(self, **kwargs):
+        ''' Return a Converter class for the sample
+        '''
+        from RootTools.Looper.Converter import Converter
+        logger.debug("Creating Converter object for sample '%s'.", self.name)
+        return Converter( self, **kwargs )
 
 #    def __del__(self): #Will be executed when the refrence count is zero
 #        '''Calling the TChain Destructor.
 #        '''
 #        self.clear()
 
+
+    # Below some helper functions to get useful things from a sample
     def getEList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString
         '''
 
         tmp=str(uuid.uuid4())
+        logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString )
         self.chain.Draw('>>'+tmp, selectionString if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 

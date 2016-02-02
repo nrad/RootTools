@@ -1,4 +1,5 @@
-'''Sample constructed from a list of files'''
+'''Sample constructed from a list of files.
+Derived from SampleBase'''
 
 # Standard imports
 import ROOT
@@ -13,13 +14,6 @@ from  RootTools.Sample.SampleBase import SampleBase, EmptySampleError
 
 # Helpers
 import RootTools.tools.helpers as helpers
-
-def readNormalization(filename):
-    with open(filename, 'r') as fin:
-        for line in fin:
-            if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
-                sumW = float(line.split()[2])
-                return sumW
 
 class SampleFromFiles( SampleBase ):
 

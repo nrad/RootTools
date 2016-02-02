@@ -1,4 +1,5 @@
-'''Handling cmg output chunks.'''
+'''Class for handling cmg output chunks. 
+Derives from SampleBase'''
 
 # Standard imports
 import ROOT
