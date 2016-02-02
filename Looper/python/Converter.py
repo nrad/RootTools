@@ -21,27 +21,13 @@ class Converter( LooperBase ):
 
         super(Converter, self).__init__( sample = sample, scalars = scalars, vectors = vectors , selectionString = selectionString)
 
-        # Internal state for running
-        self.selectionString = selectionString
-        self.eList = None
-        self.position = -1
-        self.nEvents = None
+        self.makeClass( "output" )
 
-    def run(self):
-        ''' Load event into self.entry. Return 0, if last event has been reached
-        '''
-        if self.position < 0:
-            logger.debug("Starting Converter for sample %s", self.sample.name)
-            self.__start()
-            self.position = 0
-        else:
-            self.position += 1
-        if self.position == self.nEvents: return 0
+        # self.setAddressestosometree
 
-        if (self.position % 1000)==0:
-            logger.info("Converter for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
-
+    def execute(self):
+        ''' Do what a converter does'''
         # point to the position in the chain (or the eList if there is one)
-        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)
+#        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)
+        return
 
-        return 1

@@ -20,21 +20,19 @@ class Reader( LooperBase ):
 
         super(Reader, self).__init__( sample = sample, scalars = scalars, vectors = vectors , selectionString = selectionString )
 
-    def run(self):
-        ''' Load event into self.entry. Return 0, if last event has been reached
-        '''
-        if self.position < 0:
-            logger.debug("Starting Reader for sample %s", self.sample.name)
-            self.initialize()
-            self.position = 0
-        else:
-            self.position += 1
-        if self.position == self.nEvents: return 0
+        self.makeClass( "entry" )
 
-        if (self.position % 1000)==0:
-            logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
+        self.setAddresses()
 
+    def setAddresses(self):
+        for s in self.scalars:
+            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.entry, s['name']))
+        for v in self.vectors:
+            for c in v['variables']:
+                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), \
+                ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
+
+    def execute(self):  
+        ''' Do what a reader does'''
         # point to the position in the chain (or the eList if there is one)
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)
-
-        return 1

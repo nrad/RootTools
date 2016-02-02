@@ -20,17 +20,13 @@ from RootTools.Looper.LooperHelpers import createClassString
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
 
-    @abc.abstractmethod
-    def run(self):
-        return
-
     def __init__(self, sample, scalars, vectors, selectionString):
         if not isinstance(sample, SampleBase):
             raise ValueError( "Need instance of Sample to initialize any Looper instance" )
 
         self.sample  = sample
-        self.__scalars = []
-        self.__vectors = []
+        self.scalars = []
+        self.vectors = []
 
         # directory where the class is compiled
         self.tmpDir = '/tmp/'
@@ -40,8 +36,6 @@ class LooperBase( object ):
 
         for v in vectors:
             self.addVector(v)
-
-        self.makeClass()
 
         self.selectionString = selectionString
 
@@ -57,7 +51,7 @@ class LooperBase( object ):
         if not type(scalarname)==type(""):   raise ValueError ("Got %r but was expecting string"%s)
         if not scalarname.count('/')==1:     raise Exception( "Cannot add scalar variable '%r'. Syntax is Name/Type."% s)
         scalarname, varType = scalarname.split('/')
-        self.__scalars.append({'name':scalarname, 'type':varType})
+        self.scalars.append({'name':scalarname, 'type':varType})
 
     def addVector(self, vector):
         '''Add vector variable as a dictionary e.g. {'name':Jet, 'nMax':100, 'variables':['pt/F']}
@@ -67,7 +61,7 @@ class LooperBase( object ):
         if vector_.has_key('name') and vector_.has_key('nMax') and vector_.has_key('variables'):
 
             # Add counting variable (CMG default for vector_ variable counters is 'nNAME')
-            self.__scalars.append( {'name':'n{0}'.format(vector_['name']), 'type':'I'} )
+            self.scalars.append( {'name':'n{0}'.format(vector_['name']), 'type':'I'} )
 
             # replace 'variables':['pt/F',...] with 'variables':[{'name':'pt', 'type':'F'}]
             variables_ = []
@@ -77,12 +71,12 @@ class LooperBase( object ):
                 variables_.append({'name':varName, 'type':varType})
 
             vector_.update({'variables':variables_})
-            self.__vectors.append(vector_)
+            self.vectors.append(vector_)
 
         else:
             raise Exception("Don't know what to do with vector %r"%s)
 
-    def makeClass(self):
+    def makeClass(self, attr):
 
         if not os.path.exists(self.tmpDir):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
@@ -94,7 +88,7 @@ class LooperBase( object ):
 
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
-            f.write( createClassString( scalars = self.__scalars, vectors=self.__vectors).replace( "className", className ) )
+            f.write( createClassString( scalars = self.scalars, vectors=self.vectors).replace( "className", className ) )
 
         # A less dirty solution possible?
         logger.debug("Compiling file %s", tmpFileName)
@@ -104,27 +98,17 @@ class LooperBase( object ):
         exec( "from ROOT import %s" % className )
 
         logger.debug("Creating instance of class %s", className)
-        setattr(self, "entry", eval("%s()" % className) )
-
-        self.__setAddresses()
+        setattr(self, attr, eval("%s()" % className) )
 
         return self
-
-    def __setAddresses(self):
-        for s in self.__scalars:
-            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.entry, s['name']))
-        for v in self.__vectors:
-            for c in v['variables']:
-                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), \
-                ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
 
     def mute(self):
         ''' Mute all branches that are not needed
         '''
         self.sample.chain.SetBranchStatus("*", 0)
-        for s in self.__scalars:
+        for s in self.scalars:
             self.sample.chain.SetBranchStatus(s['name'], 1)
-        for v in self.__vectors:
+        for v in self.vectors:
             for c in v['variables']:
                 self.sample.chain.SetBranchStatus("%s_%s"%(v['name'],c['name']), 1)
 
@@ -139,3 +123,26 @@ class LooperBase( object ):
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
 
         return
+
+    def loop(self):
+        ''' Load event into self.entry. Return 0, if last event has been reached
+        '''
+        if self.position < 0:
+            logger.debug("Starting Reader for sample %s", self.sample.name)
+            self.initialize()
+            self.position = 0
+        else:
+            self.position += 1
+        if self.position == self.nEvents: return 0
+
+        if (self.position % 1000)==0:
+            logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
+
+        self.execute()
+
+        return 1
+
+    @abc.abstractmethod
+    def execute(self):
+        return
+
