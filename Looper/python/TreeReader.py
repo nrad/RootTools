@@ -14,7 +14,7 @@ from RootTools.Sample.SampleBase import SampleBase
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, scalars, vectors, selectionString = None):
+    def __init__(self, sample, scalars = None, vectors = None, selectionString = None):
 
         if not isinstance(sample, SampleBase):
             raise ValueError( "Need instance of Sample to initialize any Looper instance" )
@@ -49,9 +49,10 @@ class TreeReader( LooperBase ):
     def unmute(self):
         self.sample.chain.SetBranchStatus("*", 1)
 
-    def initializeLoop(self):
+    def initialize(self):
+
         # Turn on everything for flexibility with the selectionString
-        logger.debug("Starting Reader for sample %s", self.sample.name)
+        logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.unmute()
         self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
         self.mute()
@@ -60,6 +61,15 @@ class TreeReader( LooperBase ):
         return
 
     def execute(self):  
-        ''' Do what a reader does'''
+        ''' Execute the read statement and check for the end of the loop'''
+        if self.position == self.nEvents: return 0
+
+        if (self.position % 10000)==0:
+            logger.info("TreeReader is at position %6i/%6i", self.position, self.nEvents)
+
+        # init struct
+        self.entry.init()
+
         # point to the position in the chain (or the eList if there is one)
-        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry(self.position)
+        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+        return 1

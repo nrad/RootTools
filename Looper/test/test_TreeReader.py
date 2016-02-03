@@ -33,5 +33,6 @@ scalars   =    [ 'met_pt/F', 'met_phi/F', 'run/I', 'lumi/I', 'evt/l', 'nVert/I' 
 
 h=ROOT.TH1F('met','met',100,0,0)
 r = s2.treeReader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
-while r.loop():
+r.start()
+while r.run():
     h.Fill( r.entry.met_pt )

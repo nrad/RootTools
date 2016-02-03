@@ -54,7 +54,7 @@ class LooperBase( object ):
            N.B. This will be added as {'name':Jet, 'nMax':100, 'variables':[{'name':'pt', 'type':'F'}]}.
         '''
         vector_ = copy.deepcopy(vector)
-        if vector_.has_key('name') and vector_.has_key('variables'):
+        if vector_.has_key('name') and vector_.has_key('nMax') and vector_.has_key('variables'):
 
             # Add counting variable (CMG default for vector_ variable counters is 'nNAME')
             self.scalars.append( {'name':'n{0}'.format(vector_['name']), 'type':'I'} )
@@ -101,25 +101,25 @@ class LooperBase( object ):
 
         return self
 
-    def loop(self):
+    def run(self):
         ''' Load event into self.entry. Return 0, if last event has been reached
         '''
-        if self.position < 0:
-            self.initializeLoop()
-            self.position = 0
-        else:
-            self.position += 1
-        if self.position == self.nEvents: return 0
+    
+        assert self.position>=0, "Not initialized!"
 
-        if (self.position % 1000)==0:
-            logger.info("Reader is at position %6i/%6i", self.position, self.nEvents)
+        success = self.execute()
 
-        self.execute()
+        self.position += 1
 
-        return 1
+        return success
 
+
+    def start(self):
+        self.position = 0    
+        self.initialize()
+    
     @abc.abstractmethod
-    def initializeLoop(self):
+    def initialize(self):
         return
 
     @abc.abstractmethod
