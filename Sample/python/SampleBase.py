@@ -76,19 +76,19 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
             self.chain = None
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
 
-    def reader(self, **kwargs):
+    def treeReader(self, **kwargs):
         ''' Return a Reader class for the sample
         '''
-        from RootTools.Looper.Reader import Reader
-        logger.debug("Creating Reader object for sample '%s'.", self.name)
-        return Reader( self, **kwargs )
+        from RootTools.Looper.TreeReader import TreeReader
+        logger.debug("Creating TreeReader object for sample '%s'.", self.name)
+        return TreeReader( self, **kwargs )
 
-    def converter(self, **kwargs):
+    def treeMaker(self, **kwargs):
         ''' Return a Converter class for the sample
         '''
-        from RootTools.Looper.Converter import Converter
-        logger.debug("Creating Converter object for sample '%s'.", self.name)
-        return Converter( self, **kwargs )
+        from RootTools.Looper.TreeMaker import TreeMaker
+        logger.debug("Creating TreeMaker object for sample '%s'.", self.name)
+        return TreeMaker( self, **kwargs )
 
 #    def __del__(self): #Will be executed when the refrence count is zero
 #        '''Calling the TChain Destructor.

@@ -1,11 +1,8 @@
-''' Class for a Reader of an instance of Sample.
+''' Class for a TreeReader of an instance of Sample.
 '''
 
 # Standard imports
 import ROOT
-import uuid
-import copy
-import os
 
 # Logging
 import logging
@@ -14,13 +11,13 @@ logger = logging.getLogger(__name__)
 # RootTools
 from RootTools.Looper.LooperBase import LooperBase
 
-class Reader( LooperBase ):
+class TreeReader( LooperBase ):
 
     def __init__(self, sample, scalars, vectors, selectionString = None):
 
-        super(Reader, self).__init__( sample = sample, scalars = scalars, vectors = vectors , selectionString = selectionString )
+        super(TreeReader, self).__init__( sample = sample, scalars = scalars, vectors = vectors , selectionString = selectionString )
 
-        self.makeClass( "entry" )
+        self.makeClass( "entry", useSTDVectors = False)
 
         self.setAddresses()
 

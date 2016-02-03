@@ -3,7 +3,7 @@ import logging
 import ROOT
 from RootTools.Sample.CMGOutput import CMGOutput
 from RootTools.Sample.SampleFromFiles import SampleFromFiles
-from RootTools.Looper.Reader import Reader
+from RootTools.Looper.TreeReader import TreeReader
 
 # create logger
 logger = logging.getLogger("RootTools")
@@ -32,6 +32,6 @@ scalars   =    [ 'met_pt/F', 'met_phi/F', 'run/I', 'lumi/I', 'evt/l', 'nVert/I' 
 #s1.reader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
 
 h=ROOT.TH1F('met','met',100,0,0)
-r = s2.reader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
+r = s2.treeReader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
 while r.loop():
     h.Fill( r.entry.met_pt )

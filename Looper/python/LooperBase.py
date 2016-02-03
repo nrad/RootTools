@@ -31,11 +31,13 @@ class LooperBase( object ):
         # directory where the class is compiled
         self.tmpDir = '/tmp/'
 
-        for s in scalars:
-            self.addScalar(s)
+        if scalars: 
+            for s in scalars:
+                self.addScalar(s)
 
-        for v in vectors:
-            self.addVector(v)
+        if vectors: 
+            for v in vectors:
+                self.addVector(v)
 
         self.selectionString = selectionString
 
@@ -58,7 +60,7 @@ class LooperBase( object ):
            N.B. This will be added as {'name':Jet, 'nMax':100, 'variables':[{'name':'pt', 'type':'F'}]}.
         '''
         vector_ = copy.deepcopy(vector)
-        if vector_.has_key('name') and vector_.has_key('nMax') and vector_.has_key('variables'):
+        if vector_.has_key('name') and vector_.has_key('variables'):
 
             # Add counting variable (CMG default for vector_ variable counters is 'nNAME')
             self.scalars.append( {'name':'n{0}'.format(vector_['name']), 'type':'I'} )
@@ -74,9 +76,9 @@ class LooperBase( object ):
             self.vectors.append(vector_)
 
         else:
-            raise Exception("Don't know what to do with vector %r"%s)
+            raise Exception("Don't know what to do with vector %r"%vector)
 
-    def makeClass(self, attr):
+    def makeClass(self, attr, useSTDVectors = False):
 
         if not os.path.exists(self.tmpDir):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
@@ -88,7 +90,10 @@ class LooperBase( object ):
 
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
-            f.write( createClassString( scalars = self.scalars, vectors=self.vectors).replace( "className", className ) )
+            f.write( 
+                createClassString( scalars = self.scalars, vectors=self.vectors, useSTDVectors = useSTDVectors)
+                .replace( "className", className ) 
+            )
 
         # A less dirty solution possible?
         logger.debug("Compiling file %s", tmpFileName)
@@ -115,7 +120,7 @@ class LooperBase( object ):
     def unmute(self):
         self.sample.chain.SetBranchStatus("*", 1)
 
-    def initialize(self):
+    def initializeLoop(self):
         # Turn on everything for flexibility with the selectionString
         self.unmute()
         self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
@@ -129,7 +134,7 @@ class LooperBase( object ):
         '''
         if self.position < 0:
             logger.debug("Starting Reader for sample %s", self.sample.name)
-            self.initialize()
+            self.initializeLoop()
             self.position = 0
         else:
             self.position += 1
@@ -145,4 +150,3 @@ class LooperBase( object ):
     @abc.abstractmethod
     def execute(self):
         return
-
