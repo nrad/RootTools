@@ -14,17 +14,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.Sample.SampleBase import SampleBase
 from RootTools.Looper.LooperHelpers import createClassString
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, sample, scalars, vectors, selectionString):
-        if not isinstance(sample, SampleBase):
-            raise ValueError( "Need instance of Sample to initialize any Looper instance" )
+    def __init__(self, scalars, vectors):
 
-        self.sample  = sample
         self.scalars = []
         self.vectors = []
 
@@ -38,8 +34,6 @@ class LooperBase( object ):
         if vectors: 
             for v in vectors:
                 self.addVector(v)
-
-        self.selectionString = selectionString
 
         # Internal state for running
         self.position = -1
@@ -107,33 +101,10 @@ class LooperBase( object ):
 
         return self
 
-    def mute(self):
-        ''' Mute all branches that are not needed
-        '''
-        self.sample.chain.SetBranchStatus("*", 0)
-        for s in self.scalars:
-            self.sample.chain.SetBranchStatus(s['name'], 1)
-        for v in self.vectors:
-            for c in v['variables']:
-                self.sample.chain.SetBranchStatus("%s_%s"%(v['name'],c['name']), 1)
-
-    def unmute(self):
-        self.sample.chain.SetBranchStatus("*", 1)
-
-    def initializeLoop(self):
-        # Turn on everything for flexibility with the selectionString
-        self.unmute()
-        self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
-        self.mute()
-        self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
-
-        return
-
     def loop(self):
         ''' Load event into self.entry. Return 0, if last event has been reached
         '''
         if self.position < 0:
-            logger.debug("Starting Reader for sample %s", self.sample.name)
             self.initializeLoop()
             self.position = 0
         else:
@@ -141,11 +112,15 @@ class LooperBase( object ):
         if self.position == self.nEvents: return 0
 
         if (self.position % 1000)==0:
-            logger.info("Reader for sample %s is at position %6i/%6i", self.sample.name, self.position, self.nEvents)
+            logger.info("Reader is at position %6i/%6i", self.position, self.nEvents)
 
         self.execute()
 
         return 1
+
+    @abc.abstractmethod
+    def initializeLoop(self):
+        return
 
     @abc.abstractmethod
     def execute(self):
