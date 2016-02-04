@@ -1,15 +1,14 @@
-''' Abstract base class for a sample.
+''' Sample class.
     Implements definition and handling of the TChain.
 '''
-
-#Abstract Base Class
-import abc
 
 # Standard imports
 import ROOT
 import uuid
 import numbers
+import os
 from math import sqrt
+import collections
 
 # Logging
 import logging
@@ -24,19 +23,101 @@ class EmptySampleError(Exception):
     '''
     pass
 
-class SampleBase ( object ): # 'object' argument will disappear in Python 3
-    __metaclass__ = abc.ABCMeta
+class Sample ( object ): # 'object' argument will disappear in Python 3
 
-    @abc.abstractmethod
-    def __init__(self, name, treeName ):
+    def __init__(self, name, treeName , files = [], sumOfWeights = None):
         ''' Base class constructor for all sample classes.
             name: Name of the sample, treeName: name of the TTree in the input files
         '''
         self.name = name
         self.treeName = treeName
-        self.files = []
+        self.files = files
+        self.sumOfWeights = None
         self._chain = None
         logger.debug("Created new sample %s with treeName %s.", name, treeName)
+
+    @classmethod
+    def fromFiles(cls, name, treeName , files, sumOfWeights = None):
+        files = files if isinstance(files, collections.Iterable) else [files]
+        sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+        logger.info("Loaded sample %s from %i files.", name, len(files))
+        return sample
+
+    @classmethod
+    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None):
+    
+        def readNormalization(filename):
+            with open(filename, 'r') as fin:
+                for line in fin:
+                    if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
+                        sumW = float(line.split()[2])
+                        return sumW
+
+        maxN = maxN if not (maxN and maxN<0) else None
+
+        # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
+        chunkDirectories = []
+        for x in os.walk(baseDirectory):
+            if not chunkString or (x[0].startswith(chunkString) and x[0].endswith('_Chunk')) or x[0]==chunkString:
+                chunkDirectories.append(x[0])
+
+        logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
+                           len(chunkDirectories), chunkString, baseDirectory )
+
+        sumOfWeights = 0
+        files = []
+        failedChunks=[]
+        goodChunks  =[]
+
+        for i, chunkDirectory in enumerate( chunkDirectories ):
+            success = False
+            logger.debug("Reading chunk %s", chunkDirectory)
+
+            for root, subFolders, filenames in os.walk( chunkDirectory ):
+                sumW = None
+                treeFile = None
+
+                # Determine normalization constant
+                if 'SkimReport.txt' in filenames:
+                    skimReportFilename = os.path.join(root, 'SkimReport.txt')
+                    sumW = readNormalization( skimReportFilename )
+                    if not sumW:
+                        logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
+                                             chunkDirectory, skimReportFilename )
+
+                # Load tree file 
+                if treeFilename in filenames:
+                    treeFile = os.path.join(root, treeFilename)
+                    # Checking whether root file is OG and contains a tree
+                    if not helpers.checkRootFile(treeFile, checkForObjects=[treeName] ):
+                        logger.warning( "Read chunk %s and found tree file '%s' but file looks broken.",  chunkDirectory, treeFile )
+
+                # If both, normalization and treefile are OK call it successful. 
+                if sumW and treeFile:
+                    files.append( treeFile )
+                    sumOfWeights += sumW
+                    logger.debug( "Successfully read chunk %s and incremented sumOfWeights by %7.2f",  chunkDirectory, sumW )
+                    success = True
+                    goodChunks.append( chunkDirectory )
+                    break
+
+            if not success:
+                failedChunks.append( chunkDirectory  )
+
+        # Don't allow empty samples
+        if len(goodChunks) == 0:
+            raise EmptySampleError("Could not find good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
+                  .format(name, len(chunkDirectories), baseDirectory))
+
+        # Log statements
+        eff = 100*len(failedChunks)/float( len(chunkDirectories) )
+        logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
+                          name, len(chunkDirectories), sumOfWeights, len(failedChunks), eff)
+
+        for chunk in failedChunks:
+            logger.debug( "Failed to load chunk %s", chunk)
+
+        return cls( name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
 
     # Handle loading of chain -> load it when first used 
     @property
@@ -69,9 +150,9 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
     def clear(self): #FIXME How to promote to destructor without making it segfault?
         ''' Really (in the ROOT namespace) delete the chain
         '''
-        if self.chain:
-            self.chain.IsA().Destructor( self.chain )
-            self.chain = None
+        if self._chain:
+            self._chain.IsA().Destructor( self._chain )
+            self._chain = None
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
 
     def treeReader(self, **kwargs):
@@ -80,12 +161,6 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
         from RootTools.Looper.TreeReader import TreeReader
         logger.debug("Creating TreeReader object for sample '%s'.", self.name)
         return TreeReader( self, **kwargs )
-
-#    def __del__(self): #Will be executed when the refrence count is zero
-#        '''Calling the TChain Destructor.
-#        '''
-#        self.clear()
-
 
     # Below some helper functions to get useful things from a sample
     def getEList(self, selectionString=None, name=None):

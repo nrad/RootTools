@@ -4,8 +4,7 @@ import logging
 import ROOT
 
 #RootTools
-from RootTools.Sample.CMGOutput import CMGOutput
-from RootTools.Sample.SampleFromFiles import SampleFromFiles
+from RootTools.Sample.Sample import Sample
 from RootTools.Looper.TreeReader import TreeReader
 from RootTools.Looper.TreeMaker import TreeMaker
 
@@ -27,8 +26,8 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 td = "/data/rschoefbeck/cmgTuples/MC25ns_v2_1l_151218/TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2_ext1-v1/"
-s = CMGOutput("TTJetsDilep", baseDirectory = td, treeFilename = 'tree.root', treeName = 'tree')
-#s = SampleFromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples/postProcessed_mAODv2/dilep/TTZToQQ/TTZToQQ_0.root"])
+s1 = Sample.fromCMGOutput("TTJetsDilep", baseDirectory = td, treeFilename = 'tree.root', treeName = 'tree')
+s2 = Sample.fromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples/postProcessed_mAODv2/dilep/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
 
 vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_read   =    [ 'met_pt/F' ]
@@ -36,7 +35,7 @@ vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_write  =    [ 'myMet/F' ]
 
 # Define a reader
-reader = s.treeReader( scalars = scalars_read,     vectors = vectors_read,  selectionString = None)
+reader = s2.treeReader( scalars = scalars_read,     vectors = vectors_read,  selectionString = None)
 
 # Define a filler
 

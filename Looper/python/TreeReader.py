@@ -10,13 +10,13 @@ logger = logging.getLogger(__name__)
 
 # RootTools
 from RootTools.Looper.LooperBase import LooperBase
-from RootTools.Sample.SampleBase import SampleBase
+from RootTools.Sample.Sample import Sample
 
 class TreeReader( LooperBase ):
 
     def __init__(self, sample, scalars = None, vectors = None, selectionString = None):
 
-        if not isinstance(sample, SampleBase):
+        if not isinstance(sample, Sample):
             raise ValueError( "Need instance of Sample to initialize any Looper instance" )
 
         self.selectionString = selectionString
