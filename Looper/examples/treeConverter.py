@@ -1,5 +1,5 @@
 '''Example of a converter that splits the input sample into chunks of given size
-Has all (I hope) the post processor functionality.
+Has all (I hope) post processor functionality.
 '''
 
 # Standard imports
@@ -57,7 +57,7 @@ def filler(struct):
     struct.myMet = reader.data.met_pt
     return
 
-# Create a empty maker. Maker class will be compiled.
+# Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
 treeMaker_parent = TreeMaker( filler = filler, scalars = scalars_write,  vectors = vectors_write )
 
 # Split input in ranges
@@ -66,9 +66,10 @@ logger.info( "Splitting into %i ranges of %i events on average.",  len(eventRang
 
 convertedEvents = 0
 clonedEvents = 0
+
 for ievtRange, eventRange in enumerate(eventRanges):
+
     logger.info( "Now at range %i which has %i events.",  ievtRange, eventRange[1]-eventRange[0] )
-    
 
     # Set the reader to the event range
     reader.setEventRange( eventRange )
@@ -76,7 +77,7 @@ for ievtRange, eventRange in enumerate(eventRanges):
     clonedEvents += clonedTree.GetEntries()
 
     # Clone the empty maker in order to avoid recompilation at every loop iteration
-    maker = treeMaker_parent.cloneWithoutCompile(externalTree = clonedTree)
+    maker = treeMaker_parent.cloneWithoutCompile( externalTree = clonedTree )
     maker.start()
 
     # Do the thing
