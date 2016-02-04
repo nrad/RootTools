@@ -24,17 +24,17 @@ class TreeReader( LooperBase ):
 
         super(TreeReader, self).__init__( scalars = scalars, vectors = vectors )
 
-        self.makeClass( "entry", useSTDVectors = False)
+        self.makeClass( "data", useSTDVectors = False)
 
         self.setAddresses()
 
     def setAddresses(self):
         for s in self.scalars:
-            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.entry, s['name']))
+            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name']))
         for v in self.vectors:
             for c in v['variables']:
                 self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), \
-                ROOT.AddressOf(self.entry, '%s_%s'%(v['name'], c['name'])))
+                ROOT.AddressOf(self.data, '%s_%s'%(v['name'], c['name'])))
 
     def mute(self):
         ''' Mute all branches that are not needed
@@ -70,7 +70,7 @@ class TreeReader( LooperBase ):
             logger.info("TreeReader is at position %6i/%6i", self.position, self.nEvents)
 
         # init struct
-        self.entry.init()
+        self.data.init()
 
         # point to the position in the chain (or the eList if there is one)
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )

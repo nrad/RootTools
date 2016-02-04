@@ -21,26 +21,26 @@ class TreeMaker( LooperBase ):
 
         super(TreeMaker, self).__init__( scalars = scalars, vectors = vectors )
 
-        self.makeClass( "output" , useSTDVectors = False)
+        self.makeClass( "data" , useSTDVectors = False)
 
         # Create tree to store the information and store also the branches
         self.tree = ROOT.TTree( treeName, treeName )
         self.branches = []
         self.makeBranches()
 
-        # function to fill the output 
+        # function to fill the data 
         self.filler = filler
 
     def makeBranches(self):
         for s in self.scalars:
             self.branches.append( 
-                self.tree.Branch(s['name'], ROOT.AddressOf( self.output, s['name']), "%s/%s"%(s['name'],s['type']))
+                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), "%s/%s"%(s['name'],s['type']))
             )
         for v in self.vectors:
             for c in v['variables']:
                 vectorComponentName = "%s_%s"%(v['name'], c['name'])
                 self.branches.append( 
-                    self.tree.Branch(vectorComponentName, ROOT.AddressOf( self.output, vectorComponentName ), \
+                    self.tree.Branch(vectorComponentName, ROOT.AddressOf( self.data, vectorComponentName ), \
                         "%s[n%s]/%s"%(vectorComponentName, v['name'], c['type']) )
                 )
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", len(self.scalars), len(self.vectors) )
@@ -52,13 +52,13 @@ class TreeMaker( LooperBase ):
         ''' Use filler to fill struct and then fill struct to tree'''
 
         # Initialize struct
-        self.output.init()
+        self.data.init()
 
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
 
         # Call external filler method
-        self.filler( self.output )
+        self.filler( self.data )
 
         # Write to TTree
         self.tree.Fill()

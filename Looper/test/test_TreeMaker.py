@@ -42,10 +42,10 @@ reader = s2.treeReader( scalars = scalars_read,     vectors = vectors_read,  sel
 
 #This filler just copies. Usually, some modifications would be made
 def filler(struct):
-    struct.nMyJet = reader.entry.nJet
-    for i in range(reader.entry.nJet):
-        struct.MyJet_pt[i] = reader.entry.Jet_pt[i]
-    struct.myMet = reader.entry.met_pt
+    struct.nMyJet = reader.data.nJet
+    for i in range(reader.data.nJet):
+        struct.MyJet_pt[i] = reader.data.Jet_pt[i]
+    struct.myMet = reader.data.met_pt
     return
 
 maker  =    TreeMaker( filler = filler, scalars = scalars_write,  vectors = vectors_write )
