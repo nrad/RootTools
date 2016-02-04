@@ -44,8 +44,8 @@ class LooperBase( object ):
         '''Add a scalar variable with syntax 'Var/Type'.
         '''
 
-        if not type(scalarname)==type(""):   raise ValueError ("Got %r but was expecting string"%s)
-        if not scalarname.count('/')==1:     raise Exception( "Cannot add scalar variable '%r'. Syntax is Name/Type."% s)
+        if not type(scalarname)==type(""):   raise ValueError ( "Got %r but was expecting string" % s )
+        if not scalarname.count('/')==1:     raise Exception ( "Cannot add scalar variable '%r'. Syntax is Name/Type." % s )
         scalarname, varType = scalarname.split('/')
         self.scalars.append({'name':scalarname, 'type':varType})
 
@@ -62,7 +62,7 @@ class LooperBase( object ):
             # replace 'variables':['pt/F',...] with 'variables':[{'name':'pt', 'type':'F'}]
             variables_ = []
             for component in vector_['variables']:
-                if not component.count('/')==1:     raise Exception( "Cannot add vector component '%r'. Syntax is Name/Type."% r)
+                if not component.count('/')==1:     raise Exception( "Cannot add vector component '%r'. Syntax is Name/Type." % r)
                 varName, varType = component.split('/')
                 variables_.append({'name':varName, 'type':varType})
 
@@ -116,6 +116,7 @@ class LooperBase( object ):
 
     def start(self):
         self.position = 0    
+        logger.debug("Starting to run.")
         self.initialize()
     
     @abc.abstractmethod

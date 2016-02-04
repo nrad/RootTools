@@ -57,11 +57,13 @@ class TreeReader( LooperBase ):
         self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
         self.mute()
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
+        logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
 
         return
 
     def execute(self):  
         ''' Execute the read statement and check for the end of the loop'''
+
         if self.position == self.nEvents: return 0
 
         if (self.position % 10000)==0:

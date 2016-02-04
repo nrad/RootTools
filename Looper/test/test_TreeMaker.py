@@ -32,19 +32,19 @@ s2 = SampleFromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples
 
 vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_read   =    [ 'met_pt/F' ]
-vectors_write  =    None #[ {'name':'myJet', 'nMax':100,'variables': ['pt/F'] } ]
+vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_write  =    [ 'myMet/F' ]
 
 # Define a reader
-reader = s2.treeReader( scalars = scalars_read,     vectors = vectors_read,  selectionString = "met_pt>100")
+reader = s2.treeReader( scalars = scalars_read,     vectors = vectors_read,  selectionString = None)
 
 # Define a filler
 
 #This filler just copies. Usually, some modifications would be made
 def filler(struct):
-#    struct.nJet = reader.entry.nJet
-#    for i in range(reader.entry.nJet):
-#        struct.myJet_pt.push_back( reader.entry.Jet_pt[i] )
+    struct.nMyJet = reader.entry.nJet
+    for i in range(reader.entry.nJet):
+        struct.MyJet_pt[i] = reader.entry.Jet_pt[i]
     struct.myMet = reader.entry.met_pt
     return
 

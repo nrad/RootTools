@@ -16,14 +16,12 @@ class TreeMaker( LooperBase ):
 
     def __init__(self, filler, scalars = None, vectors = None, treeName = "Events"):
 
-        if vectors: raise NotImplementedError("Need to implmenet variable sized vectors with arrays")
-
-        assert filler, "Makes no sense to have no filler."
-        assert scalars or vectors, "Makes no sense to have no members."
+        assert filler, "No filler function provided.."
+        assert scalars or vectors, "No data member specification provided."
 
         super(TreeMaker, self).__init__( scalars = scalars, vectors = vectors )
 
-        self.makeClass( "output" , useSTDVectors = True)
+        self.makeClass( "output" , useSTDVectors = False)
 
         # Create tree to store the information and store also the branches
         self.tree = ROOT.TTree( treeName, treeName )
@@ -38,13 +36,14 @@ class TreeMaker( LooperBase ):
             self.branches.append( 
                 self.tree.Branch(s['name'], ROOT.AddressOf( self.output, s['name']), "%s/%s"%(s['name'],s['type']))
             )
-        # vectors segfault
         for v in self.vectors:
             for c in v['variables']:
                 vectorComponentName = "%s_%s"%(v['name'], c['name'])
                 self.branches.append( 
-                    self.tree.Branch(vectorComponentName, "vector< %s >"%c['type'], ROOT.AddressOf( self.output, vectorComponentName ) )
+                    self.tree.Branch(vectorComponentName, ROOT.AddressOf( self.output, vectorComponentName ), \
+                        "%s[n%s]/%s"%(vectorComponentName, v['name'], c['type']) )
                 )
+        logger.debug( "TreeMaker created %i new scalars and %i new vectors.", len(self.scalars), len(self.vectors) )
 
     def initialize(self):
         pass
