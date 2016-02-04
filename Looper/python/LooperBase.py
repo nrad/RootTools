@@ -37,7 +37,6 @@ class LooperBase( object ):
 
         # Internal state for running
         self.position = -1
-        self.nEvents = None
         self.eList = None
 
     def addScalar(self, scalarname):
@@ -115,7 +114,6 @@ class LooperBase( object ):
 
 
     def start(self):
-        self.position = 0    
         logger.debug("Starting to run.")
         self._initialize()
     

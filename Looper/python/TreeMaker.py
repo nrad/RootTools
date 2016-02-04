@@ -31,6 +31,27 @@ class TreeMaker( LooperBase ):
         # function to fill the data 
         self.filler = filler
 
+    def cloneWithoutCompile(self, externalTree = None):
+        ''' make a deep copy of self to avoid re-compilation in a loop. Reset TTree.
+        '''
+        # deep copy by default
+        res = copy.deepcopy(self)
+        res.branches = []
+
+        # remake TTree
+        treeName = self.tree.GetName()
+        if res.tree: res.tree.IsA().Destructor( res.tree )
+        if externalTree:
+            assert self.tree.GetName() == externalTree.GetName(),\
+                "Treename inconsistency (instance: %s, externalTree: %s). Change one of the two"%(self.treeName, externalTree.GetName())
+            res.tree = externalTree
+        else:
+            res.tree = ROOT.TTree( treeName, treeName )
+
+        res.makeBranches()
+
+        return res
+
     def makeBranches(self):
         for s in self.scalars:
             self.branches.append( 
@@ -45,7 +66,11 @@ class TreeMaker( LooperBase ):
                 )
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", len(self.scalars), len(self.vectors) )
 
+    def clear(self):
+        if self.tree: self.tree.IsA().Destructor( self.tree )
+
     def _initialize(self):
+        self.position = 0
         pass
 
     def _execute(self):
