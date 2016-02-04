@@ -45,10 +45,10 @@ class TreeMaker( LooperBase ):
                 )
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", len(self.scalars), len(self.vectors) )
 
-    def initialize(self):
+    def _initialize(self):
         pass
 
-    def execute(self):
+    def _execute(self):
         ''' Use filler to fill struct and then fill struct to tree'''
 
         # Initialize struct

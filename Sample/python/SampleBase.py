@@ -35,33 +35,31 @@ class SampleBase ( object ): # 'object' argument will disappear in Python 3
         self.name = name
         self.treeName = treeName
         self.files = []
+        self._chain = None
         logger.debug("Created new sample %s with treeName %s.", name, treeName)
 
-# Overloading getattr: Requesting sample.chain prompts the loading of the TChain.
-    def __getattr__(self, name):
-        '''Overload getattr such that self.chain is automatically created when asked for.
-        '''
-        if name=="chain":
+    # Handle loading of chain -> load it when first used 
+    @property
+    def chain(self):
+        if not self._chain: 
             logger.debug("First request of attribute 'chain' for sample %s. Calling __loadChain", self.name)
             self.__loadChain()
-            return self.chain
-        else:
-            raise AttributeError
+        return self._chain
 
-# "Private" method that loads the chain from self.files
+    # "Private" method that loads the chain from self.files
     def __loadChain(self):
         ''' Load the TChain. Private.
         '''
         if len(self.files) == 0:
             raise EmptySampleError("Sample {name} has no input files! Can not load.".format(name = self.name) )
         else:
-            self.chain = ROOT.TChain(self.treeName)
+            self._chain = ROOT.TChain(self.treeName)
             counter = 0
             for f in self.files:
                 logger.debug("Now adding file %s to sample '%s'", f, self.name)
                 try:
                     if helpers.checkRootFile(f, checkForObjects=[self.treeName]):
-                        self.chain.Add(f)
+                        self._chain.Add(f)
                         counter+=1
                 except IOError:
                     pass

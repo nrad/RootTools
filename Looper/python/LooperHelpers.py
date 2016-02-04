@@ -64,7 +64,13 @@ def createClassString(scalars, vectors, useSTDVectors = False):
             )
 
     return \
-"""#ifndef __className__\n#define __className__\n\n#include<vector>\n#include<TMath.h>\n\n
+"""#ifndef __className__
+#define __className__
+
+#include<vector>
+#include<TMath.h>
+
+
 class className{{
   public:
 {scalarDeclaration}
@@ -76,5 +82,5 @@ class className{{
   }}; // End init
 }}; // End class declaration
 #endif""".format(scalarDeclaration = scalarDeclaration,\
-                                       scalarInitString = scalarInitString, vectorDeclaration=vectorDeclaration, 
-                                       vectorInitString=vectorInitString)
+                 scalarInitString = scalarInitString, vectorDeclaration=vectorDeclaration, 
+                 vectorInitString=vectorInitString)

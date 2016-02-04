@@ -49,7 +49,7 @@ class TreeReader( LooperBase ):
     def unmute(self):
         self.sample.chain.SetBranchStatus("*", 1)
 
-    def initialize(self):
+    def _initialize(self):
 
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
@@ -61,7 +61,7 @@ class TreeReader( LooperBase ):
 
         return
 
-    def execute(self):  
+    def _execute(self):  
         ''' Execute the read statement and check for the end of the loop'''
 
         if self.position == self.nEvents: return 0

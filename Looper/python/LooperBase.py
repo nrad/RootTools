@@ -107,7 +107,7 @@ class LooperBase( object ):
     
         assert self.position>=0, "Not initialized!"
 
-        success = self.execute()
+        success = self._execute()
 
         self.position += 1
 
@@ -117,12 +117,12 @@ class LooperBase( object ):
     def start(self):
         self.position = 0    
         logger.debug("Starting to run.")
-        self.initialize()
+        self._initialize()
     
     @abc.abstractmethod
-    def initialize(self):
+    def _initialize(self):
         return
 
     @abc.abstractmethod
-    def execute(self):
+    def _execute(self):
         return
