@@ -23,7 +23,11 @@ class TreeReader( LooperBase ):
         self.selectionString = selectionString
         self.sample = sample
 
-        super(TreeReader, self).__init__( scalars = scalars, vectors = vectors )
+        
+        super(TreeReader, self).__init__( 
+            scalars = scalars, 
+            vectors = vectors
+            )
 
         self.makeClass( "data", useSTDVectors = False)
 
@@ -37,9 +41,8 @@ class TreeReader( LooperBase ):
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
 
-        # an event range the reader is restricted to
+        #  event range of the reader
         self.eventRange = (0, self.nEvents)
-
 
     def setAddresses(self):
         for s in self.scalars:
@@ -97,15 +100,9 @@ class TreeReader( LooperBase ):
         '''For convinience: Define splitting of sample according to total input file size
         '''
         
-        nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
-        chunks = [( i*( self.nEvents/nSplit), (i+1)*( self.nEvents/nSplit) ) for i in range(nSplit) ]
+        nSplit = 1 + sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
+        chunks = [( i*( self.nEvents/nSplit), min(self.nEvents, (i+1)*( self.nEvents/nSplit) ) ) for i in range(nSplit) ]
         
-#        # Now append the little bit left over by the integer division
-#        if chunks[-1][1] < self.nEvents:
-#            chunks.append((chunks[-1][1] , self.nEvents))
-
-        # Turns out, the above creates tiny remnants, better:
-        chunks[-1] = (chunks[-1][0], self.nEvents)
         return chunks
 
     def setEventRange( self, evtRange ):

@@ -21,9 +21,9 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-td = "/data/rschoefbeck/cmgTuples/MC25ns_v2_1l_151218/TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2_ext1-v1/"
-s1 = Sample.fromCMGOutput("TTJetsDilep", baseDirectory = td, treeFilename = 'tree.root', treeName = 'tree')
-s2 = Sample.fromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples/postProcessed_mAODv2/dilep/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
+# from files
+s2 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
+s2.chain
 
 vectors   =    [ {'name':'Jet', 'nMax':100, 'variables': ['pt/F', 'eta/F', 'phi/F', 'id/I','btagCSV/F'] } ]
 scalars   =    [ 'met_pt/F', 'met_phi/F', 'run/I', 'lumi/I', 'evt/l', 'nVert/I' ]

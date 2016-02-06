@@ -8,7 +8,6 @@ import uuid
 import numbers
 import os
 from math import sqrt
-import collections
 
 # Logging
 import logging
@@ -38,9 +37,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
     @classmethod
     def fromFiles(cls, name, treeName , files, sumOfWeights = None):
-        files = files if isinstance(files, collections.Iterable) else [files]
+        files = [files] if type(files)==type("") else files 
         sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
         logger.info("Loaded sample %s from %i files.", name, len(files))
+        return sample
+
+    @classmethod
+    def fromDirectory(cls, name, treeName , directory, sumOfWeights = None):
+        directories = [directory] if type(directory)==type("") else directory 
+        files = [] 
+        for d in directories:
+            files.extend(  os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') )
+        sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+        logger.info("Loaded sample %s from %i directory(ies): %s.", name, len(files), ",".join(directories))
         return sample
 
     @classmethod

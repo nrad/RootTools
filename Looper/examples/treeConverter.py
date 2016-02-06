@@ -31,37 +31,37 @@ ch.setFormatter(formatter)
 # add ch to logger
 logger.addHandler(ch)
 
-td = "/data/rschoefbeck/cmgTuples/MC25ns_v2_1l_151218/TTJets_DiLept_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2_ext1-v1/"
-#s1 = Sample.fromCMGOutput("TTJetsDilep", baseDirectory = td, treeFilename = 'tree.root', treeName = 'tree')
-s2 = Sample.fromFiles("TTZ", files = ["/afs/hephy.at/data/rschoefbeck01/cmgTuples/postProcessed_mAODv2/dilep/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
+# from files
+s2 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
+s2.chain
 
 outputfile = "./converted.root"
 
-vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F'] } ]
-scalars_read   =    [ 'met_pt/F' ]
+vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F', 'eta/F', 'phi/F'] } ]
+scalars_read   =    [ 'met_pt/F', 'met_phi/F' ]
 vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_write  =    [ 'myMet/F' ]
 
-branches_to_keep = ["evt", "run", "lumi"]
+branches_to_keep = ["evt", "run", "lumi", "met_pt", "met_phi", "Jet_pt", "Jet_eta", "Jet_phi", 'nJet']
 
 # Define a reader
-reader = s2.treeReader( scalars = scalars_read, vectors = vectors_read, selectionString = "(met_pt>200)")
+reader = s2.treeReader( scalars = scalars_read, vectors = vectors_read, selectionString = "(met_pt>100)")
 
 # Define a filler
 
 #This filler just copies. Usually, some modifications would be made
-def filler(struct):
-    struct.nMyJet = reader.data.nJet
+def filler( target):
+    target.myMet = reader.data.met_pt
+    target.nMyJet = reader.data.nJet
     for i in range(reader.data.nJet):
-        struct.MyJet_pt[i] = reader.data.Jet_pt[i]
-    struct.myMet = reader.data.met_pt
+        target.MyJet_pt[i] = reader.data.Jet_pt[i]
     return
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
 treeMaker_parent = TreeMaker( filler = filler, scalars = scalars_write,  vectors = vectors_write )
 
 # Split input in ranges
-eventRanges = reader.getEventRanges( maxFileSizeMB = 20)
+eventRanges = reader.getEventRanges( maxFileSizeMB = 30)
 logger.info( "Splitting into %i ranges of %i events on average.",  len(eventRanges), (eventRanges[-1][1] - eventRanges[0][0])/len(eventRanges) )
 
 convertedEvents = 0

@@ -17,13 +17,14 @@ class TreeMaker( LooperBase ):
     def __init__(self, filler, scalars = None, vectors = None, treeName = "Events"):
 
         assert filler, "No filler function provided.."
-        assert scalars or vectors, "No data member specification provided."
+#        assert scalars or vectors, "No data member specification provided."
 
         super(TreeMaker, self).__init__( scalars = scalars, vectors = vectors )
 
         self.makeClass( "data" , useSTDVectors = False)
 
         # Create tree to store the information and store also the branches
+        self.treeIsExternal = False
         self.tree = ROOT.TTree( treeName, treeName )
         self.branches = []
         self.makeBranches()
@@ -42,10 +43,12 @@ class TreeMaker( LooperBase ):
         treeName = self.tree.GetName()
         if res.tree: res.tree.IsA().Destructor( res.tree )
         if externalTree:
+            res.treeIsExternal = True
             assert self.tree.GetName() == externalTree.GetName(),\
                 "Treename inconsistency (instance: %s, externalTree: %s). Change one of the two"%(self.treeName, externalTree.GetName())
             res.tree = externalTree
         else:
+            res.treeIsExternal = False
             res.tree = ROOT.TTree( treeName, treeName )
 
         res.makeBranches()
@@ -82,10 +85,15 @@ class TreeMaker( LooperBase ):
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
 
-        # Call external filler method
+#        # Call external filler method
+
         self.filler( self.data )
 
         # Write to TTree
-        self.tree.Fill()
-
+        if self.treeIsExternal:
+            for b in self.branches:
+                b.Fill()
+        else:
+            self.tree.Fill()
+        
         return 1 

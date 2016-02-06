@@ -39,13 +39,18 @@ class LooperBase( object ):
         self.position = -1
         self.eList = None
 
+        self.classUUID = None
+
+    def getStringAndType(self, argString):
+        if not type(argString)==type(""):   raise ValueError ( "Got %r but was expecting string" % argString )
+        if not argString.count('/')==1:     raise ValueError ( "Cannot add scalar variable '%r'. Syntax is argString/Type." % argString )
+        return argString.split('/') 
+
     def addScalar(self, scalarname):
         '''Add a scalar variable with syntax 'Var/Type'.
         '''
 
-        if not type(scalarname)==type(""):   raise ValueError ( "Got %r but was expecting string" % s )
-        if not scalarname.count('/')==1:     raise Exception ( "Cannot add scalar variable '%r'. Syntax is Name/Type." % s )
-        scalarname, varType = scalarname.split('/')
+        scalarname, varType = self.getStringAndType( scalarname )
         self.scalars.append({'name':scalarname, 'type':varType})
 
     def addVector(self, vector):
@@ -61,8 +66,7 @@ class LooperBase( object ):
             # replace 'variables':['pt/F',...] with 'variables':[{'name':'pt', 'type':'F'}]
             variables_ = []
             for component in vector_['variables']:
-                if not component.count('/')==1:     raise Exception( "Cannot add vector component '%r'. Syntax is Name/Type." % r)
-                varName, varType = component.split('/')
+                varName, varType = self.getStringAndType( component )
                 variables_.append({'name':varName, 'type':varType})
 
             vector_.update({'variables':variables_})
@@ -77,9 +81,11 @@ class LooperBase( object ):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
             os.path.makedirs(self.tmpDir)
 
-        uniqueString = str(uuid.uuid4()).replace('-','_')
-        tmpFileName = os.path.join(self.tmpDir, uniqueString+'.C')
-        className = "Class_"+uniqueString
+        # Recall the uuid of the compilation for the __hash__ method which we use to identify readers when plotting over multiple samples 
+        self.classUUID = str(uuid.uuid4()).replace('-','_')
+
+        tmpFileName = os.path.join(self.tmpDir, self.classUUID+'.C')
+        className = "Class_"+self.classUUID
 
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
