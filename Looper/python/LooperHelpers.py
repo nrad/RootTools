@@ -1,29 +1,3 @@
-cStringTypeDict = {
-    'b': 'UChar_t',
-    'S': 'Short_t',
-    's': 'UShort_t',
-    'I': 'Int_t',
-    'i': 'UInt_t',
-    'F': 'Float_t',
-    'D': 'Double_t',
-    'L': 'Long64_t',
-    'l': 'ULong64_t',
-    'O': 'Bool_t',
-}
-
-defaultTypeDict = {
-    'b': '0',
-    'S': '-1',
-    's': '0',
-    'I' or s=='int': '-1',
-    'i': '0',
-    'F' or s=='float': 'TMath::QuietNaN()',
-    'D': 'TMath::QuietNaN()',
-    'L': '-1',
-    'l': '-1',
-    'O': '0',
-}
-
 def getCTypeString(typeString):
     '''Translate ROOT shortcuts for branch description to proper C types
     '''

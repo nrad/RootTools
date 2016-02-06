@@ -22,7 +22,6 @@ class TreeReader( LooperBase ):
 
         self.selectionString = selectionString
         self.sample = sample
-
         
         super(TreeReader, self).__init__( 
             scalars = scalars, 
