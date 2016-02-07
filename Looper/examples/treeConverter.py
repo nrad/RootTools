@@ -12,6 +12,7 @@ import os
 from RootTools.Sample.Sample import Sample
 from RootTools.Looper.TreeReader import TreeReader
 from RootTools.Looper.TreeMaker import TreeMaker
+from RootTools.Variable.Variable import Variable, ScalarType, VectorType
 
 # create logger
 logger = logging.getLogger("RootTools")
@@ -42,10 +43,16 @@ scalars_read   =    [ 'met_pt/F', 'met_phi/F' ]
 vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
 scalars_write  =    [ 'myMet/F' ]
 
+variables =     [ Variable.fromString( 'Jet[pt/F,eta/F,phi/F]' ) ] \
+              + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F', 'nJet/I' ] ]
+
+new_variables =     [ Variable.fromString('MyJet[pt/F]') ] \
+                  + [ Variable.fromString(x) for x in [ 'myMet/F' ] ]
+
 branches_to_keep = ["evt", "run", "lumi", "met_pt", "met_phi", "Jet_pt", "Jet_eta", "Jet_phi", 'nJet']
 
 # Define a reader
-reader = s2.treeReader( scalars = scalars_read, vectors = vectors_read, selectionString = "(met_pt>100)")
+reader = s2.treeReader( variables = variables, selectionString = "(met_pt>100)")
 
 # Define a filler
 
@@ -58,7 +65,7 @@ def filler( target):
     return
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
-treeMaker_parent = TreeMaker( filler = filler, scalars = scalars_write,  vectors = vectors_write )
+treeMaker_parent = TreeMaker( filler = filler, variables = new_variables )
 
 # Split input in ranges
 eventRanges = reader.getEventRanges( maxFileSizeMB = 30)

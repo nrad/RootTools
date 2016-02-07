@@ -76,7 +76,6 @@ class TreeMaker( LooperBase ):
             self.branches.append(
                 self.tree.Branch(name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) )
             )
-            print name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) 
             vectorCount+=1
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", scalerCount, vectorCount )
 
