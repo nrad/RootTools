@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # RootTools
 from RootTools.Looper.LooperBase import LooperBase
 from RootTools.Sample.Sample import Sample
+from RootTools.Variable.Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
 

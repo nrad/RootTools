@@ -45,6 +45,13 @@ class Variable( object ):
     def __init__(self):
         return 
 
+    @classmethod
+    def fromString(cls, string):
+        try:
+            return VectorType.fromString(string)
+        except ( ValueError, AssertionError ):
+            return ScalarType.fromString(string)
+
 class ScalarType( Variable ):
 
     def __init__( self, name, tp, filler = None, defaultCString = None):
