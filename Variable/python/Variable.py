@@ -2,6 +2,9 @@
 Used in the Loopers and for plotting.
 '''
 
+# Standard imports
+import abc
+
 # Translation of short types to ROOT C types
 cStringTypeDict = {
     'b': 'UChar_t',
@@ -35,7 +38,14 @@ defaultCTypeDict = {
 allTypes  = set(cStringTypeDict.keys())
 allCTypes = set(cStringTypeDict.values())
 
-class ScalarType( object ):
+class Variable( object ):
+    __metaclass__ = abc.ABCMeta
+   
+    @abc.abstractmethod
+    def __init__(self):
+        return 
+
+class ScalarType( Variable ):
 
     def __init__( self, name, tp, filler = None, defaultCString = None):
         ''' Initialize variable. 
@@ -69,11 +79,11 @@ class ScalarType( object ):
 
     def __str__(self):
         if self.filler:
-            return "%s (scalar, type: %s, filler)" %(self. name, self.tp)
+            return "%s(scalar, type: %s, filler)" %(self. name, self.tp)
         else:
-            return "%s (scalar, type: %s)" %(self. name, self.tp)
+            return "%s(scalar, type: %s)" %(self. name, self.tp)
 
-class VectorType( object ):
+class VectorType( Variable ):
 
     def __init__( self, name, components, filler = None, nMax = None):
         ''' Initialize variable.
@@ -109,4 +119,4 @@ class VectorType( object ):
         return cls( name = name_, components = components, nMax = None, filler = None)
 
     def __str__(self):
-        return "%s-vector(nMax: %s, filler: %r, components: %s )" %(self. name, self.nMax, bool(self.filler), ",".join(str(c) for c in self.components) )
+        return "%s(vector[%s], filler: %r, components: %s )" %(self. name, self.nMax, bool(self.filler), ",".join(str(c) for c in self.components) )
