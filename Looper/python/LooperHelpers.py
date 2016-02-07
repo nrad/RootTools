@@ -1,3 +1,7 @@
+# RootTools imports
+
+from RootTools.tools.Variable import cStringTypeDict, defaultTypeDict 
+
 def getCTypeString(typeString):
     '''Translate ROOT shortcuts for branch description to proper C types
     '''
