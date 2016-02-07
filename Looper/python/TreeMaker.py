@@ -11,15 +11,20 @@ logger = logging.getLogger(__name__)
 
 # RootTools
 from RootTools.Looper.LooperBase import LooperBase
-
+from RootTools.Variable.Variable import ScalarType, VectorType, Variable
 class TreeMaker( LooperBase ):
 
-    def __init__(self, filler, scalars = None, vectors = None, treeName = "Events"):
+    def __init__(self, variables, filler = None, treeName = "Events"):
+        
+        if not type(variables)==type([]):
+            variables = [variables]
+        for v in variables:
+            if not isinstance(v, Variable):
+                raise ValueError( "Not a proper variable: '%r' '%s'"%(v,v) )
+            if  hasattr(v, 'filler') and v.filler and not hasattr(v.filler, '__call__'):
+                raise ValueError( "Something wrong with the filler '%r' for variable  '%r' '%s'"%(v.filler, v, v) )
 
-        assert filler, "No filler function provided.."
-#        assert scalars or vectors, "No data member specification provided."
-
-        super(TreeMaker, self).__init__( scalars = scalars, vectors = vectors )
+        super(TreeMaker, self).__init__( variables = variables, addVectorCounters = True)
 
         self.makeClass( "data" , useSTDVectors = False)
 
@@ -33,7 +38,8 @@ class TreeMaker( LooperBase ):
         self.filler = filler
 
     def cloneWithoutCompile(self, externalTree = None):
-        ''' make a deep copy of self to avoid re-compilation in a loop. Reset TTree.
+        ''' make a deep copy of self to e.g. avoid re-compilation of class in a loop. 
+            Reset TTree as to not create a memory leak.
         '''
         # deep copy by default
         res = copy.deepcopy(self)
@@ -56,18 +62,23 @@ class TreeMaker( LooperBase ):
         return res
 
     def makeBranches(self):
-        for s in self.scalars:
+
+        scalerCount = 0
+        for s in self._allBranchInfo( restrictType = ScalarType ):
+            name = s[0]
+            type_ = s[1]
             self.branches.append( 
-                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), "%s/%s"%(s['name'],s['type']))
+                self.tree.Branch(name, ROOT.AddressOf( self.data, name), '%s/%s'%(name, type_))
             )
-        for v in self.vectors:
-            for c in v['variables']:
-                vectorComponentName = "%s_%s"%(v['name'], c['name'])
-                self.branches.append( 
-                    self.tree.Branch(vectorComponentName, ROOT.AddressOf( self.data, vectorComponentName ), \
-                        "%s[n%s]/%s"%(vectorComponentName, v['name'], c['type']) )
-                )
-        logger.debug( "TreeMaker created %i new scalars and %i new vectors.", len(self.scalars), len(self.vectors) )
+            scalerCount+=1
+        vectorCount = 0
+        for name, type_, counterName in self._allBranchInfo( restrictType = VectorType ):
+            self.branches.append(
+                self.tree.Branch(name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) )
+            )
+            print name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) 
+            vectorCount+=1
+        logger.debug( "TreeMaker created %i new scalars and %i new vectors.", scalerCount, vectorCount )
 
     def clear(self):
         if self.tree: self.tree.IsA().Destructor( self.tree )
@@ -85,9 +96,15 @@ class TreeMaker( LooperBase ):
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
 
-#        # Call external filler method
-
-        self.filler( self.data )
+        # Call external filler method: variables first
+        # FIXME: Here, could do a better job by filling with return value for scalars and some
+        # vector filler that handles the filling of the components and nVecname.
+        for v in self.variables:
+            if hasattr(v, 'filler') and v.filler:
+                raise NotImplementedError( "Still need to decide whether this is a good idea." )
+                self.filler( self.data )
+        if self.filler:
+            self.filler( self.data )
 
         # Write to TTree
         if self.treeIsExternal:

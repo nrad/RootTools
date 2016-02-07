@@ -7,10 +7,11 @@ import ROOT
 from RootTools.Sample.Sample import Sample
 from RootTools.Looper.TreeReader import TreeReader
 from RootTools.Looper.TreeMaker import TreeMaker
+from RootTools.Variable.Variable import Variable, ScalarType, VectorType
 
 # create logger
 logger = logging.getLogger("RootTools")
-logger.setLevel(logging.INFO)
+logger.setLevel(logging.DEBUG)
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
@@ -29,13 +30,14 @@ logger.addHandler(ch)
 s2 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
 s2.chain
 
-vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F'] } ]
-scalars_read   =    [ 'met_pt/F' ]
-vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
-scalars_write  =    [ 'myMet/F' ]
+variables =     [ Variable.fromString( 'Jet[pt/F]' ) ] \
+              + [ Variable.fromString(x) for x in [ 'met_pt/F', 'nJet/I' ] ]
+
+new_variables =     [ Variable.fromString('MyJet[pt/F]' ) ] \
+                  + [ Variable.fromString(x) for x in [ 'myMet/F' ] ]
 
 # Define a reader
-reader = s2.treeReader( scalars = scalars_read,     vectors = vectors_read,  selectionString = None)
+reader = s2.treeReader( variables = variables,  selectionString = "met_pt>600")
 
 # Define a filler
 
@@ -47,7 +49,7 @@ def filler(struct):
     struct.myMet = reader.data.met_pt
     return
 
-maker  =    TreeMaker( filler = filler, scalars = scalars_write,  vectors = vectors_write )
+maker  =    TreeMaker( filler = filler, variables = new_variables )
 reader.start()
 maker.start()
 while reader.run():

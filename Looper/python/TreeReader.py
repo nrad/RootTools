@@ -16,18 +16,19 @@ from RootTools.Variable.Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, scalars = None, vectors = None, selectionString = None):
+    def __init__(self, sample, variables, selectionString = None):
 
         if not isinstance(sample, Sample):
-            raise ValueError( "Need instance of Sample to initialize any Looper instance" )
+            raise ValueError( "Need instance of Sample to initialize any Looper instance. Got '%r'."%sample )
+        if not type(variables) == type([]):
+            raise ValueError( "Argument 'variables' must be list. Got '%r'."%variables )
+        if not all (isinstance(v, Variable) for v in variables):
+            raise ValueError( "Not all elements in variable list are instances of Variable. Got '%r'."%variables )
 
         self.selectionString = selectionString
         self.sample = sample
         
-        super(TreeReader, self).__init__( 
-            scalars = scalars, 
-            vectors = vectors
-            )
+        super(TreeReader, self).__init__( variables = variables, addVectorCounters = False ) 
 
         self.makeClass( "data", useSTDVectors = False)
 
@@ -45,12 +46,10 @@ class TreeReader( LooperBase ):
         self.eventRange = (0, self.nEvents)
 
     def setAddresses(self):
-        for s in self.scalars:
-            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name']))
-        for v in self.vectors:
-            for c in v['variables']:
-                self.sample.chain.SetBranchAddress('%s_%s'%(v['name'], c['name']), \
-                ROOT.AddressOf(self.data, '%s_%s'%(v['name'], c['name'])))
+        ''' Set all the branch addresses to the members in the class instance
+        '''
+        for s in self._allBranchInfo():
+            self.sample.chain.SetBranchAddress(s[0], ROOT.AddressOf(self.data, s[0]))
 
     def cloneTree(self, branchList = []):
         '''Clone tree after preselection and event range
@@ -63,7 +62,8 @@ class TreeReader( LooperBase ):
             for i_ev in xrange(*self.eventRange):
                 list_to_copy.Enter(self.eList.GetEntry(i_ev))
 
-            # activate branches that we want to copy, disable the ones we only need for reading 
+            # activate branches that we want to copy, disable the ones we only need for reading
+            # FIXME I do not preserve the list of active branches here, maybe should improve in the future 
             self.activateBranches( readBranches = False, branchList = branchList )
             # Copy the selected events
             self.sample.chain.SetEventList( list_to_copy ) 
@@ -79,15 +79,12 @@ class TreeReader( LooperBase ):
             return self.sample.chain.CopyTree( selectionString, "", self.eventRange[1] - self.eventRange[0], self.eventRange[0] )
 
     def activateBranches(self, readBranches = True, branchList = []):
-        ''' Set status of all branches in sample chain top 1 which are needed 
+        ''' Set status of all needed branches in sample chain to '1' 
         '''
         self.sample.chain.SetBranchStatus("*", 0)
         if readBranches:
-            for s in self.scalars:
-                self.sample.chain.SetBranchStatus(s['name'], 1)
-            for v in self.vectors:
-                for c in v['variables']:
-                    self.sample.chain.SetBranchStatus("%s_%s"%(v['name'],c['name']), 1)
+            for s in self._allBranchInfo():
+                self.sample.chain.SetBranchStatus(s[0], 1)
         for b in branchList:
             self.sample.chain.SetBranchStatus(b, 1)
 

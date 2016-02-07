@@ -63,7 +63,8 @@ class ScalarType( Variable ):
         '''
         self.name = name
 
-        assert tp in allTypes.union( allCTypes ), "Type %r not known"%tp
+        if not  tp in allTypes.union( allCTypes ):
+            raise ValueError( "Type %r not known"%tp )
         # translate type to short form
         self.tp = tp if tp in allTypes else shortTypeDict[tp]
 
@@ -72,13 +73,18 @@ class ScalarType( Variable ):
         # store default
         self.defaultCString = defaultCString if defaultCString is not None else defaultCTypeDict[self.tp]
 
+    @property
+    def type(self):
+        return self.tp
+
     @classmethod
     def fromString(cls, string):
-        '''Create scalar variable from name/type
+        '''Create scalar variable from syntax 'name/type'
         '''
         if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
         string = string.replace(' ', '')
-        assert string.count('/')==1, "Could not parse string '%s', format is 'name/type'."%string
+        if not string.count('/')==1:
+            raise ValueError( "Could not parse string '%s', format is 'name/type'."%string )
 
             
         name, tp = string.split('/')
@@ -101,7 +107,7 @@ class VectorType( Variable ):
         '''
         self.name = name
         # Scalar components
-        self.components = [ ScalarType.fromString(x) if type(x)==type("") else x for x in components ]
+        self._components = [ ScalarType.fromString(x) if type(x)==type("") else x for x in components ]
 
         self.filler = filler
         
@@ -109,7 +115,7 @@ class VectorType( Variable ):
 
     @classmethod
     def fromString(cls, string):
-        '''Create vector variable from name[c1/type1,c2/type2,...]
+        '''Create vector variable from syntax 'name[c1/type1,c2/type2,...]'
         '''
         if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
         string = string.replace(' ', '')
@@ -119,11 +125,16 @@ class VectorType( Variable ):
         ts_ = string[string.find("[")+1:string.find("]")]
         componentStrings_ = ts_.split(',')
 
-        components = [ ScalarType.fromString(s) for s in componentStrings_]
+        return cls( name = name_, components = componentStrings_, nMax = None, filler = None)
 
-#        except:
-#            raise ValueError("Could not interpret string '%s')"%string)
-        return cls( name = name_, components = components, nMax = None, filler = None)
+    @property 
+    def components(self):
+        return self._components
+
+    def counterVariable(self):
+        ''' Return a scalar counter variable 'nVectorname/I'
+        '''
+        return ScalarType('n'+self.name, 'I')
 
     def __str__(self):
         return "%s(vector[%s], filler: %r, components: %s )" %(self. name, self.nMax, bool(self.filler), ",".join(str(c) for c in self.components) )

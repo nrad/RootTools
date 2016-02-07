@@ -15,65 +15,51 @@ logger = logging.getLogger(__name__)
 
 # RootTools
 from RootTools.Looper.LooperHelpers import createClassString
+from RootTools.Variable.Variable import Variable, ScalarType, VectorType
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, scalars, vectors):
+    def __init__(self, variables, addVectorCounters = True):
 
-        self.scalars = []
-        self.vectors = []
+        if not type(variables) == type([]):
+            raise ValueError( "Argument 'variables' must be list. Got '%r'"%variables )
+        if not all (isinstance(v, Variable) for v in variables):
+            raise ValueError( "Not all elements in variable list are instances of Variable. Got '%r'"%variables )
+
+        self.variables = variables
 
         # directory where the class is compiled
         self.tmpDir = '/tmp/'
-
-        if scalars: 
-            for s in scalars:
-                self.addScalar(s)
-
-        if vectors: 
-            for v in vectors:
-                self.addVector(v)
 
         # Internal state for running
         self.position = -1
         self.eList = None
 
+        # FIXME Could use to identify the sample ... alternatively overload __hash__
         self.classUUID = None
+        # Whether or not to add default counter variables 'nVector/I' for vectors
+        self.addVectorCounters = addVectorCounters
 
-    def getStringAndType(self, argString):
-        if not type(argString)==type(""):   raise ValueError ( "Got %r but was expecting string" % argString )
-        if not argString.count('/')==1:     raise ValueError ( "Cannot add scalar variable '%r'. Syntax is argString/Type." % argString )
-        return argString.split('/') 
-
-    def addScalar(self, scalarname):
-        '''Add a scalar variable with syntax 'Var/Type'.
+    def _allBranchInfo( self, restrictType = None):
+        ''' Get a list of the form [(var, type), (vectorComponent, type, counterName)...] for all branches which is
+            neededfor handling the branches.
         '''
-
-        scalarname, varType = self.getStringAndType( scalarname )
-        self.scalars.append({'name':scalarname, 'type':varType})
-
-    def addVector(self, vector):
-        '''Add vector variable as a dictionary e.g. {'name':Jet, 'nMax':100, 'variables':['pt/F']}
-           N.B. This will be added as {'name':Jet, 'nMax':100, 'variables':[{'name':'pt', 'type':'F'}]}.
-        '''
-        vector_ = copy.deepcopy(vector)
-        if vector_.has_key('name') and vector_.has_key('nMax') and vector_.has_key('variables'):
-
-            # Add counting variable (CMG default for vector_ variable counters is 'nNAME')
-            self.scalars.append( {'name':'n{0}'.format(vector_['name']), 'type':'I'} )
-
-            # replace 'variables':['pt/F',...] with 'variables':[{'name':'pt', 'type':'F'}]
-            variables_ = []
-            for component in vector_['variables']:
-                varName, varType = self.getStringAndType( component )
-                variables_.append({'name':varName, 'type':varType})
-
-            vector_.update({'variables':variables_})
-            self.vectors.append(vector_)
-
-        else:
-            raise Exception("Don't know what to do with vector %r"%vector)
+        res = []
+        for s in self.variables:
+            if isinstance(s, ScalarType):
+                if not restrictType or restrictType == ScalarType:
+                    res.append( (s.name, s.type, None) )
+            elif isinstance(s, VectorType):
+                tmp = s.counterVariable()
+                for c in s.components:
+                    if not restrictType or restrictType == VectorType:
+                        res.append( ( '%s_%s'%( s.name, c.name ), c.type, tmp.name) )
+                if self.addVectorCounters: 
+                    if not restrictType or restrictType == ScalarType:
+                        res.append( (tmp.name, tmp.type, None) )
+            else: raise ValueError( "This should never happen. Found an element in self.variables that is not a ScalarType or VectorType instance: '%r'"%s )
+        return res
 
     def makeClass(self, attr, useSTDVectors = False):
 
@@ -81,7 +67,7 @@ class LooperBase( object ):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
             os.path.makedirs(self.tmpDir)
 
-        # Recall the uuid of the compilation for the __hash__ method which we use to identify readers when plotting over multiple samples 
+        # Recall the uuid of the compilation for the __hash__ method which we use to identify readers when plotting over multiple samples
         self.classUUID = str(uuid.uuid4()).replace('-','_')
 
         tmpFileName = os.path.join(self.tmpDir, self.classUUID+'.C')
@@ -89,9 +75,9 @@ class LooperBase( object ):
 
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
-            f.write( 
-                createClassString( scalars = self.scalars, vectors=self.vectors, useSTDVectors = useSTDVectors)
-                .replace( "className", className ) 
+            f.write(
+                createClassString( variables = self.variables, useSTDVectors = useSTDVectors, addVectorCounters = self.addVectorCounters)
+                .replace( "className", className )
             )
 
         # A less dirty solution possible?
@@ -106,10 +92,17 @@ class LooperBase( object ):
 
         return self
 
-    def run(self):
-        ''' Load event into self.entry. Return 0, if last event has been reached
+    def start(self):
+        ''' Call before starting a loop.
         '''
-    
+        logger.debug("Starting to run.")
+        self._initialize()
+
+    def run(self):
+        ''' Incrementing the loop.
+            Load event into self.entry. Return 0, if last event has been reached
+        '''
+
         assert self.position>=0, "Not initialized!"
 
         success = self._execute()
@@ -119,10 +112,6 @@ class LooperBase( object ):
         return success
 
 
-    def start(self):
-        logger.debug("Starting to run.")
-        self._initialize()
-    
     @abc.abstractmethod
     def _initialize(self):
         return
