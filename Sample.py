@@ -11,7 +11,7 @@ from math import sqrt
 
 # Logging
 import logging
-logger = logging.getLogger(__name__)
+logger = logging.getLogger('RootTools.'+__name__)
 # RootTools imports
 import helpers
 import u_float

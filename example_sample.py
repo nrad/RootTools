@@ -1,27 +1,48 @@
 ''' A simple example that demonstrates how to create Sample instances from data files.
 '''
+# Standard imports
 import sys
-import logging
+#import logging
 import ROOT
+import tempfile
+
+# RootTools
 from Sample import Sample
+from logger import get_logger
 
-# create logger
-logger = logging.getLogger("RootTools")
-logger.setLevel(logging.INFO)
+## create logger
+#logger = logging.getLogger("RootTools")
+#logger.setLevel(logging.INFO)
+#
+## create console handler and set level to debug
+#ch = logging.StreamHandler()
+#ch.setLevel(logging.INFO)
+#
+## create formatter
+#formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+#
+## add formatter to ch
+#ch.setFormatter(formatter)
+#
+## add ch to logger
+#logger.addHandler(ch)
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.INFO)
+# argParser
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
 
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+argParser.add_argument('--logLevel', 
+      action='store',
+      nargs='?',
+      choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'],
+      default='INFO',
+      help="Log level for logging"
+)
 
-# add formatter to ch
-ch.setFormatter(formatter)
+args = argParser.parse_args()
 
-# add ch to logger
-logger.addHandler(ch)
-
+logFile = tempfile.NamedTemporaryFile(suffix='.log', prefix='example_sample', dir='.', delete=False) 
+logger = get_logger(args.logLevel, logFile.name)
 
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 s0.chain
