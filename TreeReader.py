@@ -10,27 +10,33 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.Looper.LooperBase import LooperBase
-from RootTools.Sample.Sample import Sample
-from RootTools.Variable.Variable import Variable, ScalarType, VectorType
+from LooperBase import LooperBase
+from Sample import Sample
+from Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, variables, selectionString = None):
+    def __init__(self, sample, variables, derived_variables = [], selectionString = None):
 
+        # The following checks are 'look before you leap' but I rather have the user know if the input non-sensical
         if not isinstance(sample, Sample):
             raise ValueError( "Need instance of Sample to initialize any Looper instance. Got '%r'."%sample )
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got '%r'."%variables )
         if not all (isinstance(v, Variable) for v in variables):
-            raise ValueError( "Not all elements in variable list are instances of Variable. Got '%r'."%variables )
+            raise ValueError( "Not all elements in 'variables' are instances of Variable. Got '%r'."%variables )
+        if not type(derived_variables) == type([]):
+            raise ValueError( "Argument 'derived_variables' must be list. Got '%r'."%derived_variables )
+        if not all (isinstance(v, Variable) for v in derived_variables):
+            raise ValueError( "Not all elements in 'derived_variables' are instances of Variable. Got '%r'."%derived_variables )
 
         self.selectionString = selectionString
         self.sample = sample
         
-        super(TreeReader, self).__init__( variables = variables, addVectorCounters = False ) 
+        super(TreeReader, self).__init__( variables = variables ) 
+        self.derived_variables = derived_variables
 
-        self.makeClass( "data", useSTDVectors = False)
+        self.makeClass( "data", variables + derived_variables, useSTDVectors = False, addVectorCounters = False)
 
         self.setAddresses()
         
@@ -48,7 +54,7 @@ class TreeReader( LooperBase ):
     def setAddresses(self):
         ''' Set all the branch addresses to the members in the class instance
         '''
-        for s in self._allBranchInfo():
+        for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
             self.sample.chain.SetBranchAddress(s[0], ROOT.AddressOf(self.data, s[0]))
 
     def cloneTree(self, branchList = []):
@@ -83,7 +89,7 @@ class TreeReader( LooperBase ):
         '''
         self.sample.chain.SetBranchStatus("*", 0)
         if readBranches:
-            for s in self._allBranchInfo():
+            for s in LooperBase._branchInfo( self.variables, addVectorCounters = False):
                 self.sample.chain.SetBranchStatus(s[0], 1)
         for b in branchList:
             self.sample.chain.SetBranchStatus(b, 1)

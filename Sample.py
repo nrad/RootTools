@@ -12,10 +12,9 @@ from math import sqrt
 # Logging
 import logging
 logger = logging.getLogger(__name__)
-
 # RootTools imports
-import RootTools.tools.helpers as helpers
-import RootTools.tools.u_float as u_float
+import helpers
+import u_float
 
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
@@ -167,7 +166,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     def treeReader(self, **kwargs):
         ''' Return a Reader class for the sample
         '''
-        from RootTools.Looper.TreeReader import TreeReader
+        from TreeReader import TreeReader
         logger.debug("Creating TreeReader object for sample '%s'.", self.name)
         return TreeReader( self, **kwargs )
 

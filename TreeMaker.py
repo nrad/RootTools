@@ -10,8 +10,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.Looper.LooperBase import LooperBase
-from RootTools.Variable.Variable import ScalarType, VectorType, Variable
+from LooperBase import LooperBase
+from Variable import ScalarType, VectorType, Variable
 class TreeMaker( LooperBase ):
 
     def __init__(self, variables, filler = None, treeName = "Events"):
@@ -24,9 +24,9 @@ class TreeMaker( LooperBase ):
             if  hasattr(v, 'filler') and v.filler and not hasattr(v.filler, '__call__'):
                 raise ValueError( "Something wrong with the filler '%r' for variable  '%r' '%s'"%(v.filler, v, v) )
 
-        super(TreeMaker, self).__init__( variables = variables, addVectorCounters = True)
+        super(TreeMaker, self).__init__( variables = variables)
 
-        self.makeClass( "data" , useSTDVectors = False)
+        self.makeClass( "data", variables = variables, useSTDVectors = False, addVectorCounters = True)
 
         # Create tree to store the information and store also the branches
         self.treeIsExternal = False
@@ -64,7 +64,7 @@ class TreeMaker( LooperBase ):
     def makeBranches(self):
 
         scalerCount = 0
-        for s in self._allBranchInfo( restrictType = ScalarType ):
+        for s in LooperBase._branchInfo( self.variables, restrictType = ScalarType, addVectorCounters = True):
             name = s[0]
             type_ = s[1]
             self.branches.append( 
@@ -72,7 +72,7 @@ class TreeMaker( LooperBase ):
             )
             scalerCount+=1
         vectorCount = 0
-        for name, type_, counterName in self._allBranchInfo( restrictType = VectorType ):
+        for name, type_, counterName in LooperBase._branchInfo( self.variables, restrictType = VectorType, addVectorCounters = True ):
             self.branches.append(
                 self.tree.Branch(name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) )
             )

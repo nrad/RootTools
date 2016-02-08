@@ -14,13 +14,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.Looper.LooperHelpers import createClassString
-from RootTools.Variable.Variable import Variable, ScalarType, VectorType
+from LooperHelpers import createClassString
+from Variable import Variable, ScalarType, VectorType
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, variables, addVectorCounters = True):
+    def __init__(self, variables):
 
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got '%r'"%variables )
@@ -39,14 +39,15 @@ class LooperBase( object ):
         # FIXME Could use to identify the sample ... alternatively overload __hash__
         self.classUUID = None
         # Whether or not to add default counter variables 'nVector/I' for vectors
-        self.addVectorCounters = addVectorCounters
+#        self.addVectorCounters = addVectorCounters
 
-    def _allBranchInfo( self, restrictType = None):
+    @staticmethod
+    def _branchInfo( variables, addVectorCounters, restrictType = None):
         ''' Get a list of the form [(var, type), (vectorComponent, type, counterName)...] for all branches which is
             neededfor handling the branches.
         '''
         res = []
-        for s in self.variables:
+        for s in variables:
             if isinstance(s, ScalarType):
                 if not restrictType or restrictType == ScalarType:
                     res.append( (s.name, s.type, None) )
@@ -55,13 +56,13 @@ class LooperBase( object ):
                 for c in s.components:
                     if not restrictType or restrictType == VectorType:
                         res.append( ( '%s_%s'%( s.name, c.name ), c.type, tmp.name) )
-                if self.addVectorCounters: 
+                if addVectorCounters: 
                     if not restrictType or restrictType == ScalarType:
                         res.append( (tmp.name, tmp.type, None) )
-            else: raise ValueError( "This should never happen. Found an element in self.variables that is not a ScalarType or VectorType instance: '%r'"%s )
+            else: raise ValueError( "Found an element in that is not a ScalarType or VectorType instance: '%r'"%s )
         return res
 
-    def makeClass(self, attr, useSTDVectors = False):
+    def makeClass(self, attr, variables, addVectorCounters, useSTDVectors = False):
 
         if not os.path.exists(self.tmpDir):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
@@ -76,13 +77,15 @@ class LooperBase( object ):
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
             f.write(
-                createClassString( variables = self.variables, useSTDVectors = useSTDVectors, addVectorCounters = self.addVectorCounters)
+                createClassString( variables = variables, useSTDVectors = useSTDVectors, addVectorCounters = addVectorCounters)
                 .replace( "className", className )
             )
 
         # A less dirty solution possible?
         logger.debug("Compiling file %s", tmpFileName)
-        ROOT.gROOT.ProcessLine('.L %s+'%tmpFileName )
+#        ROOT.gROOT.ProcessLine('.L %s+'%tmpFileName )
+        #FIXME OSX ACliC compilation diesn't work
+        ROOT.gROOT.ProcessLine('.L %s'%tmpFileName )
 
         logger.debug("Importing class %s", className)
         exec( "from ROOT import %s" % className )

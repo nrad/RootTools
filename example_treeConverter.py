@@ -1,5 +1,5 @@
-'''Example of a converter that splits the input sample into chunks of given size
-Has all (I hope) post processor functionality.
+'''Combining a TreeReader and a TreeMaker, a simple converter is built 
+that splits an input sample into chunks of given size and stores the result in new ROOT files.
 '''
 
 # Standard imports
@@ -9,15 +9,15 @@ import logging
 import os
 
 #RootTools
-from RootTools.Sample.Sample import Sample
-from RootTools.Looper.TreeReader import TreeReader
-from RootTools.Looper.TreeMaker import TreeMaker
-from RootTools.Variable.Variable import Variable, ScalarType, VectorType
+from Sample import Sample
+from TreeReader import TreeReader
+from TreeMaker import TreeMaker
+from Variable import Variable, ScalarType, VectorType
 
 # create logger
 logger = logging.getLogger("RootTools")
 logger.setLevel(logging.INFO)
-logging.getLogger("RootTools.Looper").setLevel(logging.CRITICAL)
+logging.getLogger("CRITICAL")
 
 # create console handler and set level to debug
 ch = logging.StreamHandler()
@@ -33,35 +33,28 @@ ch.setFormatter(formatter)
 logger.addHandler(ch)
 
 # from files
-s2 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/TTZToQQ/TTZToQQ_0.root"], treeName = "Events")
-s2.chain
+s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
+
+read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
+                + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
+
+new_variables =     [ Variable.fromString('MyJet[pt2/F]' ) ] \
+                  + [ Variable.fromString(x) for x in [ 'myMetOver2/F' ] ]
 
 outputfile = "./converted.root"
 
-vectors_read   =    [ {'name':'Jet', 'nMax':100,'variables': ['pt/F', 'eta/F', 'phi/F'] } ]
-scalars_read   =    [ 'met_pt/F', 'met_phi/F' ]
-vectors_write  =    [ {'name':'MyJet', 'nMax':100,'variables': ['pt/F'] } ]
-scalars_write  =    [ 'myMet/F' ]
 
-variables =     [ Variable.fromString( 'Jet[pt/F,eta/F,phi/F]' ) ] \
-              + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F', 'nJet/I' ] ]
-
-new_variables =     [ Variable.fromString('MyJet[pt/F]') ] \
-                  + [ Variable.fromString(x) for x in [ 'myMet/F' ] ]
-
-branches_to_keep = ["evt", "run", "lumi", "met_pt", "met_phi", "Jet_pt", "Jet_eta", "Jet_phi", 'nJet']
+branches_to_keep = [ "met_phi" ]
 
 # Define a reader
-reader = s2.treeReader( variables = variables, selectionString = "(met_pt>100)")
+reader = s0.treeReader( variables = read_variables, selectionString = "(met_pt>100)")
 
-# Define a filler
-
-#This filler just copies. Usually, some modifications would be made
-def filler( target):
-    target.myMet = reader.data.met_pt
-    target.nMyJet = reader.data.nJet
+# A simple eample
+def filler(struct):
+    struct.nMyJet = reader.data.nJet
     for i in range(reader.data.nJet):
-        target.MyJet_pt[i] = reader.data.Jet_pt[i]
+        struct.MyJet_pt2[i] = reader.data.Jet_pt[i]**2
+    struct.myMetOver2 = reader.data.met_pt/2.
     return
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop

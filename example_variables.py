@@ -1,4 +1,4 @@
-from RootTools.Variable.Variable import Variable, ScalarType, VectorType
+from Variable import Variable, ScalarType, VectorType
 
 s1 = ScalarType('x', 'F')
 s2 = Variable.fromString('phi/F')
