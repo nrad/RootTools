@@ -22,7 +22,6 @@ argParser.add_argument('--logLevel',
 )
 
 args = argParser.parse_args()
-
 logger = get_logger(args.logLevel, None)
 
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
