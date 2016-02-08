@@ -12,6 +12,7 @@ from math import sqrt
 # Logging
 import logging
 logger = logging.getLogger('RootTools.'+__name__)
+print logger.name
 # RootTools imports
 import helpers
 import u_float
