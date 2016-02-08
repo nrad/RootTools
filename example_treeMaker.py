@@ -12,22 +12,21 @@ from TreeReader import TreeReader
 from TreeMaker import TreeMaker
 from Variable import Variable, ScalarType, VectorType
 
-# create logger
-logger = logging.getLogger("RootTools")
-logger.setLevel(logging.DEBUG)
+from logger import get_logger
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+# argParser
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--logLevel', 
+      action='store',
+      nargs='?',
+      choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'],
+      default='INFO',
+      help="Log level for logging"
+)
 
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-ch.setFormatter(formatter)
-
-# add ch to logger
-logger.addHandler(ch)
+args = argParser.parse_args()
+logger = get_logger(args.logLevel, logFile = None)
 
 
 # from files

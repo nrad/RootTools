@@ -10,27 +10,9 @@ import tempfile
 from Sample import Sample
 from logger import get_logger
 
-## create logger
-#logger = logging.getLogger("RootTools")
-#logger.setLevel(logging.INFO)
-#
-## create console handler and set level to debug
-#ch = logging.StreamHandler()
-#ch.setLevel(logging.INFO)
-#
-## create formatter
-#formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-#
-## add formatter to ch
-#ch.setFormatter(formatter)
-#
-## add ch to logger
-#logger.addHandler(ch)
-
 # argParser
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
-
 argParser.add_argument('--logLevel', 
       action='store',
       nargs='?',
@@ -40,9 +22,7 @@ argParser.add_argument('--logLevel',
 )
 
 args = argParser.parse_args()
-
-logFile = tempfile.NamedTemporaryFile(suffix='.log', prefix='example_sample', dir='.', delete=False) 
-logger = get_logger(args.logLevel, logFile.name)
+logger = get_logger(args.logLevel, None)
 
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 s0.chain

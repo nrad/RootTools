@@ -1,6 +1,6 @@
 import logging
 import sys
-def get_logger(logLevel, logFile):
+def get_logger(logLevel, logFile = None):
     ''' Logger for post-processing module.
     
     '''
@@ -20,16 +20,25 @@ def get_logger(logLevel, logFile):
         raise ValueError("Invalid log level: %s" % logLevel)
      
     logger.setLevel(numeric_level)
-     
-    # create the logging file handler
-    fileHandler = logging.FileHandler(logFile, mode='w')
- 
     formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    fileHandler.setFormatter(formatter)
+    if logFile: 
+      # create the logging file handler
+      fileHandler = logging.FileHandler(logFile, mode='w')
+      fileHandler.setFormatter(formatter)
+      # add handler to logger object
+      logger.addHandler(fileHandler)
  
-    # add handler to logger object
-    logger.addHandler(fileHandler)
-  
+
+    # create console handler and set level to debug
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.DEBUG)
+
+    # add formatter to ch
+    ch.setFormatter(formatter)
+
+    # add ch to logger
+    logger.addHandler(ch)
+ 
     # log the exceptions to the logger
     def excepthook(*args):
         logger.error("Uncaught exception:", exc_info=args)
