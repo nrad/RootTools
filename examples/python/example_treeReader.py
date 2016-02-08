@@ -3,9 +3,9 @@
 import sys
 import logging
 import ROOT
-from Sample import Sample
-from Variable import Variable, ScalarType, VectorType
-from TreeReader import TreeReader
+from RootTools.tools.Sample import Sample
+from RootTools.tools.Variable import Variable, ScalarType, VectorType
+from RootTools.tools.TreeReader import TreeReader
 
 # Logger
 from logger import get_logger

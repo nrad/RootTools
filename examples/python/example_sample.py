@@ -2,13 +2,13 @@
 '''
 # Standard imports
 import sys
+
 #import logging
 import ROOT
-import tempfile
 
 # RootTools
-from Sample import Sample
-from logger import get_logger
+from RootTools.tools.Sample import Sample
+from RootTools.tools.logger import get_logger
 
 # argParser
 import argparse

@@ -11,11 +11,11 @@ from math import sqrt
 
 # Logging
 import logging
-logger = logging.getLogger('RootTools.'+__name__)
+logger = logging.getLogger(__name__)
 print logger.name
 # RootTools imports
-import helpers
-import u_float
+import RootTools.tools.helpers
+import RootTools.tools.u_float
 
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.

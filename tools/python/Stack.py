@@ -1,7 +1,7 @@
 ''' A stack of samples (not plots) 
 '''
 
-from RootTools.Sample.Sample import Sample
+from RootTools.tools.Sample import Sample
 
 class Stack ( object ):
         

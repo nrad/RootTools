@@ -7,12 +7,11 @@ import logging
 import ROOT
 
 #RootTools
-from Sample import Sample
-from TreeReader import TreeReader
-from TreeMaker import TreeMaker
-from Variable import Variable, ScalarType, VectorType
-
-from logger import get_logger
+from RootTools.tools.Sample import Sample
+from RootTools.tools.TreeReader import TreeReader
+from RootTools.tools.TreeMaker import TreeMaker
+from RootTools.tools.Variable import Variable, ScalarType, VectorType
+from RootTools.tools.logger import get_logger
 
 # argParser
 import argparse

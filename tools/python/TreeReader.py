@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from LooperBase import LooperBase
-from Sample import Sample
-from Variable import Variable, ScalarType, VectorType
+from RootTools.tools.LooperBase import LooperBase
+from RootTools.tools.Sample import Sample
+from RootTools.tools.Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
 

@@ -1,7 +1,7 @@
 from Variable import Variable, ScalarType, VectorType
 
 # Logger
-from logger import get_logger
+from RootTools.tools.logger import get_logger
 
 # argParser
 import argparse
