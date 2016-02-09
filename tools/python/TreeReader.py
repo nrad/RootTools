@@ -16,7 +16,7 @@ from RootTools.tools.Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, variables, derived_variables = [], selectionString = None):
+    def __init__(self, sample, variables, filled_variables = [], selectionString = None):
 
         # The following checks are 'look before you leap' but I rather have the user know if the input non-sensical
         if not isinstance(sample, Sample):
@@ -25,18 +25,21 @@ class TreeReader( LooperBase ):
             raise ValueError( "Argument 'variables' must be list. Got '%r'."%variables )
         if not all (isinstance(v, Variable) for v in variables):
             raise ValueError( "Not all elements in 'variables' are instances of Variable. Got '%r'."%variables )
-        if not type(derived_variables) == type([]):
-            raise ValueError( "Argument 'derived_variables' must be list. Got '%r'."%derived_variables )
-        if not all (isinstance(v, Variable) for v in derived_variables):
-            raise ValueError( "Not all elements in 'derived_variables' are instances of Variable. Got '%r'."%derived_variables )
+        if not type(filled_variables) == type([]):
+            raise ValueError( "Argument 'filled_variables' must be list. Got '%r'."%filled_variables )
+        if not all (isinstance(v, Variable) for v in filled_variables):
+            raise ValueError( "Not all elements in 'filled_variables' are instances of Variable. Got '%r'."%filled_variables )
+        for v in filled_variables:
+            if not hasattr(v, "filler") or not v.filler or not hasattr(v.filler, "__call__"):
+                raise ValueError( "Variable %s in 'filled_variables' does not have a proper filler function" )
 
         self.selectionString = selectionString
         self.sample = sample
         
         super(TreeReader, self).__init__( variables = variables ) 
-        self.derived_variables = derived_variables
+        self.filled_variables = filled_variables
 
-        self.makeClass( "data", variables + derived_variables, useSTDVectors = False, addVectorCounters = False)
+        self.makeClass( "data", variables + filled_variables, useSTDVectors = False, addVectorCounters = False)
 
         self.setAddresses()
         
@@ -138,4 +141,9 @@ class TreeReader( LooperBase ):
 
         # point to the position in the chain (or the eList if there is one)
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+        for v in self.filled_variables:
+            if isinstance(v, ScalarType):
+                setattr(self.data, v.name, v.filler( self. data ) )
+            else:
+                raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
         return 1

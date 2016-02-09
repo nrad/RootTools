@@ -3,11 +3,11 @@
 
 from RootTools.tools.Sample import Sample
 
-class Stack ( object ):
+class Stack ( list ):
         
-    def __init__( self, stackList ):
+    def __init__(self, *stackList):
+        list.__init__(self, *stackList)
 
-        if not type(stackList) == type([]) or not all( type(s)==type([]) for s in stackList ):
-            raise ValueError("'stackList' must be a list of lists of Sample insstance. Got '%r'"%stackLists )
+        if  not all( type(s)==type([]) for s in self ):
+            raise ValueError("'stackList' must be a list of lists of Sample insstance. Got '%r'"%self )
 
-        self.stackList = stackList

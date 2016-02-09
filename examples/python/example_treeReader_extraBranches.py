@@ -3,14 +3,12 @@ Useful for using in a plot makro with complex derived observables.
 '''
 # Standard imports
 import sys
-import logging
+from math import sqrt
 import ROOT
 from RootTools.tools.Sample import Sample
 from RootTools.tools.Variable import Variable, ScalarType, VectorType
 from RootTools.tools.TreeReader import TreeReader
-
-# Logger
-from logger import get_logger
+from RootTools.tools.logger import get_logger
 
 # argParser
 import argparse
@@ -32,10 +30,12 @@ s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Ev
 variables =  [ Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
            + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
-#s1.reader( scalars = scalars, vectors = vectors, selectionString = "met_pt>100")
+metPt2 = Variable.fromString('met_pt2/F') 
+metPt2.filler = lambda data: data.met_pt**2
+filled_variables = [ metPt2 ]
 
 h=ROOT.TH1F('met','met',100,0,0)
-r = s0.treeReader( variables = variables, selectionString = "met_pt>100")
+r = s0.treeReader( variables = variables, filled_variables = filled_variables, selectionString = "met_pt>100")
 r.start()
 while r.run():
-    h.Fill( r.data.met_pt )
+    h.Fill( sqrt(r.data.met_pt2) )

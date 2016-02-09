@@ -1,7 +1,3 @@
-from Variable import Variable, ScalarType, VectorType
-
-# Logger
-from RootTools.tools.logger import get_logger
 
 # argParser
 import argparse
@@ -13,6 +9,10 @@ argParser.add_argument('--logLevel',
       default='INFO',
       help="Log level for logging"
 )
+
+# RootTools
+from RootTools.tools.Variable import Variable, ScalarType, VectorType
+from RootTools.tools.logger import get_logger
 
 args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)

@@ -12,10 +12,9 @@ from math import sqrt
 # Logging
 import logging
 logger = logging.getLogger(__name__)
-print logger.name
 # RootTools imports
-import RootTools.tools.helpers
-import RootTools.tools.u_float
+import RootTools.tools.helpers as helpers
+import RootTools.tools.u_float as u_float
 
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
@@ -49,7 +48,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         for d in directories:
             files.extend(  os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') )
         sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
-        logger.info("Loaded sample %s from %i directory(ies): %s.", name, len(files), ",".join(directories))
+        logger.info("Loaded sample %s from %i directory(ies): %s", name, len(files), ",".join(directories))
         return sample
 
     @classmethod
