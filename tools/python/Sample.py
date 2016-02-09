@@ -21,6 +21,12 @@ class EmptySampleError(Exception):
     '''
     pass
 
+@helpers.static_vars(sampleCounter = 0)
+def newName():
+    result = "Sample_"+str(newName.sampleCounter)
+    newName.sampleCounter += 1
+    return result
+
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
     def __init__(self, name, treeName , files = [], sumOfWeights = None):
@@ -35,18 +41,42 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.debug("Created new sample %s with treeName %s.", name, treeName)
 
     @classmethod
-    def fromFiles(cls, name, treeName , files, sumOfWeights = None):
-        files = [files] if type(files)==type("") else files 
+    def fromFiles(cls, name, files, treeName=None, sumOfWeights = None):
+        '''Load sample from files or list of files. If the name is "", enumerate the sample
+        '''
+
+        # Work with files and list of files
+        files = [files] if type(files)==type("") else files
+
+        # If no name, enumerate them.
+        if not name: name = newName()
+        if not treeName: 
+            treeName = "Events"
+            logger.debug("Argument 'treeName' not providedf for sample %s, using 'Events'."%name) 
+
         sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+
         logger.info("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, treeName , directory, sumOfWeights = None):
+    def fromDirectory(cls, name, directory, treeName = None, sumOfWeights = None):
+        '''Load sample from directory or list of directories. If the name is "", enumerate the sample
+        '''
+        # Work with directories and list of directories
         directories = [directory] if type(directory)==type("") else directory 
+
+        # If no name, enumerate them.
+        if not name: name = newName()
+
+        # find all files
         files = [] 
         for d in directories:
             files.extend(  os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') )
+        if not treeName: 
+            treeName = "Events"
+            log.debug("Argument 'treeName' not provided, using 'Events'.") 
+
         sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
         logger.info("Loaded sample %s from %i directory(ies): %s", name, len(files), ",".join(directories))
         return sample

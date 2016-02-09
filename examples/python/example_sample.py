@@ -25,8 +25,15 @@ argParser.add_argument('--logLevel',
 args = argParser.parse_args()
 logger = get_logger(args.logLevel, None)
 
-s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
+filename =  "example_data/file_0.root"
+
+# simplest way
+s0 = Sample.fromFiles("", filename )
 s0.chain
+
+# works as well with lists:
+# s0 = Sample.fromFiles("", [filename, filename] )
+
 
 afsRootToolsExamples = "/afs/hephy.at/data/rschoefbeck01/RootTools/examples"
 if os.path.exists(afsRootToolsExamples):
