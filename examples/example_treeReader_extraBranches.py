@@ -1,6 +1,7 @@
 ''' A TreeReader runs over a sample and evaluates extra variables.
 Useful for using in a plot makro with complex derived observables.
 '''
+
 # Standard imports
 import sys
 from math import sqrt
@@ -30,6 +31,7 @@ s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Ev
 variables =  [ Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
            + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
+# Defining a variable and giving it a filler
 metPt2 = Variable.fromString('met_pt2/F') 
 metPt2.filler = lambda data: data.met_pt**2
 filled_variables = [ metPt2 ]

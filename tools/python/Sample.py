@@ -201,6 +201,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return TreeReader( self, **kwargs )
 
     # Below some helper functions to get useful things from a sample
+
     def getEList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString
         '''
@@ -236,6 +237,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 res += w
                 resVar += w**2
         del eList
+        # Should remove this unecessary dependency
         return u_float.u_float(res, sqrt(resVar) )
 
     def getYieldFromDraw(self, selectionString = None, weightString = None):
@@ -250,6 +252,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)
         del h
+        # Should remove this unecessary dependency
         return u_float.u_float( res, resErr )
 
     def getHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None):

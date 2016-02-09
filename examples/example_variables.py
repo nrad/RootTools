@@ -1,3 +1,5 @@
+''' Little demonstration how to define variables
+'''
 
 # argParser
 import argparse
