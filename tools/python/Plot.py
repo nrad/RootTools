@@ -10,6 +10,6 @@ class Plot( object ):
         self.varFunc        = varFunc
         self.cutString      = cutString
         self.cutFunc        = cutFunc
-        self.weightVar   = weightVar
+        self.weightVar      = weightVar
         self.weightFunc     = weightFunc
         

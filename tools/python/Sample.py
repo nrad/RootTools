@@ -218,27 +218,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             del elistTMP_t
             return elistTMP
 
-    def getYieldFromLoop(self, selectionString=None, cutFunc = None, weightVar = None, weightFunc = None):
-        ''' Get yield from self.chain according to a cut, a selectionString, a cutFunc, 
-            a weight variable (must be a TLeafElement) and a weight function.
-            This is deprecated and very slow.
-        '''
-        eList = self.getEList(selectionString)
-        res = 0.
-        resVar=0.
-
-        for i in range(eList.GetN()):
-            self.chain.GetEntry(eList.GetEntry(i))
-            if (not cutFunc) or cutFunc(self.chain):
-                w = getattr(self.chain, weightVar) if weightVar else 1
-                if not isinstance(w, numbers.Number):
-                    raise ValueError ("Problem with weightVar argument %s. Evaluates to %r"%(weightVar, w))
-                w *= weightFunc(self.chain) if weightFunc else 1
-                res += w
-                resVar += w**2
-        del eList
-        # Should remove this unecessary dependency
-        return u_float.u_float(res, sqrt(resVar) )
+## The following should really not be used. Why making a framework for doing fast loops and implement a slow one.
+#    def getYieldFromLoop(self, selectionString=None, cutFunc = None, weightVar = None, weightFunc = None):
+#        ''' Get yield from self.chain according to a cut, a selectionString, a cutFunc, 
+#            a weight variable (must be a TLeafElement) and a weight function.
+#            This is deprecated and very slow.
+#        '''
+#        eList = self.getEList(selectionString)
+#        res = 0.
+#        resVar=0.
+#
+#        for i in range(eList.GetN()):
+#            self.chain.GetEntry(eList.GetEntry(i))
+#            if (not cutFunc) or cutFunc(self.chain):
+#                w = getattr(self.chain, weightVar) if weightVar else 1
+#                if not isinstance(w, numbers.Number):
+#                    raise ValueError ("Problem with weightVar argument %s. Evaluates to %r"%(weightVar, w))
+#                w *= weightFunc(self.chain) if weightFunc else 1
+#                res += w
+#                resVar += w**2
+#        del eList
+#        # Should remove this unecessary dependency
+#        return u_float.u_float(res, sqrt(resVar) )
 
     def getYieldFromDraw(self, selectionString = None, weightString = None):
         ''' Get yield from self.chain according to a selectionString and a weightString
@@ -252,8 +253,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)
         del h
-        # Should remove this unecessary dependency
-        return u_float.u_float( res, resErr )
+
+        ## Should remove this unecessary dependency
+        #return u_float.u_float( res, resErr )
+        
+        return {'val': res, 'sigma':resErr}        
 
     def getHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None):
         ''' Get TH1D/TH2D from draw command using selectionString, weight. If binningIsExplicit is true, 
