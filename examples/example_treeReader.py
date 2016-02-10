@@ -23,8 +23,8 @@ args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)
 
 # Samplefrom files
-s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
-
+s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events", selectionString = 'Jet_pt[0]>100')
+s0.chain
 variables =  [ Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
            + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 

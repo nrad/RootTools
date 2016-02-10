@@ -32,8 +32,8 @@ s0 = Sample.fromFiles("", filename )
 s0.chain
 
 # works as well with lists:
-# s0 = Sample.fromFiles("", [filename, filename] )
-
+s0_2 = Sample.fromFiles("", [filename, filename], selectionString = ["met_pt>200", "Jet_pt[0]>100"])
+s0_2.chain
 
 afsRootToolsExamples = "/afs/hephy.at/data/rschoefbeck01/RootTools/examples"
 if os.path.exists(afsRootToolsExamples):

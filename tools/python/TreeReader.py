@@ -12,6 +12,7 @@ logger = logging.getLogger(__name__)
 # RootTools
 from RootTools.tools.LooperBase import LooperBase
 from RootTools.tools.Sample import Sample
+import RootTools.tools.helpers as helpers
 from RootTools.tools.Variable import Variable, ScalarType, VectorType
 
 class TreeReader( LooperBase ):
@@ -32,10 +33,20 @@ class TreeReader( LooperBase ):
         for v in filled_variables:
             if not hasattr(v, "filler") or not v.filler or not hasattr(v.filler, "__call__"):
                 raise ValueError( "Variable %s in 'filled_variables' does not have a proper filler function" )
+        if not type(selectionString) == type(""):
+            raise ValueError( "Don't know what to do with selectionString '%r'"%selectionString )
 
         self.selectionString = selectionString
+
         self.sample = sample
-        
+
+##      FIXME ... keep track of the interplay of Stack.selectionStrings and TreeReader selectionString
+##       There is no necessity to update with the sample.selectionStrings as long as self.sample.getEList is used.
+#        if self.sample.selectionStrings:
+#            self.selectionString = helpers.combineSelectionStrings( self.sample.selectionStrings + [self.selectionString] )
+#            logger.info("Combining selectionString %s with sample %s selectionString %s to %s", \
+#                selectionString, self.sample.name, self.sample.selectionStrings, self.selectionString )
+
         super(TreeReader, self).__init__( variables = variables ) 
         self.filled_variables = filled_variables
 
@@ -72,12 +83,15 @@ class TreeReader( LooperBase ):
                 list_to_copy.Enter(self.eList.GetEntry(i_ev))
 
             # activate branches that we want to copy, disable the ones we only need for reading
-            # FIXME I do not preserve the list of active branches here, maybe should improve in the future 
             self.activateBranches( readBranches = False, branchList = branchList )
+            # preserving current event list
+            tmpEventList = self.sample.chain.GetEventList()
+            tmpEventList = 0 if not self.sample.chain.GetEventList() else tmpEventList
             # Copy the selected events
             self.sample.chain.SetEventList( list_to_copy ) 
             res =  self.sample.chain.CopyTree( "(1)", "") 
-            self.sample.chain.SetEventList( 0 ) 
+            # restoring event list
+            self.sample.chain.SetEventList( tmpEventList ) 
             # activate what we read, don't activate the ones we just copied
             self.activateBranches( readBranches = True, branchList = [] )
             list_to_copy.Delete()

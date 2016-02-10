@@ -46,11 +46,15 @@ class Variable( object ):
         return 
 
     @classmethod
-    def fromString(cls, string):
+    def fromString(cls, string, filler = None):
         try:
-            return VectorType.fromString(string)
+            return VectorType.fromString(string, filler = filler)
         except ( ValueError, AssertionError ):
-            return ScalarType.fromString(string)
+            return ScalarType.fromString(string, filler = filler)
+
+    def addFiller(self, filler):
+        self.filler = filler
+        return self
 
 class ScalarType( Variable ):
 
@@ -78,7 +82,7 @@ class ScalarType( Variable ):
         return self.tp
 
     @classmethod
-    def fromString(cls, string):
+    def fromString(cls, string, filler = None):
         '''Create scalar variable from syntax 'name/type'
         '''
         if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
@@ -88,7 +92,7 @@ class ScalarType( Variable ):
 
             
         name, tp = string.split('/')
-        return cls( name = name, tp = tp)
+        return cls( name = name, tp = tp, filler = filler)
 
     def __str__(self):
         if self.filler:
@@ -114,7 +118,7 @@ class VectorType( Variable ):
         self.nMax = int(nMax) if nMax is not None else 100
 
     @classmethod
-    def fromString(cls, string):
+    def fromString(cls, string, filler = None):
         '''Create vector variable from syntax 'name[c1/type1,c2/type2,...]'
         '''
         if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
@@ -125,7 +129,7 @@ class VectorType( Variable ):
         ts_ = string[string.find("[")+1:string.find("]")]
         componentStrings_ = ts_.split(',')
 
-        return cls( name = name_, components = componentStrings_, nMax = None, filler = None)
+        return cls( name = name_, components = componentStrings_, nMax = None, filler = filler)
 
     @property 
     def components(self):

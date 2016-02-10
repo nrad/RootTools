@@ -10,6 +10,7 @@ import os
 
 #RootTools
 from RootTools.tools.Sample import Sample
+from RootTools.tools.Immutable import Immutable
 from RootTools.tools.TreeReader import TreeReader
 from RootTools.tools.TreeMaker import TreeMaker
 from RootTools.tools.Variable import Variable, ScalarType, VectorType
@@ -30,7 +31,7 @@ args = argParser.parse_args()
 logger = get_logger(args.logLevel, None)
 
 # from files
-s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
+s0 = Immutable(Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events"))
 
 read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
                 + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]

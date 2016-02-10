@@ -30,3 +30,37 @@ def checkRootFile(f, checkForObjects=[] ):
 
     rf.Close()
     return True
+
+def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
+    '''Expects a list of string based cuts and combines them to a single string using stringOperator
+    '''
+    if not all( (type(s) == type("") or s is None) for s in selectionStringList):
+        raise ValueError( "Don't know what to do with selectionStringList '%r'"%selectionStringList)
+
+    list_ = [s for s in selectionStringList if not s is None ]
+    if len(list_)==0:
+        return "(1)"
+    else:
+        return stringOperator.join('('+s+')' for s in list_)
+
+def lineStyle( color, width = None):
+    def func( histo ):
+        histo.SetLineColor( color )
+        histo.SetMarkerSize( 0 )
+        histo.SetMarkerStyle( 0 )
+        histo.SetMarkerColor( color )
+        histo.SetFillColor( 0 )
+        if width: histo.SetLineWidth( width )
+        return 
+    return func
+
+def uses(func, args):
+    ''' Decorates a filler function with a list of strings of the used branch names
+    '''
+    if type(args)==type(""):
+        args=[args]
+    if not all(type(s)==type("") for s in args):
+        raise ValueError( "Need string or list of strings as argument, got '%r'"%args)
+    func.uses = args
+    return func
+

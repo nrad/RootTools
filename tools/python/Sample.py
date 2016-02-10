@@ -12,6 +12,7 @@ from math import sqrt
 # Logging
 import logging
 logger = logging.getLogger(__name__)
+
 # RootTools imports
 import RootTools.tools.helpers as helpers
 import RootTools.tools.u_float as u_float
@@ -29,19 +30,35 @@ def newName():
 
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
-    def __init__(self, name, treeName , files = [], sumOfWeights = None):
+    def __init__(self, name, treeName , files = [], normalization = None, selectionString = None):
         ''' Base class constructor for all sample classes.
-            name: Name of the sample, treeName: name of the TTree in the input files
+            'name': Name of the sample, 
+            'treeName': name of the TTree in the input files
+            'normalization': can be set in order to later calculate weights, 
+            e.g. to total number of events befor all cuts or the sum of NLO gen weights
+            'selectionStrings': sample specific string based selection (can be list of strings)
         '''
+
         self.name = name
         self.treeName = treeName
         self.files = files
-        self.sumOfWeights = None
+        self.normalization = None
         self._chain = None
-        logger.debug("Created new sample %s with treeName %s.", name, treeName)
+
+        if type(selectionString)==type(""):
+            self.selectionStrings = [ selectionString ] 
+        elif type(selectionString)==type([]): 
+            self.selectionStrings =  selectionString 
+        elif selectionString is None:
+            self.selectionStrings = None
+        else:
+            raise ValueError( "Don't know what to do with selectionString '%r'"%selectionString )
+             
+        logger.debug("Created new sample %s with %i files, treeName %s and selectionStrings %s.", 
+            name, len(self.files), treeName, self.selectionStrings)
 
     @classmethod
-    def fromFiles(cls, name, files, treeName=None, sumOfWeights = None):
+    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
         '''
 
@@ -52,15 +69,15 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if not name: name = newName()
         if not treeName: 
             treeName = "Events"
-            logger.debug("Argument 'treeName' not providedf for sample %s, using 'Events'."%name) 
+            logger.debug("Argument 'treeName' not provided for sample %s, using 'Events'."%name) 
 
-        sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
 
         logger.info("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = None, sumOfWeights = None):
+    def fromDirectory(cls, name, directory, treeName = None, normalization = None, selectionString = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -77,12 +94,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             treeName = "Events"
             log.debug("Argument 'treeName' not provided, using 'Events'.") 
 
-        sample =  cls(name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
         logger.info("Loaded sample %s from %i directory(ies): %s", name, len(files), ",".join(directories))
         return sample
 
     @classmethod
-    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None):
+    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, selectionString = None):
     
         def readNormalization(filename):
             with open(filename, 'r') as fin:
@@ -102,7 +119,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
                            len(chunkDirectories), chunkString, baseDirectory )
 
-        sumOfWeights = 0
+        normalization = 0
         files = []
         failedChunks=[]
         goodChunks  =[]
@@ -133,8 +150,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 # If both, normalization and treefile are OK call it successful. 
                 if sumW and treeFile:
                     files.append( treeFile )
-                    sumOfWeights += sumW
-                    logger.debug( "Successfully read chunk %s and incremented sumOfWeights by %7.2f",  chunkDirectory, sumW )
+                    normalization += sumW
+                    logger.debug( "Successfully read chunk %s and incremented normalization by %7.2f",  chunkDirectory, sumW )
                     success = True
                     goodChunks.append( chunkDirectory )
                     break
@@ -150,12 +167,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         # Log statements
         eff = 100*len(failedChunks)/float( len(chunkDirectories) )
         logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
-                          name, len(chunkDirectories), sumOfWeights, len(failedChunks), eff)
+                          name, len(chunkDirectories), normalization, len(failedChunks), eff)
 
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
 
-        return cls( name = name, treeName = treeName, files = files, sumOfWeights = sumOfWeights)
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
 
     # Handle loading of chain -> load it when first used 
     @property
@@ -185,6 +202,16 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     logger.warning( "Could not load file %s", f )
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
+    def hash(self):
+        '''Make hash for identifying samples in e.g. plotting tools that therefore should
+           depend on everything that is used to identify the sample
+        '''
+        hash_objects = [self.name, tuple(self.files), self.treeName]
+        if self.selectionStrings: hash_objects.append(tuple(self.selectionStrings))
+        if self.normalization: hash_objects.append(self.normalization)
+        logger.debug( "Creating hash for sample from objects '%s'", tuple(hash_objects))
+        return hash(tuple(hash_objects)) 
+
     def clear(self): #FIXME How to promote to destructor without making it segfault?
         ''' Really (in the ROOT namespace) delete the chain
         '''
@@ -203,12 +230,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     # Below some helper functions to get useful things from a sample
 
     def getEList(self, selectionString=None, name=None):
-        ''' Get a TEventList from a selectionString
+        ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
+        
+        if self.selectionStrings:
+            selectionString_ = helpers.combineSelectionStrings( [selectionString]+self.selectionStrings )
+            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+                self.name, selectionString, self.selectionStrings, selectionString_ )
+        else:
+            selectionString_ = selectionString
 
         tmp=str(uuid.uuid4())
-        logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString )
-        self.chain.Draw('>>'+tmp, selectionString if selectionString else "(1)")
+        logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString_ )
+        self.chain.Draw('>>'+tmp, selectionString_ if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
         if not name:
@@ -244,12 +278,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     def getYieldFromDraw(self, selectionString = None, weightString = None):
         ''' Get yield from self.chain according to a selectionString and a weightString
         ''' 
+
+        if self.selectionString:
+            selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
+            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+                self.name, selectionString, self.selectionString, selectionString_ )
+        else:
+            selectionString_ = selectionString
+
         tmp=str(uuid.uuid4())
         h = ROOT.TH1D(tmp, tmp, 1,0,2)
         h.Sumw2()
         weight = weightString if weightString else "1"
-        cut = selectionString if selectionString else "1"
-        self.chain.Draw("1>>"+tmp, "("+weight+")*("+cut+")", 'goff')
+        self.chain.Draw("1>>"+tmp, "("+weight+")*("+selectionString_+")", 'goff')
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)
         del h
@@ -264,6 +305,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             the binning argument (a list) is translated into variable bin widths. 
             addOverFlowBin can be 'upper', 'lower', 'both' and will add 
             the corresponding overflow bin to the last bin of a 1D histogram'''
+
+        if self.selectionString:
+            selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
+            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+                self.name, selectionString, self.selectionString, selectionString_ )
+        else:
+            selectionString_ = selectionString
+
         is2D = len(binning)==6 
         tmp=str(uuid.uuid4())
         if binningIsExplicit:
@@ -274,7 +323,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             else:
                 res = ROOT.TH1D(tmp, tmp, *binning)
         weight = weightString if weightString else "1"
-        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString+")", 'goff')
+
+        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
 
         if not is2D:
             if addOverFlowBin.lower() == "upper" or addOverFlowBin.lower() == "both":

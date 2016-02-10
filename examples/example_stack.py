@@ -24,6 +24,6 @@ logger = get_logger(args.logLevel, logFile = None)
 
 #make a sample
 s0 = Sample.fromFiles("", "example_data/file_0.root" )
-s1 = Sample.fromFiles("", "example_data/file_1.root" )
+s1 = Sample.fromFiles("", "example_data/file_1.root" , selectionString = 'met_pt>100')
 
 stack = Stack( [s0, s1], [ s0 ] )

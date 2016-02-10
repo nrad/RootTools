@@ -1,44 +1,81 @@
-'''Make a stacked plot
+''' Little demonstration how to define stacks.
+Note: A stack is made from Samples (not from histos)
 '''
 
 #Standard imports
 import ROOT
 
-# Logging
-import logging
-logger = logging.getLogger(__name__)
+# argParser
+import argparse
+argParser = argparse.ArgumentParser(description = "Argument parser")
+argParser.add_argument('--logLevel', 
+      action='store',
+      nargs='?',
+      choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'],
+      default='INFO',
+      help="Log level for logging"
+)
 
 # RootTools
-from RootTools.Sample.Sample import Sample
-from RootTools.Plot.Stack import Stack
-from RootTools.Plot.Plot import Plot
+from RootTools.tools.Stack import Stack 
+from RootTools.tools.Plot import Plot 
+from RootTools.tools.Sample import Sample 
+from RootTools.tools.Variable import Variable
+from RootTools.tools.logger import get_logger
+import RootTools.tools.helpers as helpers
+import RootTools.tools.plotting as plotting
 
-# create logger
-logger = logging.getLogger("RootTools")
-logger.setLevel(logging.INFO)
+args = argParser.parse_args()
+logger = get_logger(args.logLevel, logFile = None)
 
-# create console handler and set level to debug
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
+#make samples
+s0 = Sample.fromFiles("", "example_data/file_0.root" )
+s1 = Sample.fromFiles("", "example_data/file_1.root" , selectionString = 'met_pt>100')
 
-# create formatter
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+# styles are functions to be executed on the histogram
+s0.style = helpers.lineStyle( color = ROOT.kBlue )
+s1.style = helpers.lineStyle( color = ROOT.kRed )
 
-# add formatter to ch
-ch.setFormatter(formatter)
+# Define the stack 
+stack = Stack( [ s0, s1 ], [ s0 ] )
 
-# add ch to logger
-logger.addHandler(ch)
+# A variable in the chain
+variable  = Variable.fromString( "met_pt/F" )
+# A variable with a filler
+variable2 = Variable.fromString( "sqrt_met_pt2/F", filler = lambda data:sqrt(data.met_pt**2) )
 
-# from files
-s0 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/ttJetsCSA1450ns/ttJetsCSA1450ns_0.root"], treeName = "Events")
-s0.chain
-s1 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/ttJetsCSA1450ns/ttJetsCSA1450ns_1.root"], treeName = "Events")
-s1.chain
-s2 = Sample.fromFiles("TTZToQQ", files = ["/afs/hephy.at/data/rschoefbeck01/RootTools/examples/ttJetsCSA1450ns/ttJetsCSA1450ns_2.root"], treeName = "Events")
-s2.chain
+weight_func = lambda data:data.weight
 
-stack = Stack([ [s0, s1], [s2] ])
+selectionString = "nJet>0"
+selectionString_2 = "nJet>1"
 
-plot1 = Plot('met_pt', [100,0,1000] ,"(1)", weightVar = "weight")
-plot2 = Plot('met_phi', [100,0,1000] ,"(1)", weightVar = "weight")
+
+plot1 = Plot(\
+    stack = stack,
+    variable = Variable.fromString( "met_pt/F" ), 
+    binning = [10,0,100], 
+    selectionString = selectionString,
+    weight = weight_func 
+)
+
+plot2 = Plot(\
+    stack = stack, 
+    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
+# equivalent:
+#    variable = Variable.fromString( "met_plus_jet0Pt/F", filler = helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
+    binning = [10,0,100], 
+    selectionString = selectionString,
+    weight = weight_func
+)
+
+plot3 = Plot(\
+    stack = stack, 
+    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
+# equivalent:
+#    variable = Variable.fromString( "met_plus_jet0Pt/F", filler = helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
+    binning = [10,0,100], 
+    selectionString = selectionString_2,
+    weight = weight_func
+)
+
+plotting.fill(plot1, plot2, plot3)
