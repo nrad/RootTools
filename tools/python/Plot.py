@@ -13,4 +13,3 @@ class Plot( object ):
         self.binning = binning
         self.selectionString = selectionString
         self.weight = weight
-    

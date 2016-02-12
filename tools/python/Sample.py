@@ -52,7 +52,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         elif selectionString is None:
             self.selectionStrings = None
         else:
-            raise ValueError( "Don't know what to do with selectionString '%r'"%selectionString )
+            raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
              
         logger.debug("Created new sample %s with %i files, treeName %s and selectionStrings %s.", 
             name, len(self.files), treeName, self.selectionStrings)

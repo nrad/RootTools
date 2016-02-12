@@ -1,6 +1,37 @@
 import ROOT
 import os
 
+# Translation of short types to ROOT C types
+cStringTypeDict = {
+    'b': 'UChar_t',
+    'S': 'Short_t',
+    's': 'UShort_t',
+    'I': 'Int_t',
+    'i': 'UInt_t',
+    'F': 'Float_t',
+    'D': 'Double_t',
+    'L': 'Long64_t',
+    'l': 'ULong64_t',
+    'O': 'Bool_t',
+}
+# reversed
+shortTypeDict = {v: k for k, v in cStringTypeDict.items()}
+
+# defaults
+defaultCTypeDict = {
+    'b': '0',
+    'S': '-1',
+    's': '0',
+    'I': '-1',
+    'i': '0',
+    'F': 'TMath::QuietNaN()',
+    'D': 'TMath::QuietNaN()',
+    'L': '-1',
+    'l': '-1',
+    'O': '0',
+}
+
+
 # Decorator to have smth like a static variable
 def static_vars(**kwargs):
     def decorate(func):
@@ -35,7 +66,7 @@ def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
     '''Expects a list of string based cuts and combines them to a single string using stringOperator
     '''
     if not all( (type(s) == type("") or s is None) for s in selectionStringList):
-        raise ValueError( "Don't know what to do with selectionStringList '%r'"%selectionStringList)
+        raise ValueError( "Don't know what to do with selectionStringList %r"%selectionStringList)
 
     list_ = [s for s in selectionStringList if not s is None ]
     if len(list_)==0:
@@ -54,13 +85,17 @@ def lineStyle( color, width = None):
         return 
     return func
 
+def fromString(*args):
+    # Make a list of Variables from the input arguments
+    from RootTools.tools.Variable import Variable
+    args = sum( [ [s] if type(s)==type("") else s for s in args if s is not None], [])
+    if not all(type(s)==type("") or isinstance(s, Variable) for s in args):
+        raise ValueError( "Need string or Variable instance or list of these as argument, got %r"%args)
+    return tuple(map(lambda s:Variable.fromString(s) if type(s)==type("") else s, args))
+
 def uses(func, args):
     ''' Decorates a filler function with a list of strings of the used branch names
     '''
-    if type(args)==type(""):
-        args=[args]
-    if not all(type(s)==type("") for s in args):
-        raise ValueError( "Need string or list of strings as argument, got '%r'"%args)
-    func.uses = args
+    func.arguments = fromString( args )
     return func
 

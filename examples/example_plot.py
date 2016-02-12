@@ -4,6 +4,7 @@ Note: A stack is made from Samples (not from histos)
 
 #Standard imports
 import ROOT
+from math import sqrt, cos
 
 # argParser
 import argparse
@@ -49,6 +50,7 @@ weight_func = lambda data:data.weight
 selectionString = "nJet>0"
 selectionString_2 = "nJet>1"
 
+usedVariables =  ["Jet[pt/F]", "met_pt/F"]
 
 plot1 = Plot(\
     stack = stack,
@@ -60,22 +62,22 @@ plot1 = Plot(\
 
 plot2 = Plot(\
     stack = stack, 
-    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
-# equivalent:
-#    variable = Variable.fromString( "met_plus_jet0Pt/F", filler = helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
+    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( lambda data:sqrt(data.met_pt + data.Jet_pt[0]) ), 
     binning = [10,0,100], 
     selectionString = selectionString,
     weight = weight_func
 )
 
+# Defining a variable and giving it a filler
+
+cosMetPhi = Variable.fromString('cosMetPhi/F') 
+cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
 plot3 = Plot(\
     stack = stack, 
-    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
-# equivalent:
-#    variable = Variable.fromString( "met_plus_jet0Pt/F", filler = helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]), "Jet_pt" ) ), 
-    binning = [10,0,100], 
-    selectionString = selectionString_2,
+    variable = cosMetPhi, 
+    binning = [10,-1,1], 
+    selectionString = selectionString,
     weight = weight_func
 )
 
-plotting.fill(plot1, plot2, plot3)
+plotting.fill([plot1, plot2, plot3], usedVariables = usedVariables)

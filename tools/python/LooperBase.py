@@ -23,9 +23,9 @@ class LooperBase( object ):
     def __init__(self, variables):
 
         if not type(variables) == type([]):
-            raise ValueError( "Argument 'variables' must be list. Got '%r'"%variables )
+            raise ValueError( "Argument 'variables' must be list. Got %r"%variables )
         if not all (isinstance(v, Variable) for v in variables):
-            raise ValueError( "Not all elements in variable list are instances of Variable. Got '%r'"%variables )
+            raise ValueError( "Not all elements in variable list are instances of Variable. Got %r"%variables )
 
         self.variables = variables
 
@@ -36,30 +36,27 @@ class LooperBase( object ):
         self.position = -1
         self.eList = None
 
-        # FIXME Could use to identify the sample ... alternatively overload __hash__
         self.classUUID = None
-        # Whether or not to add default counter variables 'nVector/I' for vectors
-#        self.addVectorCounters = addVectorCounters
 
     @staticmethod
-    def _branchInfo( variables, addVectorCounters, restrictType = None):
+    def _branchInfo( variables, addVectorCounters = False, restrictType = None):
         ''' Get a list of the form [(var, type), (vectorComponent, type, counterName)...] for all branches which is
-            neededfor handling the branches.
+            needed for handling the branches.
         '''
         res = []
         for s in variables:
             if isinstance(s, ScalarType):
                 if not restrictType or restrictType == ScalarType:
-                    res.append( (s.name, s.type, None) )
+                    res.append( {'name':s.name, 'type':s.type} )
             elif isinstance(s, VectorType):
                 tmp = s.counterVariable()
                 for c in s.components:
-                    if not restrictType or restrictType == VectorType:
-                        res.append( ( '%s_%s'%( s.name, c.name ), c.type, tmp.name) )
+                    if restrictType is None or restrictType == VectorType:
+                        res.append( { 'name':c.name, 'type':c.type, 'counterInt':tmp.name} )
                 if addVectorCounters: 
-                    if not restrictType or restrictType == ScalarType:
-                        res.append( (tmp.name, tmp.type, None) )
-            else: raise ValueError( "Found an element in that is not a ScalarType or VectorType instance: '%r'"%s )
+                    if restrictType is None or restrictType == ScalarType:
+                        res.append( {'name':tmp.name, 'type':tmp.type} )
+            else: raise ValueError( "Found an element in that is not a ScalarType or VectorType instance: %r"%s )
         return res
 
     def makeClass(self, attr, variables, addVectorCounters, useSTDVectors = False):
@@ -84,7 +81,7 @@ class LooperBase( object ):
         # A less dirty solution possible?
         logger.debug("Compiling file %s", tmpFileName)
 #        ROOT.gROOT.ProcessLine('.L %s+'%tmpFileName )
-        #FIXME OSX ACliC compilation diesn't work
+        #FIXME OSX ACliC compilation doesn't work
         ROOT.gROOT.ProcessLine('.L %s'%tmpFileName )
 
         logger.debug("Importing class %s", className)

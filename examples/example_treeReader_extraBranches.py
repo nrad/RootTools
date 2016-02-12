@@ -4,13 +4,13 @@ Useful for using in a plot makro with complex derived observables.
 
 # Standard imports
 import sys
-from math import sqrt
+from math import sqrt, cos
 import ROOT
 from RootTools.tools.Sample import Sample
 from RootTools.tools.Variable import Variable, ScalarType, VectorType
 from RootTools.tools.TreeReader import TreeReader
 from RootTools.tools.logger import get_logger
-
+import RootTools.tools.helpers as helpers
 # argParser
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")
@@ -32,12 +32,12 @@ variables =  [ Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
            + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
 # Defining a variable and giving it a filler
-metPt2 = Variable.fromString('met_pt2/F') 
-metPt2.filler = lambda data: data.met_pt**2
-filled_variables = [ metPt2 ]
+cosMetPhi = Variable.fromString('cosMetPhi/F') 
+cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
+filled_variables = [ cosMetPhi ]
 
 h=ROOT.TH1F('met','met',100,0,0)
 r = s0.treeReader( variables = variables, filled_variables = filled_variables, selectionString = "met_pt>100")
 r.start()
 while r.run():
-    h.Fill( sqrt(r.data.met_pt2) )
+    h.Fill( r.data.cosMetPhi )

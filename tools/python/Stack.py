@@ -15,7 +15,7 @@ class Stack ( list ):
         # Check the input. LBYL.
         for s in stackList:
             if not type(s)==type([]) or not all(isinstance(p, Sample) for p in s):
-                raise ValueError("Stack should be a list of lists of Sample instances. Got '%r'."%( stackList ) )
+                raise ValueError("Stack should be a list of lists of Sample instances. Got %r."%( stackList ) )
 
         # Make Immutable
         stackList = map(lambda l: map(lambda s:Immutable(s), l), stackList)

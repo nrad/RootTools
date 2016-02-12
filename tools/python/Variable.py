@@ -5,35 +5,7 @@ Used in the Loopers and for plotting.
 # Standard imports
 import abc
 
-# Translation of short types to ROOT C types
-cStringTypeDict = {
-    'b': 'UChar_t',
-    'S': 'Short_t',
-    's': 'UShort_t',
-    'I': 'Int_t',
-    'i': 'UInt_t',
-    'F': 'Float_t',
-    'D': 'Double_t',
-    'L': 'Long64_t',
-    'l': 'ULong64_t',
-    'O': 'Bool_t',
-}
-# reversed
-shortTypeDict = {v: k for k, v in cStringTypeDict.items()}
-
-# defaults
-defaultCTypeDict = {
-    'b': '0',
-    'S': '-1',
-    's': '0',
-    'I': '-1',
-    'i': '0',
-    'F': 'TMath::QuietNaN()',
-    'D': 'TMath::QuietNaN()',
-    'L': '-1',
-    'l': '-1',
-    'O': '0',
-}
+from RootTools.tools.helpers import cStringTypeDict, shortTypeDict, defaultCTypeDict
 
 allTypes  = set(cStringTypeDict.keys())
 allCTypes = set(cStringTypeDict.values())
@@ -85,7 +57,7 @@ class ScalarType( Variable ):
     def fromString(cls, string, filler = None):
         '''Create scalar variable from syntax 'name/type'
         '''
-        if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
+        if not type(string)==type(""): raise ValueError( "Expected string got %r"%string )
         string = string.replace(' ', '')
         if not string.count('/')==1:
             raise ValueError( "Could not parse string '%s', format is 'name/type'."%string )
@@ -111,7 +83,7 @@ class VectorType( Variable ):
         '''
         self.name = name
         # Scalar components
-        self._components = [ ScalarType.fromString(x) if type(x)==type("") else x for x in components ]
+        self._components = [ ScalarType.fromString("%s_%s"%(self.name, x) ) if type(x)==type("") else x for x in components ]
 
         self.filler = filler
         
@@ -121,7 +93,7 @@ class VectorType( Variable ):
     def fromString(cls, string, filler = None):
         '''Create vector variable from syntax 'name[c1/type1,c2/type2,...]'
         '''
-        if not type(string)==type(""): raise ValueError( "Expected string got '%r'"%string )
+        if not type(string)==type(""): raise ValueError( "Expected string got %r"%string )
         string = string.replace(' ', '')
 
         name_ = string[:string.find("[")]

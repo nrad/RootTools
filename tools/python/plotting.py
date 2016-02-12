@@ -5,23 +5,33 @@
 import logging
 logger = logging.getLogger(__name__)
 
-def fill(*plots):
+# RootTools
+import RootTools.tools.Variable as Variable
+import RootTools.tools.helpers as helpers
+
+def fill(plots, usedVariables = []):
     '''Create and fill all plots
     '''
 
-    # Get hashes from all used samples and the set of selectionStrings of the plots
-    stack_hashes = {}
-    selectionStrings = [] 
-    for p in plots:
-        selectionStrings.append(p.selectionString)
-        for s in p.stack.samples():
-            stack_hashes[s.hash()] = s
+    selectionStrings = list(set(p.selectionString for p in plots))
 
-    for selectionString in list( set( selectionStrings ) ):
-        for hash_, sample in stack_hashes.iteritems():
-            variables = 
-            r = sample.treeReader( variables = variables, selectionString = selectionString)
+    for selectionString in selectionStrings:
+        logger.info( "Now working on selection string %s"% selectionString )
+        allSamples = list(set(sum([p.stack.samples() for p in plots if p.selectionString == selectionString], [])))
+        plots_for_sample={}
+        for s in allSamples:
+            plots_for_sample[s.hash()] = [p for p in plots if s in p.stack.samples() and p.selectionString == selectionString]
+
+        for sample in allSamples:
+            read_variables      = list(set([p.variable for p in plots_for_sample[sample.hash()] if p.variable.filler is None]))
+
+            # Anything added with the 'uses' decorator?
+            read_variables += helpers.fromString(usedVariables)
+
+            filled_variables    = list(set([p.variable for p in plots_for_sample[sample.hash()] if p.variable.filler is not None]))
+            r = sample.treeReader( variables = read_variables, filled_variables = filled_variables, selectionString = selectionString)
             r.start()
             while r.run():
-                pass
-#                h.Fill( r.data.met_pt )
+                for plot in plots_for_sample[s.hash()]:
+                    plot.
+

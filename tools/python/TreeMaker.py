@@ -20,9 +20,9 @@ class TreeMaker( LooperBase ):
             variables = [variables]
         for v in variables:
             if not isinstance(v, Variable):
-                raise ValueError( "Not a proper variable: '%r' '%s'"%(v,v) )
+                raise ValueError( "Not a proper variable: %r '%s'"%(v,v) )
             if  hasattr(v, 'filler') and v.filler and not hasattr(v.filler, '__call__'):
-                raise ValueError( "Something wrong with the filler '%r' for variable  '%r' '%s'"%(v.filler, v, v) )
+                raise ValueError( "Something wrong with the filler %r for variable  %r '%s'"%(v.filler, v, v) )
 
         super(TreeMaker, self).__init__( variables = variables)
 
@@ -65,16 +65,14 @@ class TreeMaker( LooperBase ):
 
         scalerCount = 0
         for s in LooperBase._branchInfo( self.variables, restrictType = ScalarType, addVectorCounters = True):
-            name = s[0]
-            type_ = s[1]
             self.branches.append( 
-                self.tree.Branch(name, ROOT.AddressOf( self.data, name), '%s/%s'%(name, type_))
+                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), '%s/%s'%(s['name'], s['type']))
             )
             scalerCount+=1
         vectorCount = 0
-        for name, type_, counterName in LooperBase._branchInfo( self.variables, restrictType = VectorType, addVectorCounters = True ):
+        for s in LooperBase._branchInfo( self.variables, restrictType = VectorType, addVectorCounters = True ):
             self.branches.append(
-                self.tree.Branch(name, ROOT.AddressOf( self.data, name ), "%s[%s]/%s"%(name, counterName, type_) )
+                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name'] ), "%s[%s]/%s"%(s['name'], s['counterInt'], s['type']) )
             )
             vectorCount+=1
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", scalerCount, vectorCount )
