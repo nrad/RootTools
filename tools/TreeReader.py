@@ -1,1 +1,1 @@
-tools/python/TreeReader.py
+tools/TreeReader.py
