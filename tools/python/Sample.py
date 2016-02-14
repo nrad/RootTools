@@ -202,15 +202,15 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     logger.warning( "Could not load file %s", f )
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
-    def hash(self):
-        '''Make hash for identifying samples in e.g. plotting tools that therefore should
-           depend on everything that is used to identify the sample
-        '''
-        hash_objects = [self.name, tuple(self.files), self.treeName]
-        if self.selectionStrings: hash_objects.append(tuple(self.selectionStrings))
-        if self.normalization: hash_objects.append(self.normalization)
-        logger.debug( "Creating hash for sample from objects '%s'", tuple(hash_objects))
-        return hash(tuple(hash_objects)) 
+#    def hash(self):
+#        '''Make hash for identifying samples in e.g. plotting tools that therefore should
+#           depend on everything that is used to identify the sample
+#        '''
+#        hash_objects = [self.name, tuple(self.files), self.treeName]
+#        if self.selectionStrings: hash_objects.append(tuple(self.selectionStrings))
+#        if self.normalization: hash_objects.append(self.normalization)
+#        logger.debug( "Creating hash for sample from objects '%s'", tuple(hash_objects))
+#        return hash(tuple(hash_objects)) 
 
     def clear(self): #FIXME How to promote to destructor without making it segfault?
         ''' Really (in the ROOT namespace) delete the chain

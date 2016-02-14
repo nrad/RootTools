@@ -1,8 +1,12 @@
 ''' A stack of samples (not plots).
 Must be a list of lists.
 '''
+# Standard imports
+import uuid
 
+# RootTools
 from RootTools.tools.Sample import Sample
+from RootTools.tools.Plot import Plot
 from RootTools.tools.Immutable import Immutable
 
 class Stack ( list ):
@@ -22,13 +26,37 @@ class Stack ( list ):
 
         super(Stack, self).__init__( stackList )
 
-
-
-    @staticmethod
-    def cut( cut ):
-        for s in self:
-            for p in s:
-                p.cut( cut )
-
     def samples(self):
+        ''' Get all unique samples for this stack
+        '''
         return list(set(sum(self,[])))
+
+    def make_histos(self, plot):
+        '''Make histograms for plot for this stack. Structure is list of lists of histos parallel to the stack object
+        '''
+        res = []
+        for i, l in enumerate(self):
+            histos = [] 
+            for j, s in enumerate(l):
+                histo = plot.histo_class(\
+                    "_".join([plot.variable.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                    "_".join([plot.variable.name, s.name]), 
+                     *plot.binning )
+
+                # Exectute style function on histo
+                if hasattr(s, "style"):
+                    s.style(histo)
+
+                histos.append(histo)
+            res.append(histos)
+            
+        return res 
+
+    def getSampleIndicesInStack(self, sample):
+        ''' Find the indices of a sample in the stack
+        '''
+        indices = []
+        for i, l in enumerate(self):
+            for j, s in enumerate(l):
+                if s==sample: indices.append((i,j))
+        return indices

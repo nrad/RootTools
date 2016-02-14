@@ -45,12 +45,12 @@ variable  = Variable.fromString( "met_pt/F" )
 # A variable with a filler
 variable2 = Variable.fromString( "sqrt_met_pt2/F", filler = lambda data:sqrt(data.met_pt**2) )
 
-weight_func = lambda data:data.weight
+weight_func = lambda data:1
 
 selectionString = "nJet>0"
 selectionString_2 = "nJet>1"
 
-usedVariables =  ["Jet[pt/F]", "met_pt/F"]
+read_variables =  ["Jet[pt/F]", "met_pt/F"]
 
 plot1 = Plot(\
     stack = stack,
@@ -68,8 +68,6 @@ plot2 = Plot(\
     weight = weight_func
 )
 
-# Defining a variable and giving it a filler
-
 cosMetPhi = Variable.fromString('cosMetPhi/F') 
 cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
 plot3 = Plot(\
@@ -80,4 +78,4 @@ plot3 = Plot(\
     weight = weight_func
 )
 
-plotting.fill([plot1, plot2, plot3], usedVariables = usedVariables)
+plotting.fill([plot1, plot2, plot3], read_variables = read_variables)

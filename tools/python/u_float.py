@@ -42,12 +42,12 @@ class u_float():
         return u_float(val,sigma)
 
     def __mul__(self,other):
-        if not ( type(other)==int or type(other)==float or type(other)==type(self)):
+        if not ( isinstance(other, numbers.Number) or type(other)==type(self)):
             raise ValueError( "Can't multiply, %r is not a float, int or u_float"%type(other) )
         if type(other)==type(self):
             val = self.val*other.val
             sigma = sqrt((self.sigma*other.val)**2+(self.val*other.sigma)**2)
-        elif type(other)==int or type(other)==float:
+        elif isinstance(other, numbers.Number):
             val = self.val*other
             sigma = self.sigma*other
         else:
@@ -58,12 +58,12 @@ class u_float():
         return self.__mul__(other)
 
     def __div__(self,other):
-        if not ( type(other)==int or type(other)==float or type(other)==type(self)):
+        if not ( sinstance(other, numbers.Number) or type(other)==type(self)):
             raise ValueError( "Can't divide, %r is not a float, int or u_float"%type(other) )
         if type(other)==type(self):
             val = self.val/other.val
             sigma = (1./other.val)*sqrt(self.sigma**2+((self.val*other.sigma)/other.val)**2)
-        elif type(other)==int or type(other)==float:
+        elif isinstance(other, numbers.Number):
             val = self.val/other
             sigma = self.sigma/other
         else:

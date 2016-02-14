@@ -36,7 +36,7 @@ class LooperBase( object ):
         self.position = -1
         self.eList = None
 
-        self.classUUID = None
+        self.classUUIDs = []
 
     @staticmethod
     def _branchInfo( variables, addVectorCounters = False, restrictType = None):
@@ -65,11 +65,11 @@ class LooperBase( object ):
             logger.info("Creating %s directory for temporary files for class compilation.", self.tmpDir)
             os.path.makedirs(self.tmpDir)
 
-        # Recall the uuid of the compilation for the __hash__ method which we use to identify readers when plotting over multiple samples
-        self.classUUID = str(uuid.uuid4()).replace('-','_')
+        classUUID = str(uuid.uuid4()).replace('-','_')
+        self.classUUIDs.append( classUUID )
 
-        tmpFileName = os.path.join(self.tmpDir, self.classUUID+'.C')
-        className = "Class_"+self.classUUID
+        tmpFileName = os.path.join(self.tmpDir, classUUID+'.C')
+        className = "Class_"+classUUID
 
         with file( tmpFileName, 'w' ) as f:
             logger.debug("Creating temporary file %s for class compilation.", tmpFileName)
@@ -91,6 +91,20 @@ class LooperBase( object ):
         setattr(self, attr, eval("%s()" % className) )
 
         return self
+
+    def cleanUpTempFiles(self):
+        ''' Delete all temporary files.
+        '''
+        files = os.listdir(self.tmpDir)
+        toBeDeleted = []
+        for uuid in self.classUUIDs:
+            for f in files:
+                if uuid in f:
+                    toBeDeleted.append(f)
+        for f in toBeDeleted:
+            filename = os.path.join(self.tmpDir, f)
+            os.remove(filename)
+            logger.debug( "Deleted temporary file %s"%filename )
 
     def start(self):
         ''' Call before starting a loop.

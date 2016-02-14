@@ -49,8 +49,6 @@ class TreeReader( LooperBase ):
         # Read branch information from the chain
         self.readLeafInfo()
 
-        # 'variables' are read from the chain
-        super(TreeReader, self).__init__( variables = variables ) 
         # 'filled_variables' are calculated from variables from the chain, they are in the class but no branch 
         # has its address set to it.
         self.filled_variables = filled_variables
@@ -62,12 +60,18 @@ class TreeReader( LooperBase ):
                 raise ValueError( "A Variable to be filled has no proper filler function: %r"%v )
             if hasattr(v.filler, "arguments"):
                 all_variables.update(v.filler.arguments)
+
+        # Add 'variables' 
         if variables:  all_variables.update(variables)
-        for s in list(all_variables):
+
+        # 'variables' are read from the chain
+        super(TreeReader, self).__init__( variables = list(all_variables) ) 
+
+        for s in list(self.variables):
             logger.debug( "Making class with variable %s" %s)
 
         # make class
-        self.makeClass( "data", list(all_variables), useSTDVectors = False, addVectorCounters = False)
+        self.makeClass( "data", list(self.variables), useSTDVectors = False, addVectorCounters = False)
 
         # set the addresses of the branches corresponding to 'variables'
         self.setAddresses()
@@ -88,6 +92,7 @@ class TreeReader( LooperBase ):
         ''' Set all the branch addresses to the members in the class instance
         '''
         for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
+            # logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
             self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
 
     def cloneTree(self, branchList = []):
