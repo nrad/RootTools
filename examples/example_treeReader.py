@@ -3,10 +3,10 @@
 import sys
 import logging
 import ROOT
-from RootTools.tools.Sample import Sample
-from RootTools.tools.Variable import Variable, ScalarType, VectorType
-from RootTools.tools.TreeReader import TreeReader
-from RootTools.tools.logger import get_logger
+from RootTools.core.Sample import Sample
+from RootTools.core.Variable import Variable, ScalarType, VectorType
+from RootTools.core.TreeReader import TreeReader
+from RootTools.core.logger import get_logger
 
 # argParser
 import argparse

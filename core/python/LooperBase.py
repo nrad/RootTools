@@ -14,8 +14,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.tools.LooperHelpers import createClassString
-from RootTools.tools.Variable import Variable, ScalarType, VectorType
+from RootTools.core.LooperHelpers import createClassString
+from RootTools.core.Variable import Variable, ScalarType, VectorType
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta

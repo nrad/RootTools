@@ -74,20 +74,9 @@ def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
     else:
         return stringOperator.join('('+s+')' for s in list_)
 
-def lineStyle( color, width = None):
-    def func( histo ):
-        histo.SetLineColor( color )
-        histo.SetMarkerSize( 0 )
-        histo.SetMarkerStyle( 0 )
-        histo.SetMarkerColor( color )
-        histo.SetFillColor( 0 )
-        if width: histo.SetLineWidth( width )
-        return 
-    return func
-
 def fromString(*args):
     # Make a list of Variables from the input arguments
-    from RootTools.tools.Variable import Variable
+    from RootTools.core.Variable import Variable
     args = sum( [ [s] if type(s)==type("") else s for s in args if s is not None], [])
     if not all(type(s)==type("") or isinstance(s, Variable) for s in args):
         raise ValueError( "Need string or Variable instance or list of these as argument, got %r"%args)

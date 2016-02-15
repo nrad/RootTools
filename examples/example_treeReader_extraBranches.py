@@ -6,11 +6,11 @@ Useful for using in a plot makro with complex derived observables.
 import sys
 from math import sqrt, cos
 import ROOT
-from RootTools.tools.Sample import Sample
-from RootTools.tools.Variable import Variable, ScalarType, VectorType
-from RootTools.tools.TreeReader import TreeReader
-from RootTools.tools.logger import get_logger
-import RootTools.tools.helpers as helpers
+from RootTools.core.Sample import Sample
+from RootTools.core.Variable import Variable, ScalarType, VectorType
+from RootTools.core.TreeReader import TreeReader
+from RootTools.core.logger import get_logger
+import RootTools.core.helpers as helpers
 # argParser
 import argparse
 argParser = argparse.ArgumentParser(description = "Argument parser")

@@ -5,9 +5,9 @@ Must be a list of lists.
 import uuid
 
 # RootTools
-from RootTools.tools.Sample import Sample
-from RootTools.tools.Plot import Plot
-from RootTools.tools.Immutable import Immutable
+from RootTools.core.Sample import Sample
+from RootTools.plot.Plot import Plot
+from RootTools.plot.Immutable import Immutable
 
 class Stack ( list ):
         

@@ -8,8 +8,8 @@ import os
 import ROOT
 
 # RootTools
-from RootTools.tools.Sample import Sample
-from RootTools.tools.logger import get_logger
+from RootTools.core.Sample import Sample
+from RootTools.core.logger import get_logger
 
 # argParser
 import argparse

@@ -5,7 +5,7 @@ Used in the Loopers and for plotting.
 # Standard imports
 import abc
 
-from RootTools.tools.helpers import cStringTypeDict, shortTypeDict, defaultCTypeDict
+from RootTools.core.helpers import cStringTypeDict, shortTypeDict, defaultCTypeDict
 
 allTypes  = set(cStringTypeDict.keys())
 allCTypes = set(cStringTypeDict.values())

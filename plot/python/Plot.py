@@ -6,7 +6,8 @@ import ROOT
 
 class Plot( object ):
 
-    def __init__(self, stack, variable,  binning, selectionString = None, weight = None, histo_class = ROOT.TH1F):
+    def __init__(self, stack, variable,  binning, selectionString = None, weight = None, histo_class = ROOT.TH1F, 
+                 texX = "", texY = "Number of Events"):
         
         self.stack = stack
         self.variable = variable
@@ -14,3 +15,5 @@ class Plot( object ):
         self.selectionString = selectionString
         self.weight = weight
         self.histo_class = histo_class
+        self.texX = texX
+        self.texY = texY

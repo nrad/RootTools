@@ -14,8 +14,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools imports
-import RootTools.tools.helpers as helpers
-import RootTools.tools.u_float as u_float
+import RootTools.core.helpers as helpers
 
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
@@ -30,13 +29,16 @@ def newName():
 
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
-    def __init__(self, name, treeName , files = [], normalization = None, selectionString = None):
+    def __init__(self, name, treeName , files = [], normalization = None, selectionString = None, isData = False, color = 0, texName = None):
         ''' Base class constructor for all sample classes.
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
             'normalization': can be set in order to later calculate weights, 
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
-            'selectionStrings': sample specific string based selection (can be list of strings)
+            'selectionString': sample specific string based selection (can be list of strings)
+            'isData': Whether the sample is real data or not (simulation)
+            'color': ROOT color to be used in plot scripts
+            'texName': ROOT TeX string to be used in legends etc.
         '''
 
         self.name = name
@@ -44,21 +46,34 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.files = files
         self.normalization = None
         self._chain = None
+        
+        self.setSelectionString( selectionString )
 
+        self.isData = isData
+        self.color = color
+        self.texName = texName if not texName is None else name
+             
+        logger.debug("Created new sample %s with %i files, treeName %s and __selectionStrings %s.", 
+            name, len(self.files), treeName, self.__selectionStrings)
+
+    def setSelectionString(self, selectionString):
         if type(selectionString)==type(""):
-            self.selectionStrings = [ selectionString ] 
+            self.__selectionStrings = [ selectionString ] 
         elif type(selectionString)==type([]): 
-            self.selectionStrings =  selectionString 
+            self.__selectionStrings =  selectionString 
         elif selectionString is None:
-            self.selectionStrings = None
+            self.__selectionStrings = None
         else:
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
-             
-        logger.debug("Created new sample %s with %i files, treeName %s and selectionStrings %s.", 
-            name, len(self.files), treeName, self.selectionStrings)
+
+        self.clear()
+
+    @property
+    def selectionString(self):
+        return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
 
     @classmethod
-    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None):
+    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None, isData = False, color = 0, texName = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
         '''
 
@@ -71,13 +86,15 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             treeName = "Events"
             logger.debug("Argument 'treeName' not provided for sample %s, using 'Events'."%name) 
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString,\
+                        isData = isData, color=color, texName = texName)
 
         logger.info("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = None, normalization = None, selectionString = None):
+    def fromDirectory(cls, name, directory, treeName = None, normalization = None, selectionString = None, \
+                        isData = False, color = 0, texName = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -89,17 +106,22 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         # find all files
         files = [] 
         for d in directories:
-            files.extend(  os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') )
+            fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+            if len(fileNames) == 0:
+                raise EmptySampleError( "No root files found in %s" %d )
+            files.extend( fileNames )
         if not treeName: 
             treeName = "Events"
-            log.debug("Argument 'treeName' not provided, using 'Events'.") 
+            logger.debug("Argument 'treeName' not provided, using 'Events'.") 
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
+                        isData = isData, color=color, texName = texName)
         logger.info("Loaded sample %s from %i directory(ies): %s", name, len(files), ",".join(directories))
         return sample
 
     @classmethod
-    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, selectionString = None):
+    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, selectionString = None, \
+                        isData = False, color = 0, texName = None):
     
         def readNormalization(filename):
             with open(filename, 'r') as fin:
@@ -172,7 +194,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
 
-        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString)
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
+                    isData = isData, color = color, texName = texName )
 
     # Handle loading of chain -> load it when first used 
     @property
@@ -219,6 +242,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self._chain.IsA().Destructor( self._chain )
             self._chain = None
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
+        return
 
     def treeReader(self, **kwargs):
         ''' Return a Reader class for the sample
@@ -233,10 +257,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
         
-        if self.selectionStrings:
-            selectionString_ = helpers.combineSelectionStrings( [selectionString]+self.selectionStrings )
+        if self.__selectionStrings:
+            selectionString_ = helpers.combineSelectionStrings( [selectionString]+self.__selectionStrings )
             logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
-                self.name, selectionString, self.selectionStrings, selectionString_ )
+                self.name, selectionString, self.__selectionStrings, selectionString_ )
         else:
             selectionString_ = selectionString
 
@@ -251,29 +275,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             elistTMP = elistTMP_t.Clone(name)
             del elistTMP_t
             return elistTMP
-
-## The following should really not be used. Why making a framework for doing fast loops and implement a slow one.
-#    def getYieldFromLoop(self, selectionString=None, cutFunc = None, weightVar = None, weightFunc = None):
-#        ''' Get yield from self.chain according to a cut, a selectionString, a cutFunc, 
-#            a weight variable (must be a TLeafElement) and a weight function.
-#            This is deprecated and very slow.
-#        '''
-#        eList = self.getEList(selectionString)
-#        res = 0.
-#        resVar=0.
-#
-#        for i in range(eList.GetN()):
-#            self.chain.GetEntry(eList.GetEntry(i))
-#            if (not cutFunc) or cutFunc(self.chain):
-#                w = getattr(self.chain, weightVar) if weightVar else 1
-#                if not isinstance(w, numbers.Number):
-#                    raise ValueError ("Problem with weightVar argument %s. Evaluates to %r"%(weightVar, w))
-#                w *= weightFunc(self.chain) if weightFunc else 1
-#                res += w
-#                resVar += w**2
-#        del eList
-#        # Should remove this unecessary dependency
-#        return u_float.u_float(res, sqrt(resVar) )
 
     def getYieldFromDraw(self, selectionString = None, weightString = None):
         ''' Get yield from self.chain according to a selectionString and a weightString
