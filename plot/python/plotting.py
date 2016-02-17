@@ -286,6 +286,7 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         line.Draw()
 
     for extension in extensions:
-        c1.Print( os.path.join( plot_directory, "%s.%s"%(plot.variable.name, extension) ) )
+        filename = plot.name if plot.name is not None else plot.variable.name
+        c1.Print( os.path.join( plot_directory, "%s.%s"%(filename, extension) ) )
 
     del c1

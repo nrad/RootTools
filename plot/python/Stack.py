@@ -43,6 +43,11 @@ class Stack ( list ):
                     "_".join([plot.variable.name, s.name]), 
                      *plot.binning )
                 histo.Reset()
+
+                # Default sumW2
+                try: histo.Sumw2()
+                except: pass
+
                 # Exectute style function on histo
                 if hasattr(s, "style"):
                     s.style(histo)
