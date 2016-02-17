@@ -42,7 +42,7 @@ class Stack ( list ):
                     "_".join([plot.variable.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
                     "_".join([plot.variable.name, s.name]), 
                      *plot.binning )
-
+                histo.Reset()
                 # Exectute style function on histo
                 if hasattr(s, "style"):
                     s.style(histo)

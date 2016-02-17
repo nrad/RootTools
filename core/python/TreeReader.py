@@ -187,6 +187,11 @@ class TreeReader( LooperBase ):
             Default is (0, nEvents).
         '''
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
+    
+    def reduceEventRange( self, reduction_factor ):
+        ''' Reduce event range by a given factor. 
+        '''
+        self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/20 ) 
 
     def _initialize(self):
         ''' This method is called from the Base class start method.
@@ -203,9 +208,11 @@ class TreeReader( LooperBase ):
         '''
 
         if self.position == self.eventRange[1]: return 0
-
-        if (self.position % 10000)==0:
-            logger.info("TreeReader is at position %6i/%6i", self.position, self.nEvents)
+        if self.position==0:
+            logger.info("TreeReader starting at position %i and processing %i events.", 
+                self.position, self.eventRange[1] - self.eventRange[0])
+        elif (self.position % 10000)==0:
+            logger.info("TreeReader is at position %6i/%6i", self.position, self.eventRange[1] - self.eventRange[0] )
 
         # init struct
         self.data.init()

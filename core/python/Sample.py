@@ -89,7 +89,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString,\
                         isData = isData, color=color, texName = texName)
 
-        logger.info("Loaded sample %s from %i files.", name, len(files))
+        logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
@@ -108,7 +108,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         for d in directories:
             fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
             if len(fileNames) == 0:
-                raise EmptySampleError( "No root files found in %s" %d )
+                raise EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
         if not treeName: 
             treeName = "Events"
@@ -116,7 +116,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
                         isData = isData, color=color, texName = texName)
-        logger.info("Loaded sample %s from %i directory(ies): %s", name, len(files), ",".join(directories))
+        logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
@@ -188,7 +188,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         # Log statements
         eff = 100*len(failedChunks)/float( len(chunkDirectories) )
-        logger.info("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
+        logger.debug("Loaded CMGOutput sample %s. Total number of chunks : %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
                           name, len(chunkDirectories), normalization, len(failedChunks), eff)
 
         for chunk in failedChunks:
@@ -259,7 +259,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         
         if self.__selectionStrings:
             selectionString_ = helpers.combineSelectionStrings( [selectionString]+self.__selectionStrings )
-            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
                 self.name, selectionString, self.__selectionStrings, selectionString_ )
         else:
             selectionString_ = selectionString
@@ -282,7 +282,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         if self.selectionString:
             selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
-            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
                 self.name, selectionString, self.selectionString, selectionString_ )
         else:
             selectionString_ = selectionString
@@ -309,7 +309,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         if self.selectionString:
             selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
-            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
+            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
                 self.name, selectionString, self.selectionString, selectionString_ )
         else:
             selectionString_ = selectionString

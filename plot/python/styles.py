@@ -1,5 +1,17 @@
 import ROOT
 
+def errorStyle( color, markerStyle = 20):
+    def func( histo ):
+        histo.SetLineColor( color )
+        histo.SetMarkerSize( 1 )
+        histo.SetMarkerStyle( 20 )
+        histo.SetMarkerColor( color )
+#        histo.SetFillColor( color )
+        histo.SetLineWidth( 0 )
+        histo.drawOption = "e1"
+        return 
+    return func
+
 def lineStyle( color, width = None):
     def func( histo ):
         histo.SetLineColor( color )

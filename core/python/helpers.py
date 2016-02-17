@@ -75,7 +75,8 @@ def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
         return stringOperator.join('('+s+')' for s in list_)
 
 def fromString(*args):
-    # Make a list of Variables from the input arguments
+    ''' Make a list of Variables from the input arguments
+    '''
     from RootTools.core.Variable import Variable
     args = sum( [ [s] if type(s)==type("") else s for s in args if s is not None], [])
     if not all(type(s)==type("") or isinstance(s, Variable) for s in args):
@@ -88,3 +89,9 @@ def uses(func, args):
     func.arguments = fromString( args )
     return func
 
+def clone(root_object, new_name = None):
+    ''' Cloning a ROOT class instance and preserving attributes
+    '''
+    new = root_object.Clone() if new_name is None else root_object.Clone(new_name)
+    new.__dict__.update(root_object.__dict__)
+    return new 
