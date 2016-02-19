@@ -35,7 +35,7 @@ class TreeReader( LooperBase ):
         for v in filled_variables:
             if not hasattr(v, "filler") or not v.filler or not hasattr(v.filler, "__call__"):
                 raise ValueError( "Variable %s in 'filled_variables' does not have a proper filler function" )
-        if not type(selectionString) == type(""):
+        if selectionString is not None and not type(selectionString) == type(""):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
 
         # Selection string to be applied to the chain
@@ -80,7 +80,7 @@ class TreeReader( LooperBase ):
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.activateAllBranches()
-        self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString else None
+        self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString is not None else None
         self.activateBranches()
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
@@ -98,7 +98,7 @@ class TreeReader( LooperBase ):
     def cloneTree(self, branchList = []):
         '''Clone tree after preselection and event range
         '''
-        selectionString = self.selectionString if self.selectionString else "1"
+        selectionString = self.selectionString if self.selectionString is not None else "1"
         if self.eList:
 
             # If there is an eList, first restrict it to the event range, then clone
@@ -225,3 +225,8 @@ class TreeReader( LooperBase ):
             else:
                 raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
         return 1
+
+    def goToPosition(self, position):
+        self.position = position
+        self._execute()
+

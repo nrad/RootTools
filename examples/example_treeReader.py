@@ -35,3 +35,10 @@ r = s0.treeReader( variables = variables, selectionString = "met_pt>100")
 r.start()
 while r.run():
     h.Fill( r.data.met_pt )
+
+# No selection string in reader
+h_inclusive=ROOT.TH1F('met_inclusive','met',100,0,0)
+r = s0.treeReader( variables = variables)
+r.start()
+while r.run():
+    h_inclusive.Fill( r.data.met_pt )
