@@ -130,13 +130,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         sumW = float(line.split()[2])
                         return sumW
 
-        maxN = maxN if not (maxN and maxN<0) else None
+        maxN = maxN if maxN is not None and maxN>0 else None
 
         # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
         chunkDirectories = []
         for x in os.walk(baseDirectory):
             if not chunkString or (x[0].startswith(chunkString) and x[0].endswith('_Chunk')) or x[0]==chunkString:
                 chunkDirectories.append(x[0])
+                if len(chunkDirectories)==maxN:break
 
         logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
                            len(chunkDirectories), chunkString, baseDirectory )
