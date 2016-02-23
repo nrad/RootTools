@@ -1,6 +1,11 @@
 import ROOT
 import os
 
+class EmptySampleError(Exception):
+    '''Accessing a sample without ROOT files.
+    '''
+    pass
+
 # Translation of short types to ROOT C types
 cStringTypeDict = {
     'b': 'UChar_t',

@@ -16,11 +16,6 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 
-class EmptySampleError(Exception):
-    '''Accessing a sample without ROOT files.
-    '''
-    pass
-
 @helpers.static_vars(sampleCounter = 0)
 def newName():
     result = "Sample_"+str(newName.sampleCounter)
@@ -30,7 +25,7 @@ def newName():
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
     def __init__(self, name, treeName , files = [], normalization = None, selectionString = None, isData = False, color = 0, texName = None):
-        ''' Base class constructor for all sample classes.
+        ''' Handling of sample. Uses a TChain to handle root files with flat trees.
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
             'normalization': can be set in order to later calculate weights, 
@@ -44,6 +39,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.name = name
         self.treeName = treeName
         self.files = files
+        if not len(self.files)>0:
+          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (sample.name, sample.files) )
         self.normalization = None
         self._chain = None
         
@@ -108,7 +105,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         for d in directories:
             fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
             if len(fileNames) == 0:
-                raise EmptySampleError( "No root files found in directory %s." %d )
+                raise helpers.EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
         if not treeName: 
             treeName = "Events"
@@ -186,7 +183,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         # Don't allow empty samples
         if len(goodChunks) == 0:
-            raise EmptySampleError("Could not find good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
+            raise helpers.EmptySampleError("Could not find good CMGOutput chunks for sample {0}. Total number of chunks: {1}. baseDirectory: {2}"\
                   .format(name, len(chunkDirectories), baseDirectory))
 
         # Log statements
@@ -212,7 +209,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         ''' Load the TChain. Private.
         '''
         if len(self.files) == 0:
-            raise EmptySampleError("Sample {name} has no input files! Can not load.".format(name = self.name) )
+            raise helpers.EmptySampleError("Sample {name} has no input files! Can not load.".format(name = self.name) )
         else:
             self._chain = ROOT.TChain(self.treeName)
             counter = 0
