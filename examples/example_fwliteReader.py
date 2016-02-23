@@ -29,21 +29,25 @@ logger = get_logger(args.logLevel, logFile = None)
 
 
 # 8X mAOD, assumes eos mount in home directory 
-dirname = "~/eos/cms/store/relval/CMSSW_8_0_0_pre6/JetHT/MINIAOD/80X_dataRun2_v4_RelVal_jetHT2015HLHT-v1/10000/"
 filename = "~/eos/cms/store/relval/CMSSW_8_0_0_pre6/JetHT/MINIAOD/80X_dataRun2_v4_RelVal_jetHT2015HLHT-v1/10000/02EF6290-71D6-E511-AF4F-0025905B858A.root"
+dirname = "~/eos/cms/store/relval/CMSSW_8_0_0_pre6/JetHT/MINIAOD/80X_dataRun2_v4_RelVal_jetHT2015HLHT-v1/10000/"
 
 s0 = FWLiteSample.fromFiles("test", files = os.path.expanduser(filename) )
-s1 = FWLiteSample.fromDirectory("jetHT", directory = os.path.expanduser(dirname) )
+#s1 = FWLiteSample.fromDirectory("jetHT", directory = os.path.expanduser(dirname) )
 
-products = {'slimmedJets':{'type':'vector<pat::Jet>', 'label':("slimmedJets", "", "reRECO")} }
+products = {
+    'slimmedJets':{'type':'vector<pat::Jet>', 'label':("slimmedJets", "", "reRECO")} 
+    }
 
-r = s0.fwliteReader( products = products )
+r = s1.fwliteReader( products = products )
 
 h=ROOT.TH1F('met','met',100,0,0)
 r.start()
-while r.run():
-    print r.evt, [j.pt() for j in r.products['slimmedJets']]
 
-## Make plot
-#plot1 = Plot.fromHisto(name = "met", histos = [[h_inclusive]], texX = "#slash{E}_{T} (GeV", texY = "Number of events" )
-#plotting.draw(plot1, plot_directory = ".", ratio = None, logX = False, logY = False, sorting = False )
+runs = set()
+while r.run():
+    runs.add(r.evt[0])
+#    print r.evt, [j.pt() for j in r.products['slimmedJets']]
+
+logger.info( "Found the following run(s): %s", ",".join(str(run) for run in runs) )
+
