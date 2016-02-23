@@ -46,12 +46,16 @@ class FWLiteSample ( object ):
         self.events = Events(files)
 
     @classmethod
-    def fromFiles(cls, name, files,  color = 0, texName = None):
+    def fromFiles(cls, name, files,  color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
         '''
 
         # Work with files and list of files
         files = [files] if type(files)==type("") else files
+
+        # restrict files 
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
 
         # If no name, enumerate them.
         if not name: name = newName()
@@ -60,7 +64,7 @@ class FWLiteSample ( object ):
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, color = 0, texName = None):
+    def fromDirectory(cls, name, directory, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -76,6 +80,10 @@ class FWLiteSample ( object ):
             if len(fileNames) == 0:
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
+
+        # restrict files 
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
 
         sample =  cls(name = name, files = files, color=color, texName = texName)
         return sample

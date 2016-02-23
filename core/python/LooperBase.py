@@ -112,14 +112,14 @@ class LooperBase( object ):
         logger.debug("Starting to run.")
         self._initialize()
 
-    def run(self):
+    def run(self, **kwargs):
         ''' Incrementing the loop.
             Load event into self.entry. Return 0, if last event has been reached
         '''
 
         assert self.position>=0, "Not initialized!"
 
-        success = self._execute()
+        success = self._execute( **kwargs )
 
         self.position += 1
 

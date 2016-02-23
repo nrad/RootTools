@@ -70,7 +70,7 @@ class FWLiteReader( LooperBase ):
         self.position = 0
         return
 
-    def _execute(self):  
+    def _execute(self, readProducts = True):  
         ''' Does what a FWLite reader should do: Go to self.position and read the products.
             Returns 0 if upper eventRange is hit. 
         '''
@@ -90,7 +90,15 @@ class FWLiteReader( LooperBase ):
         self.evt = (eaux.run(), eaux.luminosityBlock(), eaux.event() )
             
         # read all products
-        self.getProducts()  
+        if readProducts:
+            self.getProducts() 
+        else:
+            self.products = None 
 
         return 1
 
+    def goToPosition(self, position):
+        ''' Go to specific positon
+        '''
+        self.position = position
+        self._execute()

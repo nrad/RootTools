@@ -70,7 +70,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
 
     @classmethod
-    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None, isData = False, color = 0, texName = None):
+    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None, isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
         '''
 
@@ -83,6 +83,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             treeName = "Events"
             logger.debug("Argument 'treeName' not provided for sample %s, using 'Events'."%name) 
 
+        # restrict files 
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
+
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString,\
                         isData = isData, color=color, texName = texName)
 
@@ -91,7 +95,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
     @classmethod
     def fromDirectory(cls, name, directory, treeName = None, normalization = None, selectionString = None, \
-                        isData = False, color = 0, texName = None):
+                        isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -110,6 +114,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if not treeName: 
             treeName = "Events"
             logger.debug("Argument 'treeName' not provided, using 'Events'.") 
+
+        # restrict files 
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
 
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
                         isData = isData, color=color, texName = texName)

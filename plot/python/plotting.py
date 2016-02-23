@@ -229,10 +229,12 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
                 h.GetYaxis().SetLabelSize(0.045)
                 h.GetXaxis().SetLabelSize(0.045)
                 h.GetXaxis().SetTitleOffset(1.3)
+                h.GetYaxis().SetTitleOffset(1.65)
             else:
                 h.GetYaxis().SetTitleSize(0.045)
                 h.GetYaxis().SetLabelSize(0.045)
                 h.GetYaxis().SetTitleOffset(1.3)
+                h.GetYaxis().SetTitleOffset(1.65)
 
             h.Draw(drawOption+same)
             same = "same"
