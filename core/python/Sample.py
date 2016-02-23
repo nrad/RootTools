@@ -134,14 +134,16 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
         chunkDirectories = []
-        for x in os.walk(baseDirectory):
-            if not chunkString or (x[0].startswith(chunkString) and x[0].endswith('_Chunk')) or x[0]==chunkString:
-                chunkDirectories.append(x[0])
-                if len(chunkDirectories)==maxN:break
+
+        # FIXME: Better to loop only over subdirectories in base directory?
+        for x in os.listdir(baseDirectory): 
+            if os.path.isdir(os.path.join(baseDirectory, x)):
+                if not chunkString or (x.startswith(chunkString) and x.endswith('_Chunk')) or x==chunkString:
+                    chunkDirectories.append(os.path.join(baseDirectory, x))
+                    if len(chunkDirectories)==maxN:break
 
         logger.debug( "Found %i chunk directories with chunkString %s in base directory %s", \
                            len(chunkDirectories), chunkString, baseDirectory )
-
         normalization = 0
         files = []
         failedChunks=[]
@@ -151,10 +153,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             success = False
             logger.debug("Reading chunk %s", chunkDirectory)
 
+            # Find normalization
+            sumW = None
             for root, subFolders, filenames in os.walk( chunkDirectory ):
-                sumW = None
-                treeFile = None
-
                 # Determine normalization constant
                 if 'SkimReport.txt' in filenames:
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
@@ -162,7 +163,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     if not sumW:
                         logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
                                              chunkDirectory, skimReportFilename )
-
+            # Find treefile
+            treeFile = None
+            for root, subFolders, filenames in os.walk( chunkDirectory ):
                 # Load tree file 
                 if treeFilename in filenames:
                     treeFile = os.path.join(root, treeFilename)
@@ -170,17 +173,16 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     if not helpers.checkRootFile(treeFile, checkForObjects=[treeName] ):
                         logger.warning( "Read chunk %s and found tree file '%s' but file looks broken.",  chunkDirectory, treeFile )
 
-                # If both, normalization and treefile are OK call it successful. 
-                if sumW and treeFile:
-                    files.append( treeFile )
-                    normalization += sumW
-                    logger.debug( "Successfully read chunk %s and incremented normalization by %7.2f",  chunkDirectory, sumW )
-                    success = True
-                    goodChunks.append( chunkDirectory )
-                    break
+            # If both, normalization and treefile are OK call it successful.
+            if sumW and treeFile:
+                files.append( treeFile )
+                normalization += sumW
+                logger.debug( "Successfully read chunk %s and incremented normalization by %7.2f",  chunkDirectory, sumW )
+                success = True
+                goodChunks.append( chunkDirectory )
 
             if not success:
-                failedChunks.append( chunkDirectory  )
+                failedChunks.append( chunkDirectory )
 
         # Don't allow empty samples
         if len(goodChunks) == 0:
@@ -194,7 +196,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
-
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
                     isData = isData, color = color, texName = texName )
 
@@ -226,16 +227,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     logger.warning( "Could not load file %s", f )
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
-#    def hash(self):
-#        '''Make hash for identifying samples in e.g. plotting tools that therefore should
-#           depend on everything that is used to identify the sample
-#        '''
-#        hash_objects = [self.name, tuple(self.files), self.treeName]
-#        if self.selectionStrings: hash_objects.append(tuple(self.selectionStrings))
-#        if self.normalization: hash_objects.append(self.normalization)
-#        logger.debug( "Creating hash for sample from objects '%s'", tuple(hash_objects))
-#        return hash(tuple(hash_objects)) 
-
     def clear(self): #FIXME How to promote to destructor without making it segfault?
         ''' Really (in the ROOT namespace) delete the chain
         '''
@@ -252,7 +243,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.debug("Creating TreeReader object for sample '%s'.", self.name)
         return TreeReader( self, **kwargs )
 
-    # Below some helper functions to get useful things from a sample
+    # Below some helper functions to get useful 
 
     def getEList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
