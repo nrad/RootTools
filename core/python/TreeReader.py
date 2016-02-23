@@ -184,9 +184,17 @@ class TreeReader( LooperBase ):
 
     def setEventRange( self, evtRange ):
         ''' Specify an event range that the reader will run over. 
-            Default is (0, nEvents).
+            Bounded by (0, nEvents).
         '''
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
+
+    def setEventList( self, evtList ):
+        ''' Specify an event list that the reader will run over. 
+        '''
+        self.sample.chain.SetEventList( evtList ) 
+        self.eList = evtList 
+        self.nEvents = self.eList.GetN()
+        self.eventRange = (0, self.nEvents)
     
     def reduceEventRange( self, reduction_factor ):
         ''' Reduce event range by a given factor. 
@@ -209,22 +217,26 @@ class TreeReader( LooperBase ):
 
         if self.position == self.eventRange[1]: return 0
         if self.position==0:
-            logger.info("TreeReader starting at position %i and processing %i events.", 
-                self.position, self.eventRange[1] - self.eventRange[0])
+            logger.info("TreeReader for sample %s starting at position %i and processing %i events.", 
+                self.sample.name, self.position, self.eventRange[1] - self.eventRange[0])
         elif (self.position % 10000)==0:
-            logger.info("TreeReader is at position %6i/%6i", self.position, self.eventRange[1] - self.eventRange[0] )
+            logger.info("TreeReader for sample %s is at position %6i/%6i", 
+                self.sample.name, self.position, self.eventRange[1] - self.eventRange[0] )
 
         # init struct
         self.data.init()
 
-        # point to the position in the chain (or the eList if there is one)
+        # get entry
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+
+        # point to the position in the chain (or the eList if there is one)
         for v in self.filled_variables:
             if isinstance(v, ScalarType):
                 setattr(self.data, v.name, v.filler( self. data ) )
             else:
                 raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
         return 1
+
 
     def goToPosition(self, position):
         self.position = position
