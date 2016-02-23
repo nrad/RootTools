@@ -95,8 +95,8 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
     defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
     if ratio is not None and not type(ratio)==type({}):
         raise ValueError( "'ratio' must be dict (default: {}). General form is {'num':1, 'den':0, 'logY':bool, 'style':style funcion, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}." )
-    if ratio is not None and len(plot.stack)<2:
-        raise ValueError( "Need at least 2 components in stack to make ratio. Got %i."%len(plot.stack) )
+#    if ratio is not None and len(plot.stack)<2:
+#        raise ValueError( "Need at least 2 components in stack to make ratio. Got %i."%len(plot.stack) )
 
     # Make sure ratio dict has all the keys by updating the default
     if ratio is not None:
@@ -142,7 +142,11 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
 
         # recall the sample for use in the legend
         for j, h in enumerate(l):
-            h.sample = plot.stack[i][j]
+            h.sample = plot.stack[i][j] if plot.stack is not None else None
+
+            # Exectute style function on histo, therefore histo styler has precendence over stack styler
+            if hasattr(h, "style"):
+                h.style(h)
 
         # sort 
         if sorting:
@@ -163,7 +167,7 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
     #Calculate legend coordinates in gPad coordinates
     if legend is not None:
         if legend=="auto":
-            legendCoordinates = (0.50,0.93-0.05*sum(map(len, plot.stack)),0.95,0.93)
+            legendCoordinates = (0.50,0.93-0.05*sum(map(len, plot.histos)),0.95,0.93)
         else:
             legendCoordinates = legend 
 
@@ -224,12 +228,11 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
                 h.GetYaxis().SetTitleSize(0.045)
                 h.GetYaxis().SetLabelSize(0.045)
                 h.GetXaxis().SetLabelSize(0.045)
-                h.GetYaxis().SetTitleOffset(1.2)
-                h.GetXaxis().SetTitleOffset(1.1)
+                h.GetXaxis().SetTitleOffset(1.3)
             else:
                 h.GetYaxis().SetTitleSize(0.045)
                 h.GetYaxis().SetLabelSize(0.045)
-                h.GetYaxis().SetTitleOffset(1.2)
+                h.GetYaxis().SetTitleOffset(1.3)
 
             h.Draw(drawOption+same)
             same = "same"
@@ -244,7 +247,12 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         legend_.SetBorderSize(1)
         for l in histos:
             for h in l:
-                legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
+                if h.sample is not None:
+                    legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
+                elif hasattr(h, "texName"): 
+                    legend_text = h.texName
+                else:
+                    legend_text = "No title"   
                 legend_.AddEntry(h, legend_text)
         legend_.Draw()
 
@@ -271,13 +279,16 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         h_ratio.GetYaxis().SetTickLength( 0.03*2 )
 
         h_ratio.GetXaxis().SetTitleOffset( 1.1 )
-        h_ratio.GetYaxis().SetTitleOffset( 1.6/scaleFacRatioPad )
+        h_ratio.GetYaxis().SetTitleOffset( 1.8/scaleFacRatioPad )
 
         h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
         h_ratio.GetYaxis().SetNdivisions(505)
 
         drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
         h_ratio.Draw(drawOption)
+
+        bottomPad.SetLogx(logX)
+        bottomPad.SetLogy(ratio['logY'])
 
         line = ROOT.TPolyLine(2)
         line.SetPoint(0, h_ratio.GetXaxis().GetXmin(), 1.)

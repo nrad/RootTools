@@ -11,7 +11,7 @@ class Plot( object ):
         ''' A plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
         'variable' instance, either with a filler or with the name of a data member, a
-        'selectionStrong' to be used on top of each samples selectionString, a
+        'selectionString' to be used on top of each samples selectionString, a
         'weight' function, a 
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
@@ -25,3 +25,10 @@ class Plot( object ):
         self.histo_class = histo_class
         self.texX = texX
         self.texY = texY
+
+    @classmethod
+    def fromHisto(cls, name, histos, texX= "", texY = "Number of Events"):
+        res = cls(stack=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
+            texX = texX, texY = texY)
+        res.histos = histos
+        return res

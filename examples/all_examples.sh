@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -x
 python example_plot.py
 python example_sample.py
 python example_stack.py
