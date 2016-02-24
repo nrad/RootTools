@@ -24,12 +24,13 @@ def lineStyle( color, width = None):
         return 
     return func
 
-def fillStyle( color ):
+def fillStyle( color, lineColor = ROOT.kBlack ):
     def func( histo ):
-        histo.SetLineColor( ROOT.kBlack )
+        lc = lineColor if lineColor is not None else color
+        histo.SetLineColor( lc )
         histo.SetMarkerSize( 0 )
         histo.SetMarkerStyle( 0 )
-        histo.SetMarkerColor( ROOT.kBlack )
+        histo.SetMarkerColor( lc )
         histo.SetFillColor( color )
         histo.drawOption = "hist"
         return 
