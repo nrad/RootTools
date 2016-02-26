@@ -88,6 +88,39 @@ class FWLiteSample ( object ):
         sample =  cls(name = name, files = files, color=color, texName = texName)
         return sample
 
+    @classmethod
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://xrootd.unl.edu/', maxN = None):
+        ''' Make sample from DAS. 
+        '''
+        # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
+
+        def _dasPopen(dbs):
+            if 'LSB_JOBID' in os.environ:
+                raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+            if 'X509_USER_PROXY' in os.environ:
+                dbs += " --key {0} --cert {0}".format(os.environ['X509_USER_PROXY'])
+            logger.info('DAS query\t: %s',  dbs)
+            return os.popen(dbs)
+
+        sampleName = dataset.rstrip('/')
+        query, qwhat = sampleName, "dataset"
+        if "#" in sampleName: qwhat = "block"
+
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        dbs='das_client.py --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+        dbsOut = _dasPopen(dbs).readlines()
+        
+        files = []
+        for line in dbsOut:
+            if line.find('/store')==-1:
+                continue
+            line = line.rstrip()
+            files.append(prefix+line)
+
+        return cls(name, files=files)
+
 
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample

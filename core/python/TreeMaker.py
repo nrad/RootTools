@@ -80,15 +80,23 @@ class TreeMaker( LooperBase ):
     def clear(self):
         if self.tree: self.tree.IsA().Destructor( self.tree )
 
+    def fill(self):
+        # Write to TTree
+        if self.treeIsExternal:
+            for b in self.branches:
+                b.Fill()
+        else:
+            self.tree.Fill()
+
     def _initialize(self):
         self.position = 0
+        # Initialize struct
+        self.data.init()
         pass
 
     def _execute(self):
         ''' Use filler to fill struct and then fill struct to tree'''
 
-        # Initialize struct
-        self.data.init()
 
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
@@ -100,14 +108,13 @@ class TreeMaker( LooperBase ):
             if hasattr(v, 'filler') and v.filler:
                 raise NotImplementedError( "Still need to decide whether this is a good idea." )
                 self.filler( self.data )
+
         if self.filler:
             self.filler( self.data )
 
-        # Write to TTree
-        if self.treeIsExternal:
-            for b in self.branches:
-                b.Fill()
-        else:
-            self.tree.Fill()
-        
+        self.fill()
+
+        # Initialize struct
+        self.data.init()
+ 
         return 1 

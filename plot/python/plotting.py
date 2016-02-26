@@ -249,12 +249,14 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         legend_.SetBorderSize(1)
         for l in histos:
             for h in l:
-                if h.sample is not None:
-                    legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
-                elif hasattr(h, "texName"): 
+                if hasattr(h, "texName"): 
                     legend_text = h.texName
+                elif hasattr(h, "legendText"): 
+                    legend_text = h.legendText
+                elif h.sample is not None:
+                    legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
                 else:
-                    legend_text = "No title"   
+                    continue #legend_text = "No title"   
                 legend_.AddEntry(h, legend_text)
         legend_.Draw()
 
@@ -270,8 +272,8 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         h_ratio.GetXaxis().SetTitle(plot.texX)
         h_ratio.GetYaxis().SetTitle(ratio['texY'])
 
-        h_ratio.GetXaxis().SetTitleSize( 0.12 )
-        h_ratio.GetYaxis().SetTitleSize( 0.12 )
+        h_ratio.GetXaxis().SetTitleSize( 0.09 )
+        h_ratio.GetYaxis().SetTitleSize( 0.09 )
 
         h_ratio.GetXaxis().SetLabelSize( 0.11 )
         h_ratio.GetYaxis().SetLabelSize( 0.11 )
@@ -281,7 +283,7 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         h_ratio.GetYaxis().SetTickLength( 0.03*2 )
 
         h_ratio.GetXaxis().SetTitleOffset( 1.1 )
-        h_ratio.GetYaxis().SetTitleOffset( 1.8/scaleFacRatioPad )
+        h_ratio.GetYaxis().SetTitleOffset( 2.5/scaleFacRatioPad )
 
         h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
         h_ratio.GetYaxis().SetNdivisions(505)
