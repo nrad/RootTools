@@ -35,7 +35,7 @@ class FWLiteSample ( object ):
         self.name = name
         self.files = files
         if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (sample.name, sample.files) )
+          raise helpers.EmptyselfError( "No ROOT files for self %s! Files: %s" % (self.name, self.files) )
  
         self.color = color
         self.texName = texName if not texName is None else name
