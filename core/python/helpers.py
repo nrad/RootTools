@@ -70,6 +70,8 @@ def checkRootFile(f, checkForObjects=[] ):
 def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
     '''Expects a list of string based cuts and combines them to a single string using stringOperator
     '''
+    if selectionStringList is None: return "(1)"
+
     if not all( (type(s) == type("") or s is None) for s in selectionStringList):
         raise ValueError( "Don't know what to do with selectionStringList %r"%selectionStringList)
 

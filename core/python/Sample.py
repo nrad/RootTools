@@ -250,16 +250,23 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
     # Below some helper functions to get useful 
 
+    def combineWithSampleSelection(self, selectionString):
+        if selectionString is None: return self.selectionString
+        if not type(selectionString)==type(""): raise ValueError( "Need 'None' or string for selectionString, got %s" % selectionString )
+        if self.__selectionStrings:
+            logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s", \
+                self.name, selectionString, self.selectionString )
+            return helpers.combineSelectionStrings( [selectionString]+self.__selectionStrings )
+        else:
+            logger.debug("For Sample %s: Return selectionString %s because sample has no selectionString", \
+                self.name, selectionString )
+            return selectionString
+
     def getEList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
-        
-        if self.__selectionStrings:
-            selectionString_ = helpers.combineSelectionStrings( [selectionString]+self.__selectionStrings )
-            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
-                self.name, selectionString, self.__selectionStrings, selectionString_ )
-        else:
-            selectionString_ = selectionString
+
+        selectionString_ = self.combineWithSampleSelection( selectionString )
 
         tmp=str(uuid.uuid4())
         logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString_ )
@@ -277,12 +284,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         ''' Get yield from self.chain according to a selectionString and a weightString
         ''' 
 
-        if self.selectionString:
-            selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
-            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
-                self.name, selectionString, self.selectionString, selectionString_ )
-        else:
-            selectionString_ = selectionString
+        selectionString_ = self.combineWithSampleSelection( selectionString )
 
         tmp=str(uuid.uuid4())
         h = ROOT.TH1D(tmp, tmp, 1,0,2)
@@ -298,33 +300,29 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         
         return {'val': res, 'sigma':resErr}        
 
-    def getHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None):
-        ''' Get TH1D/TH2D from draw command using selectionString, weight. If binningIsExplicit is true, 
+    def get1DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None, isProfile = False):
+        ''' Get TH1D/TProfile1D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a list) is translated into variable bin widths. 
             addOverFlowBin can be 'upper', 'lower', 'both' and will add 
             the corresponding overflow bin to the last bin of a 1D histogram'''
 
-        if self.selectionString:
-            selectionString_ = helpers.combineSelectionStrings( [selectionString] + self.selectionString)
-            logger.info("For Sample %s: Combining selectionString %s with sample selectionString %s to %s", \
-                self.name, selectionString, self.selectionString, selectionString_ )
-        else:
-            selectionString_ = selectionString
+        selectionString_ = self.combineWithSampleSelection( selectionString )
 
-        is2D = len(binning)==6 
         tmp=str(uuid.uuid4())
         if binningIsExplicit:
-            res = ROOT.TH1D(tmp, tmp, len(binning)-1, array('d', binning))
+            binningArgs = (len(binning)-1, array('d', binning))
         else:
-            if is2D:
-                res = ROOT.TH2D(tmp, tmp, *binning)
-            else:
-                res = ROOT.TH1D(tmp, tmp, *binning)
+            binningArgs = binning
+
+        cls = ROOT.TProfile if isProfile else ROOT.TH1D
+
+        res = cls(tmp, tmp, *binningArgs)
+
         weight = weightString if weightString else "1"
 
         self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
 
-        if not is2D:
+        if addOverFlowBin is not None:
             if addOverFlowBin.lower() == "upper" or addOverFlowBin.lower() == "both":
                 nbins = res.GetNbinsX()
                 res.SetBinContent(nbins , res.GetBinContent(nbins) + res.GetBinContent(nbins + 1))
@@ -335,3 +333,32 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         return res
 
+    def get2DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None, isProfile = False):
+        ''' Get TH2D/TProfile2D from draw command using selectionString, weight. If binningIsExplicit is true, 
+            the binning argument (a tuple of two lists) is translated into variable bin widths. 
+        '''
+
+        selectionString_ = self.combineWithSampleSelection( selectionString )
+
+        tmp=str(uuid.uuid4())
+        if binningIsExplicit:
+            if not len(binning)==2 and type(binning)==type(()):
+                raise ValueError( "Need a tuple with two lists corresponding to variable bin thresholds for x and y axis. Got % s"% binning )
+            binningArgs = (len(binning[0])-1, array('d', binning[0]), len(binning[1])-1, array('d', binning[1]))
+        else:
+            if not len(binning)==6:
+                raise ValueError( "Need binning in standard 2D form: [nBinsx,xLow,xHigh,nBinsy,yLow,yHigh]. Got %s" % binning )
+            binningArgs = binning
+
+        if isProfile:
+            cls = ROOT.TProfile2D 
+        else:
+            cls = ROOT.TH2D
+
+        res = cls(tmp, tmp, *binningArgs)
+
+        weight = weightString if weightString else "1"
+
+        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
+
+        return res

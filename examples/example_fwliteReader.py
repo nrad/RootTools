@@ -6,12 +6,7 @@ import logging
 import ROOT
 
 #RootTools
-from RootTools.core.Variable import Variable, ScalarType, VectorType
-from RootTools.core.logger import get_logger
-from RootTools.fwlite.FWLiteSample import FWLiteSample
-from RootTools.fwlite.FWLiteReader import FWLiteReader
-from RootTools.plot.Plot import Plot
-import RootTools.plot.plotting as plotting
+from RootTools.core.standard import *
 
 # argParser
 import argparse

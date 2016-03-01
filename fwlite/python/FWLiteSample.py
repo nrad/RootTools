@@ -128,4 +128,3 @@ class FWLiteSample ( object ):
         from FWLiteReader import FWLiteReader
         logger.debug("Creating FWLiteReader object for sample '%s'.", self.name)
         return FWLiteReader( self, **kwargs )
-

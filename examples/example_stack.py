@@ -14,10 +14,7 @@ argParser.add_argument('--logLevel',
 )
 
 # RootTools
-from RootTools.plot.Stack import Stack 
-from RootTools.core.Sample import Sample 
-from RootTools.core.Variable import Variable, ScalarType, VectorType
-from RootTools.core.logger import get_logger
+from RootTools.core.standard import *
 
 args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)

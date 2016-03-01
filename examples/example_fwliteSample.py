@@ -8,8 +8,7 @@ import os
 import ROOT
 
 # RootTools
-from RootTools.fwlite.FWLiteSample import FWLiteSample
-from RootTools.core.logger import get_logger
+from RootTools.core.standard import *
 
 # argParser
 import argparse
