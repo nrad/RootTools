@@ -2,8 +2,6 @@
 Note: A stack is made from Samples (not from histos)
 '''
 
-plot_path = "."
-
 #Standard imports
 import ROOT
 import os
@@ -18,6 +16,13 @@ argParser.add_argument('--logLevel',
       choices=['CRITICAL', 'ERROR', 'WARNING', 'INFO', 'DEBUG', 'TRACE', 'NOTSET'],
       default='INFO',
       help="Log level for logging"
+)
+
+argParser.add_argument('--plotPath', 
+      action='store',
+      nargs='?',
+      default='.',
+      help="where to write the plots"
 )
 
 # RootTools
@@ -100,9 +105,9 @@ read_variables =  []
 
 plotting.fill([plot1, plot2, plot3], read_variables = read_variables)
 
-if not os.path.exists( plot_path ): os.makedirs( plot_path )
+if not os.path.exists( args.plotPath ): os.makedirs( args.plotPath )
 for plot in [plot1, plot2, plot3]:
-    plotting.draw(plot, plot_directory = plot_path, 
+    plotting.draw(plot, plot_directory = args.plotPath, 
         ratio = {}, # Add a default ratio from the first two elements in the stack 
         logX = False, logY = True, 
 # inside each stack member, sort wrt. histo.Integral. Useful when the stack looks like [ [mc1,mc2,mc3,...], [data]]

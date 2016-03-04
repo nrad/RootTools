@@ -85,6 +85,7 @@ def fill(plots, read_variables = [], reduce_stat = 1):
             # Clean up
             for plot in plots_for_sample:
                 del plot.sample_indices
+
             r.cleanUpTempFiles()
 
 def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, sorting = False, legend = "auto"):
@@ -106,12 +107,14 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
     # Make canvas and if there is a ratio plot adjust the size of the pads
     y_width = 500
     y_ratio = 200
+    x_width = 500
     if ratio is not None:
+        x_width = 520
         y_width += y_ratio
         scaleFacRatioPad = y_width/float(y_ratio)
         y_border = y_ratio/float(y_width)
 
-    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10,500, y_width)
+    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10,x_width, y_width)
 
     if ratio is not None:
         c1.Divide(1,2,0,0)
@@ -223,18 +226,20 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
             h.GetYaxis().SetRangeUser(yMin_, yMax_)
             h.GetXaxis().SetTitle(plot.texX)
             h.GetYaxis().SetTitle(plot.texY)
+            # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
+            h.GetXaxis().SetTitleFont(43)
+            h.GetYaxis().SetTitleFont(43)
+            h.GetXaxis().SetLabelFont(43)
+            h.GetYaxis().SetLabelFont(43)
+            h.GetXaxis().SetTitleSize(24)
+            h.GetYaxis().SetTitleSize(24)
+            h.GetXaxis().SetLabelSize(20)
+            h.GetYaxis().SetLabelSize(20)
+
             if ratio is None:
-                h.GetXaxis().SetTitleSize(0.045)
-                h.GetYaxis().SetTitleSize(0.045)
-                h.GetYaxis().SetLabelSize(0.045)
-                h.GetXaxis().SetLabelSize(0.045)
-                h.GetXaxis().SetTitleOffset(1.3)
-                h.GetYaxis().SetTitleOffset(1.65)
+                h.GetYaxis().SetTitleOffset( 1.3 )
             else:
-                h.GetYaxis().SetTitleSize(0.045)
-                h.GetYaxis().SetLabelSize(0.045)
-                h.GetYaxis().SetTitleOffset(1.3)
-                h.GetYaxis().SetTitleOffset(1.65)
+                h.GetYaxis().SetTitleOffset( 1.6 )
 
             h.Draw(drawOption+same)
             same = "same"
@@ -272,18 +277,21 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         h_ratio.GetXaxis().SetTitle(plot.texX)
         h_ratio.GetYaxis().SetTitle(ratio['texY'])
 
-        h_ratio.GetXaxis().SetTitleSize( 0.09 )
-        h_ratio.GetYaxis().SetTitleSize( 0.09 )
+        h_ratio.GetXaxis().SetTitleFont(43)
+        h_ratio.GetYaxis().SetTitleFont(43)
+        h_ratio.GetXaxis().SetLabelFont(43)
+        h_ratio.GetYaxis().SetLabelFont(43)
+        h_ratio.GetXaxis().SetTitleSize(24)
+        h_ratio.GetYaxis().SetTitleSize(24)
+        h_ratio.GetXaxis().SetLabelSize(20)
+        h_ratio.GetYaxis().SetLabelSize(20)
 
-        h_ratio.GetXaxis().SetLabelSize( 0.11 )
-        h_ratio.GetYaxis().SetLabelSize( 0.11 )
-
+        h_ratio.GetXaxis().SetTitleOffset( 3.2 )
+        h_ratio.GetYaxis().SetTitleOffset( 1.6 )
 
         h_ratio.GetXaxis().SetTickLength( 0.03*3 )
         h_ratio.GetYaxis().SetTickLength( 0.03*2 )
 
-        h_ratio.GetXaxis().SetTitleOffset( 1.1 )
-        h_ratio.GetYaxis().SetTitleOffset( 2.5/scaleFacRatioPad )
 
         h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
         h_ratio.GetYaxis().SetNdivisions(505)
