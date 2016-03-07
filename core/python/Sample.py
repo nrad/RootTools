@@ -22,6 +22,13 @@ def newName():
     newName.sampleCounter += 1
     return result
 
+def checkEqual(vals):
+    if not len(set(vals)) == 1:
+        raise ValueError( "These values should be identical but are not: %r"%vals )
+    else:
+        return vals[0]
+
+
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
     def __init__(self, name, treeName , files = [], normalization = None, selectionString = None, isData = False, color = 0, texName = None):
@@ -41,7 +48,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.files = files
         if not len(self.files)>0:
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (sample.name, sample.files) )
-        self.normalization = None
+        self.normalization = normalization
         self._chain = None
         
         self.setSelectionString( selectionString )
@@ -69,6 +76,34 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     def selectionString(self):
         return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
 
+    @classmethod
+    def combine(cls, name, samples, texName = None, maxN = None):
+        '''Make new sample from a list of samples.
+           Adds normalizations if neither is None
+        '''
+        if not (type(samples) in [type([]), type(())]) or len(samples)<1:
+            raise ValueError( "Need non-empty list of samples. Got %r"% samples)
+
+        normalizations = [s.normalization for s in samples]
+        if None not in normalizations:
+            normalization = sum(normalizations)
+        else:
+            normalization = None
+
+        files = sum([s.files for s in samples], [])
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
+
+        return cls(name = name, \
+                   treeName = checkEqual([s.treeName for s in samples]),
+                   normalization = normalization,
+                   files = files,
+                   selectionString = checkEqual([s.selectionString for s in samples]),
+                   isData = checkEqual([s.isData for s in samples]),
+                   color = checkEqual([s.color for s in samples]),
+                   texName = texName
+            )
+ 
     @classmethod
     def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None, isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
@@ -201,6 +236,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
+        logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
                     isData = isData, color = color, texName = texName )
 
@@ -241,12 +277,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
         return
 
-    def treeReader(self, **kwargs):
+    def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
         '''
         from TreeReader import TreeReader
         logger.debug("Creating TreeReader object for sample '%s'.", self.name)
-        return TreeReader( self, **kwargs )
+        return TreeReader( self, *args, **kwargs )
 
     # Below some helper functions to get useful 
 

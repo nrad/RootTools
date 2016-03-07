@@ -51,7 +51,7 @@ class TreeMaker( LooperBase ):
         if externalTree:
             res.treeIsExternal = True
             assert self.tree.GetName() == externalTree.GetName(),\
-                "Treename inconsistency (instance: %s, externalTree: %s). Change one of the two"%(self.treeName, externalTree.GetName())
+                "Treename inconsistency (instance: %s, externalTree: %s). Change one of the two"%(treeName, externalTree.GetName())
             res.tree = externalTree
         else:
             res.treeIsExternal = False

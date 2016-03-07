@@ -95,7 +95,7 @@ class TreeReader( LooperBase ):
             # logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
             self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
 
-    def cloneTree(self, branchList = []):
+    def cloneTree(self, branchList = [], newTreename = None):
         '''Clone tree after preselection and event range
         '''
         selectionString = self.selectionString if self.selectionString is not None else "1"
@@ -119,7 +119,7 @@ class TreeReader( LooperBase ):
             # activate what we read, don't activate the ones we just copied
             self.activateBranches( turnOnReadBranches = True, branchList = [] )
             list_to_copy.Delete()
-
+            if newTreename is not None: res.SetName( newTreename )
             return res 
 
         else:

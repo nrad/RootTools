@@ -49,8 +49,6 @@ def createClassString(variables, useSTDVectors = False, addVectorCounters = Fals
     vectorInitString  = ""
     if useSTDVectors:
         for vector in vectors:
-            vectorDeclaration = ""
-            vectorInitString = ""
             for c in vector.components:
                 if c.name in declared_components:
                     continue
@@ -63,7 +61,6 @@ def createClassString(variables, useSTDVectors = False, addVectorCounters = Fals
         for vector in vectors:
             if not hasattr( vector, 'nMax' ):
                 raise ValueError ("Vector definition needs nMax if using C arrays: %r"%vector)
-            vectorDeclaration = ""
             vectorCompInitString = ""
             for c in vector.components:
                 if c.name in declared_components:
@@ -71,9 +68,9 @@ def createClassString(variables, useSTDVectors = False, addVectorCounters = Fals
                 else:
                     declared_components.append(c.name)
                 vectorDeclaration    +=  "  %s %s[%3i];\n" % ( getCTypeString(c.type), c.name, vector.nMax)
-                vectorCompInitString +=  "  %s[i] = %15s;\n"%(c.name, getCDefaultString(c.type)) 
+                vectorCompInitString +=  "    %s[i] = %15s;\n"%(c.name, getCDefaultString(c.type)) 
 
-            vectorInitString = """  for(UInt_t i=0;i<{nMax};i++){{\n{vectorCompInitString}     }}; //End for loop"""\
+            vectorInitString += """\n  for(UInt_t i=0;i<{nMax};i++){{\n{vectorCompInitString}     }}; //End for loop"""\
                 .format(nMax = vector.nMax, vectorCompInitString = vectorCompInitString)
 
     return \

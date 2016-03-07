@@ -90,7 +90,7 @@ class VectorType( Variable ):
         self.nMax = int(nMax) if nMax is not None else 100
 
     @classmethod
-    def fromString(cls, string, filler = None):
+    def fromString(cls, string, filler = None, nMax = None):
         '''Create vector variable from syntax 'name[c1/type1,c2/type2,...]'
         '''
         if not type(string)==type(""): raise ValueError( "Expected string got %r"%string )
@@ -101,7 +101,7 @@ class VectorType( Variable ):
         ts_ = string[string.find("[")+1:string.find("]")]
         componentStrings_ = ts_.split(',')
 
-        return cls( name = name_, components = componentStrings_, nMax = None, filler = filler)
+        return cls( name = name_, components = componentStrings_, nMax = nMax, filler = filler)
 
     @property 
     def components(self):
