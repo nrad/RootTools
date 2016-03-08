@@ -173,14 +173,25 @@ class TreeReader( LooperBase ):
             leafInfo.append(leaf)
         return leafInfo
 
-    def getEventRanges(self, maxFileSizeMB = 200):
-        '''For convinience: Define splitting of sample according to total input file size
+    def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None):
+        '''For convinience: Define splitting of sample according to various criteria
         '''
-        
-        nSplit = 1 + sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
-        chunks = [( i*( self.nEvents/nSplit), min(self.nEvents, (i+1)*( self.nEvents/nSplit) ) ) for i in range(nSplit) ]
-        
-        return chunks
+        def chunks(l, n):
+            """Yield successive n-sized chunks from l."""
+            for i in xrange(0, len(l), n):
+                yield (i, i+n)
+
+        if maxFileSizeMB is not None:
+            nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
+        elif maxNEvents is not None:
+            nSplit = self.nEvents / maxNEvents 
+        else:
+            logger.debug( "Returning full event range because no splitting is specified" )
+            return [(0, self.nEvents)]
+        if nSplit==0:
+            return [(0, self.nEvents)]
+        thresholds = [i*self.nEvents/nSplit for i in range(nSplit)]+[self.nEvents]
+        return [(thresholds[i], thresholds[i+1]) for i in range(len(thresholds)-1)] 
 
     def setEventRange( self, evtRange ):
         ''' Specify an event range that the reader will run over. 
@@ -218,10 +229,10 @@ class TreeReader( LooperBase ):
         if self.position == self.eventRange[1]: return 0
         if self.position==0:
             logger.info("TreeReader for sample %s starting at position %i and processing %i events.", 
-                self.sample.name, self.position, self.eventRange[1] - self.eventRange[0])
+                self.sample.name, self.position, self.nEvents)
         elif (self.position % 10000)==0:
             logger.info("TreeReader for sample %s is at position %6i/%6i", 
-                self.sample.name, self.position, self.eventRange[1] - self.eventRange[0] )
+                self.sample.name, self.position, self.nEvents )
 
         # init struct
         self.data.init()
