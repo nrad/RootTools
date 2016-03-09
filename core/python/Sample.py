@@ -162,7 +162,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, selectionString = None, \
                         isData = False, color = 0, texName = None):
-    
+        '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
+           Expects the presence of the tree root file and the SkimReport.txt
+        ''' 
         def readNormalization(filename):
             with open(filename, 'r') as fin:
                 for line in fin:
@@ -236,6 +238,82 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
+        logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
+                    isData = isData, color = color, texName = texName )
+    @classmethod
+    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, selectionString = None, \
+                        isData = False, color = 0, texName = None):
+        '''Load a CMG crab output directory
+        ''' 
+        import tarfile
+#        def readNormalization(filename):
+#            with open(filename, 'r') as fin:
+
+        maxN = maxN if maxN is not None and maxN>0 else None
+
+        # Walk through all subdirectories and pick up pairs of files '..._n.root and ..._n.tgz where n is the job number'
+        treeFiles = {}
+        zipFiles  = {}
+        for root, subFolders, filenames in os.walk( baseDirectory ):
+            for filename in filenames:
+                base, ext = os.path.splitext( filename )
+                try:
+                    n = int(base.split('_')[-1])
+                except:
+                    # filename is not of the form 'xyz_n' where n is the job number
+                    continue
+                # add the tgz and files to the dict.   
+                filename_ = os.path.join(root, filename)
+                if ext=='.root':
+                    treeFiles[n] = filename_
+                if ext=='.tgz':
+                    zipFiles[n] = filename_
+        # Find pairs of zip and root files
+        pairs = set(zipFiles.keys()) & set(treeFiles.keys())
+        n_jobs = len( set(zipFiles.keys()) | set(treeFiles.keys()) )
+
+        normalization = 0
+        files = []
+        failedJobs = []
+        for n in pairs:
+            sumW = None
+            tf = tarfile.open( zipFiles[n], 'r:gz' )
+            for f in tf.getmembers():
+                if "SkimReport.txt" in f.name:
+                    for line in tf.extractfile( f ).read().split( '\n' ) :
+                        if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
+                            sumW = float(line.split()[2])
+                            break
+                if sumW is not None: break
+            if sumW is None:
+                logger.warning( "No normalization found when reading tar file %s", zipFiles[n] )
+            tf.close()
+
+            # Check treefile for whether the tree 'treeName' can be found.
+            # This is an implicit check for broken, recovered or otherwise corrupted root files.
+            treeFile = treeFiles[n] if helpers.checkRootFile(treeFiles[n], checkForObjects = [treeName] ) else None
+
+            if treeFile is None: logger.warning( "File %s looks broken. Checked for presence of tree %s.", treeFiles[n] , treeName )
+
+            # If both, normalization and treefile are OK call it successful.
+            if sumW and treeFile:
+                files.append( treeFile )
+                normalization += sumW
+                logger.debug( "Successfully read job %i and incremented normalization by %7.2f",  n, sumW )
+            else:
+                failedJobs.append( n )
+
+        # Don't allow empty samples
+        if len(files) == 0:
+            raise helpers.EmptySampleError("Could not find valid crab CMG output for sample {0}. Total number of jobs: {1}. baseDirectory: {2}"\
+                  .format(name, len(pairs), baseDirectory))
+
+        # Log statements
+        eff = 100*len(failedJobs)/float( n_jobs )
+        logger.debug("Loaded CMGOutput sample %s. Total number of  jobs: %i, both tgz and root: %i. Normalization: %7.2f Bad: %i. Inefficiency: %3.3f", \
+                          name, len(pairs), n_jobs, normalization, len(failedJobs), eff)
+
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
                     isData = isData, color = color, texName = texName )
