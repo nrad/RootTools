@@ -120,15 +120,14 @@ class TreeReader( LooperBase ):
 
             # restoring event list
             self.sample.chain.SetEventList( tmpEventList ) 
+
             # activate what we read, don't activate the ones we just copied
             self.activateBranches( turnOnReadBranches = True, branchList = [] )
+
             list_to_copy.Delete()
+
             if newTreename is not None: res.SetName( newTreename )
-            # Remove from the list of cloned trees (FIXME -- causes segfault)
-            #self.sample.chain.GetListOfClones().Remove(res)
-            #self.sample.chain.ResetBranchAddresses()
-            #res.ResetBranchAddresses()   
-            #self.sample.chain.CopyAddresses(res, True)
+
             return res 
 
         else:
