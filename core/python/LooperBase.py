@@ -118,7 +118,6 @@ class LooperBase( object ):
         '''
 
         assert self.position>=0, "Not initialized!"
-
         success = self._execute( **kwargs )
 
         self.position += 1

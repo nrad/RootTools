@@ -92,7 +92,7 @@ class TreeReader( LooperBase ):
         ''' Set all the branch addresses to the members in the class instance
         '''
         for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
-            # logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
+            #logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
             self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
 
     def cloneTree(self, branchList = [], newTreename = None):
@@ -113,13 +113,22 @@ class TreeReader( LooperBase ):
             tmpEventList = 0 if not self.sample.chain.GetEventList() else tmpEventList
             # Copy the selected events
             self.sample.chain.SetEventList( list_to_copy ) 
-            res =  self.sample.chain.CopyTree( "(1)", "") 
+            res =  self.sample.chain.CopyTree( "(1)", "")
+            # Same?
+#            res =  self.sample.chain.CloneTree( 0 )
+#            res.CopyEntries( self.sample.chain )
+
             # restoring event list
             self.sample.chain.SetEventList( tmpEventList ) 
             # activate what we read, don't activate the ones we just copied
             self.activateBranches( turnOnReadBranches = True, branchList = [] )
             list_to_copy.Delete()
             if newTreename is not None: res.SetName( newTreename )
+            # Remove from the list of cloned trees (FIXME -- causes segfault)
+            #self.sample.chain.GetListOfClones().Remove(res)
+            #self.sample.chain.ResetBranchAddresses()
+            #res.ResetBranchAddresses()   
+            #self.sample.chain.CopyAddresses(res, True)
             return res 
 
         else:
@@ -237,8 +246,11 @@ class TreeReader( LooperBase ):
         # init struct
         self.data.init()
 
-        # get entry
+        # get entry 
+        errorLevel = ROOT.gErrorIgnoreLevel
+        ROOT.gErrorIgnoreLevel = 3000
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+        ROOT.gErrorIgnoreLevel = errorLevel
 
         # point to the position in the chain (or the eList if there is one)
         for v in self.filled_variables:
