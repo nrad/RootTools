@@ -166,11 +166,18 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
            Expects the presence of the tree root file and the SkimReport.txt
         ''' 
         def readNormalization(filename):
+            sumW = None
+            allEvents = None
             with open(filename, 'r') as fin:
                 for line in fin:
-                    if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
+                    if "Sum Weights" in line:
                         sumW = float(line.split()[2])
-                        return sumW
+                    if 'All Events' in line:
+                        allEvents = float(line.split()[2])
+            if sumW is not None:
+                return sumW
+            else:
+                return allEvents
 
         maxN = maxN if maxN is not None and maxN>0 else None
 
