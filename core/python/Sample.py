@@ -28,6 +28,15 @@ def checkEqual(vals):
     else:
         return vals[0]
 
+def readNormalization(file):
+    sumW = None
+    allEvents = None
+    for line in file:
+      print line
+      if "Sum Weights" in line: sumW = float(line.split()[2])
+      if 'All Events'  in line: allEvents = float(line.split()[2])
+    if sumW is not None: return sumW
+    else:                return allEvents
 
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
@@ -165,20 +174,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
            Expects the presence of the tree root file and the SkimReport.txt
         ''' 
-        def readNormalization(filename):
-            sumW = None
-            allEvents = None
-            with open(filename, 'r') as fin:
-                for line in fin:
-                    if "Sum Weights" in line:
-                        sumW = float(line.split()[2])
-                    if 'All Events' in line:
-                        allEvents = float(line.split()[2])
-            if sumW is not None:
-                return sumW
-            else:
-                return allEvents
-
         maxN = maxN if maxN is not None and maxN>0 else None
 
         # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
@@ -208,7 +203,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 # Determine normalization constant
                 if 'SkimReport.txt' in filenames:
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
-                    sumW = readNormalization( skimReportFilename )
+                    with open(skimReportFilename, 'r') as fin:
+                      sumW = readNormalization(fin)
                     if not sumW:
                         logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
                                              chunkDirectory, skimReportFilename )
@@ -288,10 +284,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             tf = tarfile.open( zipFiles[n], 'r:gz' )
             for f in tf.getmembers():
                 if "SkimReport.txt" in f.name:
-                    for line in tf.extractfile( f ).read().split( '\n' ) :
-                        if any( [x in line for x in ['All Events', 'Sum Weights'] ] ):
-                            sumW = float(line.split()[2])
-                            break
+                    sumW = readNormalization(tf.extractfile(f))
                 if sumW is not None: break
             if sumW is None:
                 logger.warning( "No normalization found when reading tar file %s", zipFiles[n] )
