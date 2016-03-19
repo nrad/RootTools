@@ -71,16 +71,17 @@ def fill(plots, read_variables = [], reduce_stat = 1):
             # reducing event range
             evt_range = r.reduceEventRange(reduce_stat)
 
-            sample_scale = sample.scale(sample) if  hasattr(sample, "scale") else 1
+            # Scaling sample
+            sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
 
             r.start()
             while r.run():
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
 
-                        weight = 1 if plot.weight is None else plot.weight(r.data)
+                        weight  = 1 if plot.weight is None else plot.weight(r.data)
                         val = plot.variable.filler(r.data) if plot.variable.filler else getattr(r.data, plot.variable.name)
-                        plot.histos[index[0]][index[1]].Fill(val, weight*sample_scale)
+                        plot.histos[index[0]][index[1]].Fill(val, weight*sample_scale_factor)
 
             # Clean up
             for plot in plots_for_sample:
@@ -88,7 +89,7 @@ def fill(plots, read_variables = [], reduce_stat = 1):
 
             r.cleanUpTempFiles()
 
-def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, sorting = False, legend = "auto"):
+def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, sorting = False, legend = "auto", drawObjects = []):
 
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
@@ -264,6 +265,9 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
                     continue #legend_text = "No title"   
                 legend_.AddEntry(h, legend_text)
         legend_.Draw()
+
+    for o in drawObjects:
+        o.Draw()
 
     # Make a ratio plot
     if ratio is not None:

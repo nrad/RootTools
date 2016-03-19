@@ -411,6 +411,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         h = ROOT.TH1D(tmp, tmp, 1,0,2)
         h.Sumw2()
         weight = weightString if weightString else "1"
+        logger.debug( "getYieldFromDraw for sample %s with chain %r", self.name, self.chain )
         self.chain.Draw("1>>"+tmp, "("+weight+")*("+selectionString_+")", 'goff')
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)

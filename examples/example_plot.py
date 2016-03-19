@@ -44,9 +44,7 @@ s1.style = styles.fillStyle( color = ROOT.kGreen )
 
 # scaling a sample
 # Let's scale s2 up by a factor of 2 and compare it to s0+s1
-# This function will be executed on the sample object, i.e. could be lambda sample: sample.weightFromFit or similar
-sample_weight = lambda sample:2
-s2.scale = sample_weight
+s2.scale = 2 
 
 # Define the stack.
 # The whole point is that a stack is a stack of samples, not plots. Plots take stacks as arguments. 
@@ -58,7 +56,6 @@ plot_weight   = lambda data:1
 # Two selection strings
 selectionString = "nJet>0"
 selectionString_2 = "nJet>1"
-
 
 plot1 = Plot(\
     name = "met_coarseBinning", # Name is not needed. If not provided, variable.name is used as filename instead.

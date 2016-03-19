@@ -83,7 +83,7 @@ class TreeReader( LooperBase ):
         self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString is not None else None
         self.activateBranches()
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
-        logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
+        logger.debug("Found %i events in  %s", self.nEvents, self.sample.name)
 
         #  default event range of the reader
         self.eventRange = (0, self.nEvents)
@@ -206,6 +206,7 @@ class TreeReader( LooperBase ):
             Bounded by (0, nEvents).
         '''
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
+        logger.debug( "[setEventRange] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
 
     def setEventList( self, evtList ):
         ''' Specify an event list that the reader will run over. 
@@ -214,11 +215,13 @@ class TreeReader( LooperBase ):
         self.eList = evtList 
         self.nEvents = self.eList.GetN()
         self.eventRange = (0, self.nEvents)
+        logger.debug( "[setEventList] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
     
     def reduceEventRange( self, reduction_factor ):
         ''' Reduce event range by a given factor. 
         '''
-        self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/20 ) 
+        self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/reduction_factor ) 
+        logger.debug( "[reduceEventRange] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
 
     def _initialize(self):
         ''' This method is called from the Base class start method.
@@ -259,8 +262,6 @@ class TreeReader( LooperBase ):
                 raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
         return 1
 
-
     def goToPosition(self, position):
         self.position = position
         self._execute()
-
