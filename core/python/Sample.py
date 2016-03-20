@@ -32,7 +32,6 @@ def readNormalization(file):
     sumW = None
     allEvents = None
     for line in file:
-      print line
       if "Sum Weights" in line: sumW = float(line.split()[2])
       if 'All Events'  in line: allEvents = float(line.split()[2])
     if sumW is not None: return sumW
