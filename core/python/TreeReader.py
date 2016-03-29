@@ -17,6 +17,7 @@ import RootTools.core.helpers as helpers
 from RootTools.core.Variable import Variable, ScalarType, VectorType
 from RootTools.core.helpers import shortTypeDict
 
+
 class TreeReader( LooperBase ):
 
     def __init__(self, sample, variables, filled_variables = [], selectionString = None, allBranchesActive = True):
@@ -115,8 +116,8 @@ class TreeReader( LooperBase ):
             self.sample.chain.SetEventList( list_to_copy ) 
             res =  self.sample.chain.CopyTree( "(1)", "")
             # Same?
-#            res =  self.sample.chain.CloneTree( 0 )
-#            res.CopyEntries( self.sample.chain )
+    #        res =  self.sample.chain.CloneTree( 0 )
+    #        res.CopyEntries( self.sample.chain )
 
             # restoring event list
             self.sample.chain.SetEventList( tmpEventList ) 
@@ -181,7 +182,7 @@ class TreeReader( LooperBase ):
             leafInfo.append(leaf)
         return leafInfo
 
-    def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None):
+    def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None, minJobs = None):
         '''For convinience: Define splitting of sample according to various criteria
         '''
         def chunks(l, n):
@@ -194,9 +195,11 @@ class TreeReader( LooperBase ):
         elif maxNEvents is not None:
             nSplit = self.nEvents / maxNEvents 
         else:
-            logger.debug( "Returning full event range because no splitting is specified" )
-            return [(0, self.nEvents)]
+            nSplit = 0
+        if minJobs is not None and nSplit < minJobs: 
+            nSplit = minJobs
         if nSplit==0:
+            logger.debug( "Returning full event range because no splitting is specified" )
             return [(0, self.nEvents)]
         thresholds = [i*self.nEvents/nSplit for i in range(nSplit)]+[self.nEvents]
         return [(thresholds[i], thresholds[i+1]) for i in range(len(thresholds)-1)] 
