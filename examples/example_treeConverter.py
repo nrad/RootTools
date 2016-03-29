@@ -35,7 +35,7 @@ read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/
 new_variables =     [ Variable.fromString('MyJet[pt2/F]' ) ] \
                   + [ Variable.fromString(x) for x in [ 'myMetOver2/F' ] ]
 
-outputfile = "./converted.root"
+outputfilename = "./converted.root"
 
 
 branches_to_keep = [ "met_phi" ]
@@ -65,9 +65,14 @@ for ievtRange, eventRange in enumerate(eventRanges):
 
     logger.info( "Now at range %i which has %i events.",  ievtRange, eventRange[1]-eventRange[0] )
 
+    tmp_directory = ROOT.gDirectory
+    filename, ext = os.path.splitext( outputfilename )
+    outputfile = ROOT.TFile.Open(filename+'_'+str(ievtRange)+ext, 'recreate')
+    tmp_directory.cd()
+
     # Set the reader to the event range
     reader.setEventRange( eventRange )
-    clonedTree = reader.cloneTree( branches_to_keep )
+    clonedTree = reader.cloneTree( branches_to_keep, rootfile = outputfile )
     clonedEvents += clonedTree.GetEntries()
 
     # Clone the empty maker in order to avoid recompilation at every loop iteration
@@ -81,12 +86,10 @@ for ievtRange, eventRange in enumerate(eventRanges):
 
     convertedEvents += maker.tree.GetEntries()
 
-    # Writing to file
-    filename, ext = os.path.splitext( outputfile )
-    f = ROOT.TFile.Open(filename+'_'+str(ievtRange)+ext, 'recreate')
+#    # Writing to file
     maker.tree.Write()
-    f.Close()
 
+    outputfile.Close()
     # Destroy the TTree
     maker.clear()
 

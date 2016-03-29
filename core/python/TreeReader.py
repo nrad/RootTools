@@ -95,7 +95,7 @@ class TreeReader( LooperBase ):
             #logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
             self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
 
-    def cloneTree(self, branchList = [], newTreename = None):
+    def cloneTree(self, branchList = [], newTreename = None, rootfile = None):
         '''Clone tree after preselection and event range
         '''
         selectionString = self.selectionString if self.selectionString is not None else "1"
@@ -111,12 +111,23 @@ class TreeReader( LooperBase ):
             # preserving current event list
             tmpEventList = self.sample.chain.GetEventList()
             tmpEventList = 0 if not self.sample.chain.GetEventList() else tmpEventList
+
             # Copy the selected events
             self.sample.chain.SetEventList( list_to_copy ) 
-            res =  self.sample.chain.CopyTree( "(1)", "")
+
+            # Create the new tree in a file (if there is one)
+            tmp_directory = ROOT.gDirectory
+            if rootfile is not None: 
+                logger.debug( "cd to file %r", rootfile )
+                rootfile.cd() 
+
+            res =  self.sample.chain.CopyTree( "(1)", "" )
             # Same?
-#            res =  self.sample.chain.CloneTree( 0 )
-#            res.CopyEntries( self.sample.chain )
+            # res =  self.sample.chain.CloneTree( 0 )
+            # res.CopyEntries( self.sample.chain )
+
+            # Change back to previous gDirectory
+            tmp_directory.cd()
 
             # restoring event list
             self.sample.chain.SetEventList( tmpEventList ) 
@@ -131,7 +142,17 @@ class TreeReader( LooperBase ):
             return res 
 
         else:
-            return self.sample.chain.CopyTree( selectionString, "", self.eventRange[1] - self.eventRange[0], self.eventRange[0] )
+
+            tmp_directory = ROOT.gDirectory
+            if rootfile is not None: 
+                logger.debug( "cd to file %r", rootfile )
+                rootfile.cd() 
+
+            res = self.sample.chain.CopyTree( selectionString, "", self.eventRange[1] - self.eventRange[0], self.eventRange[0] )
+            # Change back to previous gDirectory
+            tmp_directory.cd()
+
+            return res
 
     def activateBranches(self, turnOnReadBranches = True, branchList = []):
         ''' Set status of all needed branches in sample chain to '1' 
