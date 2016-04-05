@@ -15,6 +15,7 @@ logger = logging.getLogger(__name__)
 
 # RootTools imports
 import RootTools.core.helpers as helpers
+import RootTools.plot.Plot as Plot
 
 @helpers.static_vars(sampleCounter = 0)
 def newName():
@@ -55,7 +56,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.treeName = treeName
         self.files = files
         if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (sample.name, sample.files) )
+          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
         self.normalization = normalization
         self._chain = None
         
@@ -354,6 +355,23 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
         return
 
+    def reduceFiles( self, factor = 1 ):
+        len_before = len(self.files)
+        self.files = self.files[:len_before/factor]
+        if len(self.files)==0:
+            raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
+        norm_before = self.normalization
+        
+        # Keeping track of reduceFile factors
+        if hasattr(self, "reduce_files_factor"):
+            self.reduce_files_factor *= factor
+        else:
+            self.reduce_files_factor = factor
+
+        self.normalization = factor*self.normalization if self.normalization is not None else None
+        logger.debug("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len_before/factor, norm_before, self.normalization) 
+
+
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
         '''
@@ -435,19 +453,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         weight = weightString if weightString else "1"
 
         self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
-
-        if addOverFlowBin is not None:
-            if addOverFlowBin.lower() == "upper" or addOverFlowBin.lower() == "both":
-                nbins = res.GetNbinsX()
-                res.SetBinContent(nbins , res.GetBinContent(nbins) + res.GetBinContent(nbins + 1))
-                res.SetBinError(nbins , sqrt(res.GetBinError(nbins)**2 + res.GetBinError(nbins + 1)**2))
-            if addOverFlowBin.lower() == "lower" or addOverFlowBin.lower() == "both":
-                res.SetBinContent(1 , res.GetBinContent(0) + res.GetBinContent(1))
-                res.SetBinError(1 , sqrt(res.GetBinError(0)**2 + res.GetBinError(1)**2))
-
+       
+        Plot.addOverFlowBin1D( res, addOverFlowBin )
+ 
         return res
 
-    def get2DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None, isProfile = False):
+    def get2DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
         ''' Get TH2D/TProfile2D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a tuple of two lists) is translated into variable bin widths. 
         '''

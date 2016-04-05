@@ -229,8 +229,9 @@ class TreeReader( LooperBase ):
         ''' Specify an event range that the reader will run over. 
             Bounded by (0, nEvents).
         '''
+        old_eventRange = self.eventRange
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
-        logger.debug( "[setEventRange] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
+        logger.debug( "[setEventRange] Set eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
 
     def setEventList( self, evtList ):
         ''' Specify an event list that the reader will run over. 
@@ -239,13 +240,14 @@ class TreeReader( LooperBase ):
         self.eList = evtList 
         self.nEvents = self.eList.GetN()
         self.eventRange = (0, self.nEvents)
-        logger.debug( "[setEventList] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
+        logger.debug( "[setEventList] Set eventRange %r for reader of sample %s", self.eventRange, self.sample.name )
     
     def reduceEventRange( self, reduction_factor ):
         ''' Reduce event range by a given factor. 
         '''
+        old_eventRange = self.eventRange if hasattr(self, "eventRange") else None
         self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/reduction_factor ) 
-        logger.debug( "[reduceEventRange] Set new eventRange %r for reader of sample %s", (0, self.nEvents), self.sample.name )
+        logger.debug( "[reduceEventRange] Set new eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
 
     def _initialize(self):
         ''' This method is called from the Base class start method.

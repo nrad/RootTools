@@ -13,6 +13,7 @@ from math import log
 
 # RootTools
 import RootTools.core.Variable as Variable
+import RootTools.plot.Plot as Plot
 import RootTools.core.helpers as helpers
 
 
@@ -86,6 +87,10 @@ def fill(plots, read_variables = [], reduce_stat = 1):
             # Clean up
             for plot in plots_for_sample:
                 del plot.sample_indices
+                if plot.addOverFlowBin is not None:
+                    for s in plot.histos:
+                        for p in s:
+                            Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
 
             r.cleanUpTempFiles()
 
