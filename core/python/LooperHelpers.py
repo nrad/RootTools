@@ -69,9 +69,9 @@ def createClassString(variables, useSTDVectors = False, addVectorCounters = Fals
                     declared_components.append(c.name)
                 vectorDeclaration    +=  "  %s %s[%3i];\n" % ( getCTypeString(c.type), c.name, vector.nMax)
                 vectorCompInitString +=  "    %s[i] = %15s;\n"%(c.name, getCDefaultString(c.type)) 
-
-            vectorInitString += """\n  for(UInt_t i=0;i<{nMax};i++){{\n{vectorCompInitString}     }}; //End for loop"""\
-                .format(nMax = vector.nMax, vectorCompInitString = vectorCompInitString)
+            if vectorCompInitString != "":
+                vectorInitString += """\n  for(UInt_t i=0;i<{nMax};i++){{\n{vectorCompInitString}     }}; //End for loop"""\
+                    .format(nMax = vector.nMax, vectorCompInitString = vectorCompInitString)
 
     return \
 """#ifndef __className__
