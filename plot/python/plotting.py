@@ -64,7 +64,10 @@ def fill(plots, read_variables = [], reduce_stat = 1):
 
             # Make reader
             chain_variables  = list(set([p.variable for p in plots_for_sample if p.variable.filler is None]))
-            filled_variables = list(set([p.variable for p in plots_for_sample if p.variable.filler is not None]))
+            # Keep sequence of filled variables
+            filled_variables = []
+            for p in plots_for_sample:
+                if p.variable.filler is not None and p.variable not in filled_variables: filled_variables.append( p.variable )
 
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, selectionString = selectionString)

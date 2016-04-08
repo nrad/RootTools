@@ -281,7 +281,7 @@ class TreeReader( LooperBase ):
         ROOT.gErrorIgnoreLevel = errorLevel
 
         # point to the position in the chain (or the eList if there is one)
-        for v in self.filled_variables:
+        for v in self.filled_variables: # Keep the sequence!
             if isinstance(v, ScalarType):
                 setattr(self.data, v.name, v.filler( self. data ) )
             else:
