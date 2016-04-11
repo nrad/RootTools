@@ -23,7 +23,7 @@ def newName():
     newName.sampleCounter += 1
     return result
 
-def checkEqual(vals):
+def checkEqual_(vals):
     if not len(set(vals)) == 1:
         raise ValueError( "These values should be identical but are not: %r"%vals )
     else:
@@ -86,7 +86,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
 
     @classmethod
-    def combine(cls, name, samples, texName = None, maxN = None):
+    def combine(cls, name, samples, texName = None, maxN = None, checkEqualSelectionString = True):
         '''Make new sample from a list of samples.
            Adds normalizations if neither is None
         '''
@@ -104,11 +104,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         files = files[:maxN]
 
         return cls(name = name, \
-                   treeName = checkEqual([s.treeName for s in samples]),
+                   treeName = checkEqual_([s.treeName for s in samples]),
                    normalization = normalization,
                    files = files,
-                   selectionString = checkEqual([s.selectionString for s in samples]),
-                   isData = checkEqual([s.isData for s in samples]),
+                   selectionString = checkEqual_([s.selectionString for s in samples]) or not checkEqualSelectionString,
+                   isData = checkEqual_([s.isData for s in samples]),
                    # color = checkEqual([s.color for s in samples]), # not practical
                    texName = texName
             )
