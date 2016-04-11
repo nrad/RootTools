@@ -109,7 +109,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                    files = files,
                    selectionString = checkEqual([s.selectionString for s in samples]),
                    isData = checkEqual([s.isData for s in samples]),
-                   color = checkEqual([s.color for s in samples]),
+                   # color = checkEqual([s.color for s in samples]), # not practical
                    texName = texName
             )
  
