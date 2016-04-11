@@ -78,6 +78,8 @@ def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
     list_ = [s for s in selectionStringList if not s is None ]
     if len(list_)==0:
         return "(1)"
+    elif len(list_)==1:
+        return list_[0]
     else:
         return stringOperator.join('('+s+')' for s in list_)
 
