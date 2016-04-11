@@ -86,7 +86,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
 
     @classmethod
-    def combine(cls, name, samples, texName = None, maxN = None, checkEqualSelectionString = True):
+    def combine(cls, name, samples, texName = None, maxN = None):
         '''Make new sample from a list of samples.
            Adds normalizations if neither is None
         '''
@@ -107,7 +107,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                    treeName = checkEqual_([s.treeName for s in samples]),
                    normalization = normalization,
                    files = files,
-                   selectionString = checkEqual_([s.selectionString for s in samples]) or not checkEqualSelectionString,
+                   selectionString = checkEqual_([s.selectionString for s in samples]),
                    isData = checkEqual_([s.isData for s in samples]),
                    # color = checkEqual([s.color for s in samples]), # not practical
                    texName = texName
