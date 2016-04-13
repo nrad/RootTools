@@ -97,22 +97,60 @@ def fill(plots, read_variables = [], reduce_stat = 1):
 
             r.cleanUpTempFiles()
 
-def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, sorting = False, legend = "auto", drawObjects = []):
+def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, scaling = {}, sorting = False, legend = "auto", drawObjects = []):
 
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
     ROOT.setTDRStyle()
     defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
     if ratio is not None and not type(ratio)==type({}):
-        raise ValueError( "'ratio' must be dict (default: {}). General form is {'num':1, 'den':0, 'logY':bool, 'style':style funcion, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}." )
+        raise ValueError( "'ratio' must be dict (default: {}). General form is '%r'." % defaultRatioStyle)
 #    if ratio is not None and len(plot.stack)<2:
 #        raise ValueError( "Need at least 2 components in stack to make ratio. Got %i."%len(plot.stack) )
 
+    if not isinstance(scaling, dict):
+        raise ValueError( "'scaling' must be of the form {0:1, 2:3} which normalizes stack[0] to stack[1] etc. Got '%r'" % scaling )
+            
     # Make sure ratio dict has all the keys by updating the default
     if ratio is not None:
         defaultRatioStyle.update(ratio)
         ratio = defaultRatioStyle
 
+    # Clone (including any attributes) and add up histos in stack
+    histos = map(lambda l:map(lambda h:helpers.clone(h), l), plot.histos)
+    for i, l in enumerate(histos):
+
+        # recall the sample for use in the legend
+        for j, h in enumerate(l):
+            h.sample = plot.stack[i][j] if plot.stack is not None else None
+
+            # Exectute style function on histo, therefore histo styler has precendence over stack styler
+            if hasattr(h, "style"):
+                h.style(h)
+
+        # sort 
+        if sorting:
+            l.sort(key=lambda h: -h.Integral())
+
+        # Add up stacks
+        for j, h in enumerate(l):
+            for k in range(j+1, len(l) ):
+                l[j].Add(l[k])
+    # Scaling
+    for source, target in scaling.iteritems():
+        if not ( isinstance(source, int) and isinstance(target, int) ):
+            raise ValueError( "Scaling should be {0:1, 1:2, ...}. Expected ints, got %r %r"%( source, target ) ) 
+
+        source_yield = histos[source][0].Integral()
+
+        if source_yield == 0:
+            logger.warning( "Requested to scale empty Stack? Do nothing." )
+            continue
+
+        factor = histos[target][0].Integral()/source_yield
+        for h in histos[source]:
+            h.Scale( factor )
+        
     # Make canvas and if there is a ratio plot adjust the size of the pads
     y_width = 500
     y_ratio = 200
@@ -147,27 +185,6 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         topPad.SetRightMargin(0.05)
 
     topPad.cd()
-
-    # Clone (including any attributes) and add up histos in stack
-    histos = map(lambda l:map(lambda h:helpers.clone(h), l), plot.histos)
-    for i, l in enumerate(histos):
-
-        # recall the sample for use in the legend
-        for j, h in enumerate(l):
-            h.sample = plot.stack[i][j] if plot.stack is not None else None
-
-            # Exectute style function on histo, therefore histo styler has precendence over stack styler
-            if hasattr(h, "style"):
-                h.style(h)
-
-        # sort 
-        if sorting:
-            l.sort(key=lambda h: -h.Integral())
-
-        # Add up stacks
-        for j, h in enumerate(l):
-            for k in range(j+1, len(l) ):
-                l[j].Add(l[k])
 
     # Range on y axis: Start with default
     if not yRange=="auto" and not (type(yRange)==type(()) and len(yRange)==2):
@@ -275,7 +292,10 @@ def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_direct
         legend_.Draw()
 
     for o in drawObjects:
-        o.Draw()
+        if o:
+            o.Draw()
+        else:
+            logger.debug( "drawObjects has something I can't Draw(): %r", o)
 
     # Make a ratio plot
     if ratio is not None:
