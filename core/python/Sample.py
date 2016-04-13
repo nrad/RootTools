@@ -355,21 +355,32 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
         return
 
-    def reduceFiles( self, factor = 1 ):
+    def reduceFiles( self, factor = 1, to = None ):
         len_before = len(self.files)
-        self.files = self.files[:len_before/factor]
-        if len(self.files)==0:
-            raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
         norm_before = self.normalization
-        
+
+        if factor!=1:
+            self.files = self.files[:len_before/factor]
+            if len(self.files)==0:
+                raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
+        elif to is not None:
+            if to>=len(self.files):
+                return
+            self.files = self.files[:to] 
+        else:
+            return
+
         # Keeping track of reduceFile factors
+        factor = len(self.files)/float(len_before)
         if hasattr(self, "reduce_files_factor"):
             self.reduce_files_factor *= factor
         else:
             self.reduce_files_factor = factor
-
         self.normalization = factor*self.normalization if self.normalization is not None else None
-        logger.debug("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len_before/factor, norm_before, self.normalization) 
+
+        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len_before/factor, norm_before, self.normalization) 
+
+        return
 
 
     def treeReader(self, *args, **kwargs):
