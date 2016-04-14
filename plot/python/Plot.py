@@ -31,7 +31,11 @@ class Plot( object ):
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
         ''' 
+
         self.name = name
+        if name is None and variable.name is not None:
+            self.name = variable.name
+
         self.stack = stack
         self.variable = variable
         self.binning = binning
