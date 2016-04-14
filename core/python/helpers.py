@@ -95,7 +95,7 @@ def fromString(*args):
 def uses(func, args):
     ''' Decorates a filler function with a list of strings of the used branch names
     '''
-    func.arguments = fromString( args )
+    func.used_variables = fromString( args )
     return func
 
 def clone(root_object, new_name = None):
