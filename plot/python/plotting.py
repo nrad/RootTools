@@ -30,14 +30,14 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], reduce_stat = 1):
+def fill(plots, read_variables = [], filled_variables = [], reduce_stat = 1):
     '''Create and fill all plots
     '''
 
     # Unique list of selection strings
     selectionStrings    = list(set(p.selectionString for p in plots))
     # Convert extra arguments from text to Variable instance
-    read_variables      = list(helpers.fromString(read_variables))
+    read_variables      =list(helpers.fromString(read_variables))
 
     for selectionString in selectionStrings:
         logger.info( "Now working on selection string %s"% selectionString )
@@ -65,12 +65,12 @@ def fill(plots, read_variables = [], reduce_stat = 1):
             # Make reader
             chain_variables  = list(set([p.variable for p in plots_for_sample if p.variable.filler is None]))
             # Keep sequence of filled variables
-            filled_variables = []
+            filled_variables_ = filled_variables
             for p in plots_for_sample:
-                if p.variable.filler is not None and p.variable not in filled_variables: filled_variables.append( p.variable )
+                if p.variable.filler is not None and p.variable not in filled_variables_: filled_variables_.append( p.variable )
 
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables_, selectionString = selectionString)
 
             # reducing event range
             evt_range = r.reduceEventRange(reduce_stat)
@@ -97,7 +97,25 @@ def fill(plots, read_variables = [], reduce_stat = 1):
 
             r.cleanUpTempFiles()
 
-def draw(plot, yRange = "auto", extensions = ["pdf", "png", "root"], plot_directory = ".", logX = False, logY = True, ratio = None, scaling = {}, sorting = False, legend = "auto", drawObjects = []):
+def draw(plot, \
+        yRange = "auto", 
+        extensions = ["pdf", "png", "root"], 
+        plot_directory = ".", 
+        logX = False, logY = True, 
+        ratio = None, 
+        scaling = {}, 
+        sorting = False, 
+        legend = "auto", 
+        drawObjects = []):
+    ''' yRange: 'auto' (default) or [low, high]
+        extensions: ["pdf", "png", "root"] (default)
+        logX: True/False (default), logY: True(default)/False
+        ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
+        scaling: {} (default). Scaling the i-th stach to the j-th is done by scaling = {i:j} with i,j integers
+        sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
+        legend: "auto" (default) or [x_low, y_low, x_high, y_high] 
+        drawObjects = [] Additional ROOT objects that are called by .Draw() 
+    '''
 
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
