@@ -5,6 +5,7 @@
 import ROOT
 import os
 import array
+import inspect
 
 # Logging
 import logging
@@ -168,7 +169,7 @@ class TreeReader( LooperBase ):
             # First, arguments used in any of the filler functions
             filler_variables = set()
             for v in self.filled_variables:
-                if hasattr(v.filler, "arguments"): filler_variables.update( v.filler.arguments ) 
+                if hasattr(v.filler, "used_variables"): filler_variables.update( v.filler.used_variables ) 
             # Turn on all branches
             for s in LooperBase._branchInfo( self.variables + list(filler_variables), addVectorCounters = False):
                 self.sample.chain.SetBranchStatus(s['name'], 1)
@@ -283,7 +284,15 @@ class TreeReader( LooperBase ):
         # point to the position in the chain (or the eList if there is one)
         for v in self.filled_variables: # Keep the sequence!
             if isinstance(v, ScalarType):
-                setattr(self.data, v.name, v.filler( self. data ) )
+                n_args = len( inspect.getargspec( v.filler ).args )
+                if n_args == 1:
+                    # filler may depend on the data only
+                    setattr(self.data, v.name, v.filler( self. data ) )
+                elif n_args == 2:
+                    # ... or on the sample as well (for normalization)
+                    setattr(self.data, v.name, v.filler( self. data, self.sample ) )
+                else:
+                    raise  NotImplementedError( "Got filler with %i arguments in variable %s. Don't know what to do" % (n_args, v.name) )
             else:
                 raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
         return 1
