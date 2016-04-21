@@ -21,8 +21,36 @@ def addOverFlowBin1D( histo, addOverFlowBin = None):
 
 class Plot( object ):
 
-    def __init__(self, stack, variable,  binning, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F, 
-                 texX = "", texY = "Number of Events", addOverFlowBin = None):
+    defaultStack           = None
+    defaultVariable        = None
+    defaultBinning         = None
+    defaultPrefix          = None
+    defaultName            = None
+    defaultSelectionString = None
+    defaultWeight          = None
+    defaultHistoClass      = ROOT.TH1F
+    defaultTexX            = ""
+    defaultTexY            = "Number of Events"
+    defaultAddOverFlowBin  = None
+
+    @staticmethod
+    def setDefaults(stack = None, variable = None, binning = None, prefix = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
+                 texX = "", texY = "Number of events", addOverFlowBin = None):
+        Plot.defaultStack           = stack
+        Plot.defaultVariable        = variable
+        Plot.defaultBinning         = binning
+        Plot.defaultPrefix          = prefix
+        Plot.defaultName            = name
+        Plot.defaultSelectionString = selectionString
+        Plot.defaultWeight          = staticmethod(weight)
+        Plot.defaultHistoClass      = histo_class
+        Plot.defaultTexX            = texX
+        Plot.defaultTexY            = texY
+        Plot.defaultAddOverFlowBin  = addOverFlowBin
+
+
+    def __init__(self, stack = None, variable = None, binning = None, prefix = None,  name = None, selectionString = None, weight = None, histo_class = None,
+                 texX = None, texY = None, addOverFlowBin = None):
         ''' A plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
         'variable' instance, either with a filler or with the name of a data member, a
@@ -31,24 +59,25 @@ class Plot( object ):
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
         ''' 
+        if stack    is None and Plot.defaultStack    is None: raise TypeError
+        if variable is None and Plot.defaultVariable is None: raise TypeError
+        if binning  is None and Plot.defaultBinning  is None: raise TypeError
 
-        self.name = name
-        if name is None and variable.name is not None:
-            self.name = variable.name
-
-        self.stack = stack
-        self.variable = variable
-        self.binning = binning
-        self.selectionString = selectionString
-        self.weight = weight
-        self.histo_class = histo_class
-        self.texX = texX
-        self.texY = texY
-        self.addOverFlowBin = addOverFlowBin
+        self.stack           = stack            if stack           is not None else Plot.defaultStack
+        self.variable        = variable         if variable        is not None else Plot.defaultVariable
+        self.binning         = binning          if binning         is not None else Plot.defaultBinning
+        self.selectionString = selectionString  if selectionString is not None else Plot.defaultSelectionString
+        self.weight          = weight           if weight          is not None else Plot.defaultWeight
+        self.histo_class     = histo_class      if histo_class     is not None else Plot.defaultHistoClass
+        self.texX            = texX             if texX            is not None else Plot.defaultTexX
+        self.texY            = texY             if texY            is not None else Plot.defaultTexY
+        self.addOverFlowBin  = addOverFlowBin   if addOverFlowBin  is not None else Plot.defaultAddOverFlowBin
+        self.prefix          = prefix           if prefix          is not None else Plot.defaultPrefix
+        self.name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else variable.name
 
     @classmethod
     def fromHisto(cls, name, histos, texX= "", texY = "Number of Events"):
-        res = cls(stack=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
+        res = cls(stack=None, prefix=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
