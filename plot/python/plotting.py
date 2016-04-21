@@ -30,7 +30,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], filled_variables = [], reduce_stat = 1):
+def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
     '''Create and fill all plots
     '''
 
@@ -65,12 +65,12 @@ def fill(plots, read_variables = [], filled_variables = [], reduce_stat = 1):
             # Make reader
             chain_variables  = list(set([p.variable for p in plots_for_sample if p.variable.filler is None]))
             # Keep sequence of filled variables
-            filled_variables_ = filled_variables
+            filled_variables = []
             for p in plots_for_sample:
-                if p.variable.filler is not None and p.variable not in filled_variables_: filled_variables_.append( p.variable )
+                if p.variable.filler is not None and p.variable not in filled_variables: filled_variables.append( p.variable )
 
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables_, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence, selectionString = selectionString)
 
             # reducing event range
             evt_range = r.reduceEventRange(reduce_stat)
@@ -84,7 +84,8 @@ def fill(plots, read_variables = [], filled_variables = [], reduce_stat = 1):
                     for index in plot.sample_indices:
 
                         weight  = 1 if plot.weight is None else plot.weight(r.data)
-                        val = plot.variable.filler(r.data) if plot.variable.filler else getattr(r.data, plot.variable.name)
+                        val = getattr(r.data, plot.variable.name)
+
                         plot.histos[index[0]][index[1]].Fill(val, weight*sample_scale_factor)
 
             # Clean up
@@ -106,8 +107,9 @@ def draw(plot, \
         scaling = {}, 
         sorting = False, 
         legend = "auto", 
-        drawObjects = []):
-    ''' yRange: 'auto' (default) or [low, high]
+        drawObjects = [],
+        widths = {}):
+    ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
         ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
@@ -115,6 +117,7 @@ def draw(plot, \
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
         legend: "auto" (default) or [x_low, y_low, x_high, y_high] 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
+        widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
     '''
 
     # FIXME -> Introduces CMSSW dependence
@@ -123,8 +126,12 @@ def draw(plot, \
     defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
     if ratio is not None and not type(ratio)==type({}):
         raise ValueError( "'ratio' must be dict (default: {}). General form is '%r'." % defaultRatioStyle)
-#    if ratio is not None and len(plot.stack)<2:
-#        raise ValueError( "Need at least 2 components in stack to make ratio. Got %i."%len(plot.stack) )
+
+    # default_widths    
+    default_widths = {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+    if ratio is not None: default_widths['x_width'] = 520
+    # Updating with width arguments 
+    default_widths.update(widths)
 
     if not isinstance(scaling, dict):
         raise ValueError( "'scaling' must be of the form {0:1, 2:3} which normalizes stack[0] to stack[1] etc. Got '%r'" % scaling )
@@ -170,16 +177,13 @@ def draw(plot, \
             h.Scale( factor )
         
     # Make canvas and if there is a ratio plot adjust the size of the pads
-    y_width = 500
-    y_ratio = 200
-    x_width = 500
-    if ratio is not None:
-        x_width = 520
-        y_width += y_ratio
-        scaleFacRatioPad = y_width/float(y_ratio)
-        y_border = y_ratio/float(y_width)
 
-    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10,x_width, y_width)
+    if ratio is not None:
+        default_widths['y_width'] += default_widths['y_ratio_width']
+        scaleFacRatioPad = default_widths['y_width']/float( default_widths['y_ratio_width'] )
+        y_border = default_widths['y_ratio_width']/float( default_widths['y_width'] )
+
+    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
 
     if ratio is not None:
         c1.Divide(1,2,0,0)

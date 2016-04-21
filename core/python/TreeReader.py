@@ -21,9 +21,9 @@ from RootTools.core.helpers import shortTypeDict
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, variables, filled_variables = [], selectionString = None, allBranchesActive = True):
+    def __init__(self, sample, variables, sequence = [], filled_variables = [], selectionString = None, allBranchesActive = False):
 
-        # The following checks are 'look before you leap' but I rather have the user know if the input non-sensical
+        # The following checks are 'look before you leap' but I rather have the user know if the input is non-sensical
         if not isinstance(sample, Sample):
             raise ValueError( "Need instance of Sample to initialize any Looper instance. Got %r."%sample )
         if not type(variables) == type([]):
@@ -39,9 +39,14 @@ class TreeReader( LooperBase ):
                 raise ValueError( "Variable %s in 'filled_variables' does not have a proper filler function" )
         if selectionString is not None and not type(selectionString) == type(""):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
-
         # Selection string to be applied to the chain
         self.selectionString = selectionString
+
+        # Sequence of precomputed attributes for data
+        for i, s in enumerate(sequence):
+            if not (hasattr(s, '__call__') and len( inspect.getargspec( s ).args )<=2):
+                raise ValueError( "Element %i in sequence is not a function with less than two arguments." % i )
+        self.sequence = sequence
 
         self.sample = sample
 
@@ -60,8 +65,8 @@ class TreeReader( LooperBase ):
         for v in self.filled_variables:
             if not v.filler or not hasattr(v.filler, "__call__"):
                 raise ValueError( "A Variable to be filled has no proper filler function: %r"%v )
-            if hasattr(v.filler, "arguments"):
-                all_variables.update(v.filler.arguments)
+            if hasattr(v.filler, "used_variables"):
+                all_variables.update(v.filler.used_variables)
 
         # Add 'variables' 
         if variables:  all_variables.update(variables)
@@ -169,7 +174,9 @@ class TreeReader( LooperBase ):
             # First, arguments used in any of the filler functions
             filler_variables = set()
             for v in self.filled_variables:
-                if hasattr(v.filler, "used_variables"): filler_variables.update( v.filler.used_variables ) 
+                if hasattr(v.filler, "used_variables"): filler_variables.update( v.filler.used_variables )
+                logger.debug( "Variable %s has filler which uses variables: %s", v.name, ",".join(vn.name for vn in v.filler.used_variables) ) 
+
             # Turn on all branches
             for s in LooperBase._branchInfo( self.variables + list(filler_variables), addVectorCounters = False):
                 self.sample.chain.SetBranchStatus(s['name'], 1)
@@ -204,7 +211,7 @@ class TreeReader( LooperBase ):
             leafInfo.append(leaf)
         return leafInfo
 
-    def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None, minJobs = None):
+    def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None, nJobs = None, minJobs = None):
         '''For convinience: Define splitting of sample according to various criteria
         '''
         def chunks(l, n):
@@ -216,6 +223,8 @@ class TreeReader( LooperBase ):
             nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
         elif maxNEvents is not None:
             nSplit = self.nEvents / maxNEvents 
+        elif nJobs is not None:
+            nSplit = nJobs
         else:
             nSplit = 0
         if minJobs is not None and nSplit < minJobs: 
@@ -281,7 +290,17 @@ class TreeReader( LooperBase ):
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
         ROOT.gErrorIgnoreLevel = errorLevel
 
-        # point to the position in the chain (or the eList if there is one)
+        # precompute sequence
+        for s in self.sequence:
+            n_args = len( inspect.getargspec( s ).args )
+            if n_args == 1:
+                # element may depend on the data only
+                s( self.data )
+            elif n_args == 2:
+                # ... or on the sample as well (for normalization)
+                s( self.data, self.sample ) 
+            else:
+                raise  NotImplementedError( "Got filler with %i arguments in variable %s. Don't know what to do" % (n_args, v.name) )
         for v in self.filled_variables: # Keep the sequence!
             if isinstance(v, ScalarType):
                 n_args = len( inspect.getargspec( v.filler ).args )
