@@ -362,11 +362,11 @@ def draw(plot, \
         line.SetLineWidth(1)
         line.Draw()
 
-    if not os.path.exists( os.path.join( plot_directory, plot.prefix ) ):
-        os.makedirs(       os.path.join( plot_directory, plot.prefix ) )
+    if not os.path.exists(plot_directory):
+        os.makedirs(plot_directory)
 
     for extension in extensions:
         filename = plot.name if plot.name is not None else plot.variable.name
-        c1.Print( os.path.join( plot_directory, plot.prefix, "%s.%s"%(filename, extension) ) )
+        c1.Print( os.path.join( plot_directory, "%s.%s"%(filename, extension) ) )
 
     del c1
