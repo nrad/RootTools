@@ -24,7 +24,6 @@ class Plot( object ):
     defaultStack           = None
     defaultVariable        = None
     defaultBinning         = None
-    defaultPrefix          = None
     defaultName            = None
     defaultSelectionString = None
     defaultWeight          = None
@@ -34,12 +33,11 @@ class Plot( object ):
     defaultAddOverFlowBin  = None
 
     @staticmethod
-    def setDefaults(stack = None, variable = None, binning = None, prefix = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
+    def setDefaults(stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
                  texX = "", texY = "Number of events", addOverFlowBin = None):
         Plot.defaultStack           = stack
         Plot.defaultVariable        = variable
         Plot.defaultBinning         = binning
-        Plot.defaultPrefix          = prefix
         Plot.defaultName            = name
         Plot.defaultSelectionString = selectionString
         Plot.defaultWeight          = staticmethod(weight)
@@ -49,7 +47,7 @@ class Plot( object ):
         Plot.defaultAddOverFlowBin  = addOverFlowBin
 
 
-    def __init__(self, stack = None, variable = None, binning = None, prefix = None,  name = None, selectionString = None, weight = None, histo_class = None,
+    def __init__(self, stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
                  texX = None, texY = None, addOverFlowBin = None):
         ''' A plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
@@ -72,12 +70,11 @@ class Plot( object ):
         self.texX            = texX             if texX            is not None else Plot.defaultTexX
         self.texY            = texY             if texY            is not None else Plot.defaultTexY
         self.addOverFlowBin  = addOverFlowBin   if addOverFlowBin  is not None else Plot.defaultAddOverFlowBin
-        self.prefix          = prefix           if prefix          is not None else Plot.defaultPrefix
         self.name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else variable.name
 
     @classmethod
     def fromHisto(cls, name, histos, texX= "", texY = "Number of Events"):
-        res = cls(stack=None, prefix=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
+        res = cls(stack=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
