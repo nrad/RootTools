@@ -81,6 +81,9 @@ class Plot( object ):
 
     @property
     def histos_added(self):
+        ''' Returns [[h1], [h2], ...] where h_i are the sums of all histograms in the i-th copmponent of the plot.
+        '''
+
         if not hasattr(self, "histos"):
             raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?" )
         res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
