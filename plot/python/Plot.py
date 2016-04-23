@@ -57,10 +57,6 @@ class Plot( object ):
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
         ''' 
-        if stack    is None and Plot.defaultStack    is None: raise TypeError
-        if variable is None and Plot.defaultVariable is None: raise TypeError
-        if binning  is None and Plot.defaultBinning  is None: raise TypeError
-
         self.stack           = stack            if stack           is not None else Plot.defaultStack
         self.variable        = variable         if variable        is not None else Plot.defaultVariable
         self.binning         = binning          if binning         is not None else Plot.defaultBinning
