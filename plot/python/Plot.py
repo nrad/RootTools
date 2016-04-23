@@ -57,10 +57,6 @@ class Plot( object ):
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
         ''' 
-        if stack    is None and Plot.defaultStack    is None: raise TypeError
-        if variable is None and Plot.defaultVariable is None: raise TypeError
-        if binning  is None and Plot.defaultBinning  is None: raise TypeError
-
         self.stack           = stack            if stack           is not None else Plot.defaultStack
         self.variable        = variable         if variable        is not None else Plot.defaultVariable
         self.binning         = binning          if binning         is not None else Plot.defaultBinning
@@ -78,3 +74,18 @@ class Plot( object ):
             texX = texX, texY = texY)
         res.histos = histos
         return res
+
+    @property
+    def histos_added(self):
+        ''' Returns [[h1], [h2], ...] where h_i are the sums of all histograms in the i-th copmponent of the plot.
+        '''
+
+        if not hasattr(self, "histos"):
+            raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?" )
+        res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
+        for i, h in enumerate( self.histos ):
+            for p in h[1:]:
+                res[i][0].Add( p )
+        return res
+         
+            
