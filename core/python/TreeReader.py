@@ -174,8 +174,9 @@ class TreeReader( LooperBase ):
             # First, arguments used in any of the filler functions
             filler_variables = set()
             for v in self.filled_variables:
-                if hasattr(v.filler, "used_variables"): filler_variables.update( v.filler.used_variables )
-                logger.debug( "Variable %s has filler which uses variables: %s", v.name, ",".join(vn.name for vn in v.filler.used_variables) ) 
+                if hasattr(v.filler, "used_variables"): 
+                    filler_variables.update( v.filler.used_variables )
+                    logger.debug( "Variable %s has filler which uses variables: %s", v.name, ",".join(vn.name for vn in v.filler.used_variables) ) 
 
             # Turn on all branches
             for s in LooperBase._branchInfo( self.variables + list(filler_variables), addVectorCounters = False):
