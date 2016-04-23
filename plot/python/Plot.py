@@ -78,3 +78,15 @@ class Plot( object ):
             texX = texX, texY = texY)
         res.histos = histos
         return res
+
+    @property
+    def histos_added(self):
+        if not hasattr(self, "histos"):
+            raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?" )
+        res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
+        for i, h in enumerate( self.histos ):
+            for p in h[1:]:
+                res[i].Add( p )
+        return res
+         
+            
