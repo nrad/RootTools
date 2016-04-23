@@ -86,7 +86,7 @@ class Plot( object ):
         res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
         for i, h in enumerate( self.histos ):
             for p in h[1:]:
-                res[i].Add( p )
+                res[i][0].Add( p )
         return res
          
             
