@@ -24,7 +24,7 @@ class Variable( object ):
             return VectorType.fromString(string, filler = filler)
         except ( ValueError, AssertionError ):
             return ScalarType.fromString(string, filler = filler)
-    
+
     def addFiller(self, filler):
         self.filler = filler
         return self
