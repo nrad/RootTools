@@ -4,6 +4,7 @@ Used in the Loopers and for plotting.
 
 # Standard imports
 import abc
+import uuid
 
 from RootTools.core.helpers import cStringTypeDict, shortTypeDict, defaultCTypeDict
 
@@ -23,7 +24,7 @@ class Variable( object ):
             return VectorType.fromString(string, filler = filler)
         except ( ValueError, AssertionError ):
             return ScalarType.fromString(string, filler = filler)
-
+    
     def addFiller(self, filler):
         self.filler = filler
         return self
@@ -65,6 +66,14 @@ class ScalarType( Variable ):
             
         name, tp = string.split('/')
         return cls( name = name, tp = tp, filler = filler)
+
+    @classmethod
+    def uniqueFloat(cls):
+        return cls(name = "float_"+str(uuid.uuid4()), tp='F', filler = None )
+
+    @classmethod
+    def uniqueInt(cls):
+        return cls(name = "int_"+str(uuid.uuid4()), tp='F', filler = None )
 
     def __str__(self):
         if self.filler:
