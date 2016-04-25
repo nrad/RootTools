@@ -73,7 +73,7 @@ class ScalarType( Variable ):
 
     @classmethod
     def uniqueInt(cls):
-        return cls(name = "int_"+str(uuid.uuid4()), tp='F', filler = None )
+        return cls(name = "int_"+str(uuid.uuid4()), tp='I', filler = None )
 
     def __str__(self):
         if self.filler:
