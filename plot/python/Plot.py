@@ -5,6 +5,9 @@
 import ROOT
 from math import sqrt
 
+#RootTools
+from RootTools.plot.PlotBase import PlotBase
+
 def addOverFlowBin1D( histo, addOverFlowBin = None):
 
     if not any( isinstance(histo, o) for o in [ROOT.TH1, ROOT.TProfile]):
@@ -19,10 +22,10 @@ def addOverFlowBin1D( histo, addOverFlowBin = None):
             histo.SetBinContent(1 , histo.GetBinContent(0) + histo.GetBinContent(1))
             histo.SetBinError(1 , sqrt(histo.GetBinError(0)**2 + histo.GetBinError(1)**2))
 
-class Plot( object ):
+class Plot( PlotBase ):
 
     defaultStack           = None
-    defaultVariable        = None
+    defaultVariables       = None
     defaultBinning         = None
     defaultName            = None
     defaultSelectionString = None
@@ -36,7 +39,7 @@ class Plot( object ):
     def setDefaults(stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
                  texX = "", texY = "Number of events", addOverFlowBin = None):
         Plot.defaultStack           = stack
-        Plot.defaultVariable        = variable
+        Plot.defaultVariables       = [variable]
         Plot.defaultBinning         = binning
         Plot.defaultName            = name
         Plot.defaultSelectionString = selectionString
@@ -57,35 +60,24 @@ class Plot( object ):
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis and a
         ''' 
-        self.stack           = stack            if stack           is not None else Plot.defaultStack
-        self.variable        = variable         if variable        is not None else Plot.defaultVariable
+
+        super(Plot, self).__init__( \
+            stack           = stack            if stack           is not None else Plot.defaultStack,
+            selectionString = selectionString  if selectionString is not None else Plot.defaultSelectionString,
+            weight          = weight           if weight          is not None else Plot.defaultWeight,
+            texX            = texX             if texX            is not None else Plot.defaultTexX,
+            texY            = texY             if texY            is not None else Plot.defaultTexY,
+            name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else variable.name,
+            variables       = [variable]       if variable        is not None else Plot.defaultVariables
+        )
+
         self.binning         = binning          if binning         is not None else Plot.defaultBinning
-        self.selectionString = selectionString  if selectionString is not None else Plot.defaultSelectionString
-        self.weight          = weight           if weight          is not None else Plot.defaultWeight
         self.histo_class     = histo_class      if histo_class     is not None else Plot.defaultHistoClass
-        self.texX            = texX             if texX            is not None else Plot.defaultTexX
-        self.texY            = texY             if texY            is not None else Plot.defaultTexY
         self.addOverFlowBin  = addOverFlowBin   if addOverFlowBin  is not None else Plot.defaultAddOverFlowBin
-        self.name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else variable.name
 
     @classmethod
-    def fromHisto(cls, name, histos, texX= "", texY = "Number of Events"):
+    def fromHisto(cls, name, histos, texX = defaultTexX, texY = defaultTexY):
         res = cls(stack=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
-
-    @property
-    def histos_added(self):
-        ''' Returns [[h1], [h2], ...] where h_i are the sums of all histograms in the i-th copmponent of the plot.
-        '''
-
-        if not hasattr(self, "histos"):
-            raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?" )
-        res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
-        for i, h in enumerate( self.histos ):
-            for p in h[1:]:
-                res[i][0].Add( p )
-        return res
-         
-            

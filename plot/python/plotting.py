@@ -63,11 +63,12 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
 
             # Make reader
-            chain_variables  = list(set([p.variable for p in plots_for_sample if p.variable.filler is None]))
+            chain_variables  = list(set([variable for variable in p.variables for p in plots_for_sample if variable.filler is None]))
             # Keep sequence of filled variables
             filled_variables = []
             for p in plots_for_sample:
-                if p.variable.filler is not None and p.variable not in filled_variables: filled_variables.append( p.variable )
+                for variable in p.variables:
+                    if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
 
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence, selectionString = selectionString)
@@ -83,18 +84,23 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
 
+                        #Get x,y or just x
+                        TH_fill_args = [ getattr(r.data, variable.name ) for variable in plot.variables ]
+                        #Get weight
                         weight  = 1 if plot.weight is None else plot.weight(r.data)
-                        val = getattr(r.data, plot.variable.name)
-
-                        plot.histos[index[0]][index[1]].Fill(val, weight*sample_scale_factor)
+                        TH_fill_args.append( weight*sample_scale_factor )
+                        plot.histos[index[0]][index[1]].Fill(*TH_fill_args)
 
             # Clean up
             for plot in plots_for_sample:
                 del plot.sample_indices
-                if plot.addOverFlowBin is not None:
-                    for s in plot.histos:
-                        for p in s:
-                            Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
+
+                # Add overflow bins for 1D plots
+                if isinstance(plot, Plot.Plot):
+                    if plot.addOverFlowBin is not None:
+                        for s in plot.histos:
+                            for p in s:
+                                Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
 
             r.cleanUpTempFiles()
 
@@ -366,7 +372,89 @@ def draw(plot, \
         os.makedirs(plot_directory)
 
     for extension in extensions:
-        filename = plot.name if plot.name is not None else plot.variable.name
+        filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
+        c1.Print( os.path.join( plot_directory, "%s.%s"%(filename, extension) ) )
+
+    del c1
+
+def draw2D(plot, \
+        extensions = ["pdf", "png", "root"], 
+        plot_directory = ".", 
+        logX = False, logY = False, logZ = True, 
+        drawObjects = [],
+        widths = {}):
+    ''' plot: a Plot2D instance
+        extensions: ["pdf", "png", "root"] (default)
+        logX: True/False (default), logY: True/False(default), logZ: True/False(default)
+        drawObjects = [] Additional ROOT objects that are called by .Draw() 
+        widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+    '''
+
+    # FIXME -> Introduces CMSSW dependence
+    ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
+    ROOT.setTDRStyle()
+
+    # default_widths    
+    default_widths = {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+
+    # Updating with width arguments 
+    default_widths.update(widths)
+
+    # Adding up all components
+    histos = plot.histos_added
+    histo = histos[0][0].Clone()
+    if len(histos)>1:
+        logger.warning( "Adding %i histos for 2D plot %s", len(histos), plot.name )
+        for h in histos[1:]:
+            histo.Add( h[0] )
+                
+    ## Clone (including any attributes) and add up histos in stack
+    #if hasattr(histo, "style"):
+    #    histo.style(histo)
+        
+    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
+
+    c1.SetBottomMargin(0.13)
+    c1.SetLeftMargin(0.15)
+    c1.SetTopMargin(0.07)
+    c1.SetRightMargin(0.05)
+
+    drawOption = plot.drawOption if hasattr(plot, "drawOption") else "COLZ"
+
+    c1.SetLogx(logX)
+    c1.SetLogy(logY)
+    c1.SetLogz(logZ)
+    histo.GetXaxis().SetTitle(plot.texX)
+    histo.GetYaxis().SetTitle(plot.texY)
+    # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
+    histo.GetXaxis().SetTitleFont(43)
+    histo.GetYaxis().SetTitleFont(43)
+    histo.GetXaxis().SetLabelFont(43)
+    histo.GetYaxis().SetLabelFont(43)
+    histo.GetXaxis().SetTitleSize(24)
+    histo.GetYaxis().SetTitleSize(24)
+    histo.GetXaxis().SetLabelSize(20)
+    histo.GetYaxis().SetLabelSize(20)
+
+    # should probably go into a styler
+    ROOT.gStyle.SetPalette(1)
+    ROOT.gPad.SetRightMargin(0.15)
+
+    histo.Draw(drawOption)
+
+    c1.RedrawAxis()
+
+    for o in drawObjects:
+        if o:
+            o.Draw()
+        else:
+            logger.debug( "drawObjects has something I can't Draw(): %r", o)
+
+    if not os.path.exists(plot_directory):
+        os.makedirs(plot_directory)
+
+    for extension in extensions:
+        filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
         c1.Print( os.path.join( plot_directory, "%s.%s"%(filename, extension) ) )
 
     del c1

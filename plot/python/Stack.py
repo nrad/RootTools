@@ -39,8 +39,8 @@ class Stack ( list ):
             histos = [] 
             for j, s in enumerate(l):
                 histo = plot.histo_class(\
-                    "_".join([plot.variable.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
-                    "_".join([plot.variable.name, s.name]), 
+                    "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                    "_".join([plot.name, s.name]), 
                      *plot.binning )
                 histo.Reset()
 
