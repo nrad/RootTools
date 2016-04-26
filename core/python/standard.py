@@ -5,6 +5,7 @@ from RootTools.core.TreeMaker import TreeMaker
 from RootTools.core.logger import get_logger
 from RootTools.plot.Stack import Stack 
 from RootTools.plot.Plot import Plot
+from RootTools.plot.Plot2D import Plot2D
 from RootTools.fwlite.FWLiteSample import FWLiteSample
 from RootTools.fwlite.FWLiteReader import FWLiteReader
 import RootTools.core.helpers as helpers
