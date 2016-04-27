@@ -63,12 +63,13 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
 
             # Make reader
-            chain_variables  = list(set([variable for variable in p.variables for p in plots_for_sample if variable.filler is None]))
             # Keep sequence of filled variables
             filled_variables = []
+            chain_variables  = []
             for p in plots_for_sample:
                 for variable in p.variables:
                     if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
+                    if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
 
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence, selectionString = selectionString)
