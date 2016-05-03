@@ -26,7 +26,15 @@ class Variable( object ):
             return ScalarType.fromString(string, filler = filler)
 
     def addFiller(self, filler):
+        ''' Add filler function
+        '''
         self.filler = filler
+        return self
+
+    def uses(self, args):
+        ''' Add variable strings
+        '''
+        helpers.uses(self, args)
         return self
 
 class ScalarType( Variable ):

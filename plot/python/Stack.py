@@ -22,7 +22,7 @@ class Stack ( list ):
                 raise ValueError("Stack should be a list of lists of Sample instances. Got %r."%( stackList ) )
 
         # Make Immutable
-        stackList = map(lambda l: map(lambda s:Immutable(s), l), stackList)
+        # stackList = map(lambda l: map(lambda s:Immutable(s), l), stackList)
 
         super(Stack, self).__init__( stackList )
 

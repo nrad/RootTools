@@ -378,7 +378,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.reduce_files_factor = factor
         self.normalization = factor*self.normalization if self.normalization is not None else None
 
-        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len_before/factor, norm_before, self.normalization) 
+        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len(self.files), norm_before, self.normalization) 
 
         return
 
