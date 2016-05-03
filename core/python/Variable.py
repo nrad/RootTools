@@ -25,16 +25,12 @@ class Variable( object ):
         except ( ValueError, AssertionError ):
             return ScalarType.fromString(string, filler = filler)
 
-    def addFiller(self, filler):
+    def addFiller(self, filler, uses = None):
         ''' Add filler function
         '''
         self.filler = filler
-        return self
-
-    def uses(self, args):
-        ''' Add variable strings
-        '''
-        helpers.uses(self, args)
+        if uses is not None:
+            helpers.uses(self.filler, uses)
         return self
 
 class ScalarType( Variable ):
