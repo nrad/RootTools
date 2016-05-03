@@ -6,10 +6,10 @@ Used in the Loopers and for plotting.
 import abc
 import uuid
 
-from RootTools.core.helpers import cStringTypeDict, shortTypeDict, defaultCTypeDict
+import RootTools.core.helpers as helpers 
 
-allTypes  = set(cStringTypeDict.keys())
-allCTypes = set(cStringTypeDict.values())
+allTypes  = set(helpers.cStringTypeDict.keys())
+allCTypes = set(helpers.cStringTypeDict.values())
 
 class Variable( object ):
     __metaclass__ = abc.ABCMeta
@@ -51,12 +51,12 @@ class ScalarType( Variable ):
         if not  tp in allTypes.union( allCTypes ):
             raise ValueError( "Type %r not known"%tp )
         # translate type to short form
-        self.tp = tp if tp in allTypes else shortTypeDict[tp]
+        self.tp = tp if tp in allTypes else helpers.shortTypeDict[tp]
 
         self.filler = filler
 
         # store default
-        self.defaultCString = defaultCString if defaultCString is not None else defaultCTypeDict[self.tp]
+        self.defaultCString = defaultCString if defaultCString is not None else helpers.defaultCTypeDict[self.tp]
 
     @property
     def type(self):
