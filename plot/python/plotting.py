@@ -71,6 +71,9 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
                     if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
                     if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
 
+            # Look if we need to add sample dependend variables
+            if hasattr(sample, "read_variables"): chain_variables += list(helpers.fromString(sample.read_variables))
+
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence, selectionString = selectionString)
 
