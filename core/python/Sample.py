@@ -378,7 +378,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.reduce_files_factor = factor
         self.normalization = factor*self.normalization if self.normalization is not None else None
 
-        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r.", self.name, len_before, len(self.files), norm_before, self.normalization) 
+        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
 
         return
 
@@ -404,7 +404,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 self.name, selectionString )
             return selectionString
 
-    def getEList(self, selectionString=None, name=None):
+    def getEventList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
 

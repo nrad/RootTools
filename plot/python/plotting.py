@@ -71,17 +71,23 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
                     if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
                     if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
 
-            # Look if we need to add sample dependend variables
+            # Check if we need to add sample dependend variables
             if hasattr(sample, "read_variables"): chain_variables += list(helpers.fromString(sample.read_variables))
+            
+            # Check if we need to run a sequence for this sample? (Should run after a global sequence) 
+            sequence_ = sequence + sample.sequence if hasattr(sample, "sequence") else sequence
 
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
 
             # reducing event range
             evt_range = r.reduceEventRange(reduce_stat)
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
+
+            if not hasattr(sample, "weight"):
+                sample.weight = None
 
             r.start()
             while r.run():
@@ -90,8 +96,10 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
 
                         #Get x,y or just x
                         TH_fill_args = [ getattr(r.data, variable.name ) for variable in plot.variables ]
+
                         #Get weight
-                        weight  = 1 if plot.weight is None else plot.weight(r.data)
+                        weight  = 1 if plot.weight is None else plot.weight( r.data )
+                        if sample.weight is not None: weight *= sample.weight( r.data )
                         TH_fill_args.append( weight*sample_scale_factor )
                         plot.histos[index[0]][index[1]].Fill(*TH_fill_args)
 

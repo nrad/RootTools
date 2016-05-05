@@ -87,7 +87,7 @@ class TreeReader( LooperBase ):
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.activateAllBranches()
-        self.eList = self.sample.getEList(selectionString = self.selectionString) if self.selectionString is not None else None
+        self.eList = self.sample.getEventList(selectionString = self.selectionString) if self.selectionString is not None else None
         self.activateBranches()
         self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events in  %s", self.nEvents, self.sample.name)
