@@ -30,7 +30,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
+def fill(plots, read_variables = [], sequence=[]):
     '''Create and fill all plots
     '''
 
@@ -79,9 +79,6 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
 
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
-
-            # reducing event range
-            evt_range = r.reduceEventRange(reduce_stat)
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
