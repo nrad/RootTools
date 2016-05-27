@@ -126,7 +126,9 @@ def draw(plot, \
         sorting = False, 
         legend = "auto", 
         drawObjects = [],
-        widths = {}):
+        widths = {},
+        canvasModifications = []
+        ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
@@ -136,6 +138,7 @@ def draw(plot, \
         legend: "auto" (default) or [x_low, y_low, x_high, y_high] 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+        canvasModifications = [] could be used to pass on lambdas to modify the canvas
     '''
 
     # FIXME -> Introduces CMSSW dependence
@@ -224,6 +227,8 @@ def draw(plot, \
         topPad.SetLeftMargin(0.15)
         topPad.SetTopMargin(0.07)
         topPad.SetRightMargin(0.05)
+
+    for modification in canvasModifications: modification(c1)
 
     topPad.cd()
 
