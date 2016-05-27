@@ -130,7 +130,7 @@ def draw(plot, \
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
-        ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
+        ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
         scaling: {} (default). Scaling the i-th stach to the j-th is done by scaling = {i:j} with i,j integers
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
         legend: "auto" (default) or [x_low, y_low, x_high, y_high] 
@@ -141,7 +141,7 @@ def draw(plot, \
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
     ROOT.setTDRStyle()
-    defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects':[]}
+    defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5)}
     if ratio is not None and not type(ratio)==type({}):
         raise ValueError( "'ratio' must be dict (default: {}). General form is '%r'." % defaultRatioStyle)
 
@@ -270,14 +270,12 @@ def draw(plot, \
                 # Use: (y - yMin_) / (sf*yMax_ - yMin_) = maxFraction (and y->log(y) in log case). 
                 # Compute the maximum required scale factor s. 
                 y = histo.GetBinContent(i_bin)
-                try:
-                    if logY:
-                        new_sf = yMin_/yMax_*(y/yMin_)**(1./maxFraction) if y>0 else 1 
-                    else:
-                        new_sf = 1./yMax_*(yMin_ + (y-yMin_)/maxFraction ) 
-                    scaleFactor = new_sf if new_sf>scaleFactor else scaleFactor
-                except ZeroDivisionError:
-                    pass 
+                if logY:
+                    new_sf = yMin_/yMax_*(y/yMin_)**(1./maxFraction) if y>0 else 1 
+                else:
+                    new_sf = 1./yMax_*(yMin_ + (y-yMin_)/maxFraction ) 
+
+                scaleFactor = new_sf if new_sf>scaleFactor else scaleFactor
                 # print i_bin, xLowerEdge, xUpperEdge, 'yMin', yMin_, 'yMax', yMax_, 'y', y, 'maxFraction', maxFraction, scaleFactor, new_sf
 
         # Apply scale factor to avoid legend
@@ -381,11 +379,6 @@ def draw(plot, \
         line.SetPoint(1, h_ratio.GetXaxis().GetXmax(), 1.)
         line.SetLineWidth(1)
         line.Draw()
-        for o in ratio['drawObjects']:
-            if o:
-                o.Draw()
-            else:
-                logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
