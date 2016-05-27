@@ -29,7 +29,7 @@ class PlotBase( object ):
         '''
 
         if not hasattr(self, "histos"):
-            raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?" )
+            raise AttributeError( "Plot %r has no attribute 'histos'. Did you forget to fill?"%self.name )
         res = [ [ h[0].Clone( h[0].GetName()+"_clone" ) ] for h in self.histos]
         for i, h in enumerate( self.histos ):
             for p in h[1:]:
