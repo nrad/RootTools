@@ -53,12 +53,12 @@ class Plot( PlotBase ):
     def __init__(self, stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
                  texX = None, texY = None, addOverFlowBin = None):
         ''' A plot needs a
-        'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
-        'variable' instance, either with a filler or with the name of a data member, a
-        'selectionString' to be used on top of each samples selectionString, a
-        'weight' function, a 
+        'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], 
+        'variable' instance, either with a filler or with the name of a data member, 
+        'selectionString' to be used on top of each samples selectionString, 
+        'weight' function, 
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
-        'texX', 'texY' labels for x and y axis and a
+        'texX', 'texY' labels for x and y axis 
         ''' 
 
         super(Plot, self).__init__( \
@@ -72,6 +72,7 @@ class Plot( PlotBase ):
         )
 
         self.binning         = binning          if binning         is not None else Plot.defaultBinning
+
         self.histo_class     = histo_class      if histo_class     is not None else Plot.defaultHistoClass
         self.addOverFlowBin  = addOverFlowBin   if addOverFlowBin  is not None else Plot.defaultAddOverFlowBin
 

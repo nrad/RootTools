@@ -27,7 +27,7 @@ args = argParser.parse_args()
 logger = get_logger(args.logLevel, None)
 
 # from files
-s0 = Immutable(Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events"))
+s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 
 read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
                 + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
@@ -52,7 +52,7 @@ def filler(struct):
     return
 
 # Create a maker. Maker class will be compiled. This instance will be used as a parent in the loop
-treeMaker_parent = TreeMaker( filler = filler, variables = new_variables )
+treeMaker_parent = TreeMaker( filler = filler, variables = new_variables , treeName = "newTree")
 
 # Split input in ranges
 eventRanges = reader.getEventRanges( maxFileSizeMB = 30)
@@ -73,6 +73,7 @@ for ievtRange, eventRange in enumerate(eventRanges):
     # Set the reader to the event range
     reader.setEventRange( eventRange )
     clonedTree = reader.cloneTree( branches_to_keep, rootfile = outputfile )
+    clonedTree.SetName( "newTree" )
     clonedEvents += clonedTree.GetEntries()
 
     # Clone the empty maker in order to avoid recompilation at every loop iteration

@@ -3,11 +3,13 @@ Must be a list of lists.
 '''
 # Standard imports
 import uuid
+import array
 
 # RootTools
 from RootTools.core.Sample import Sample
 from RootTools.plot.Plot import Plot
 from RootTools.plot.Immutable import Immutable
+from RootTools.plot.Binning import Binning
 
 class Stack ( list ):
         
@@ -38,10 +40,28 @@ class Stack ( list ):
         for i, l in enumerate(self):
             histos = [] 
             for j, s in enumerate(l):
-                histo = plot.histo_class(\
-                    "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
-                    "_".join([plot.name, s.name]), 
-                     *plot.binning )
+                if isinstance(plot.binning, Binning):
+                    if plot.binning.binning_is_explicit:
+                        # explicit binning with thresholds
+                        histo = plot.histo_class(\
+                            "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            "_".join([plot.name, s.name]), 
+                             len(plot.binning.binning)-1, array.array('d', plot.binning.binning) )
+                    else:
+                        # default case (but using Binning class)
+                        histo = plot.histo_class(\
+                            "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                            "_".join([plot.name, s.name]), 
+                             *plot.binning.binning )
+                elif type(plot.binning)==type([]) or type(plot.binning)==type(()): 
+                    # default case: Binning is specified as [n, x0, x1]
+                    histo = plot.histo_class(\
+                        "_".join([plot.name, s.name, str(uuid.uuid4()).replace('-','_')]), 
+                        "_".join([plot.name, s.name]), 
+                         *plot.binning )
+                else:
+                    raise ValueError( "Don't know what to do with binning of plot %s: %r"%( plot.name, plot.binning ) )
+
                 histo.Reset()
 
                 # Default sumW2
