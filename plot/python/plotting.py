@@ -30,7 +30,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
+def fill(plots, read_variables = [], sequence=[]):
     '''Create and fill all plots
     '''
 
@@ -80,9 +80,6 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
             # Create reader and run it over sample, fill the plots
             r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
 
-            # reducing event range
-            evt_range = r.reduceEventRange(reduce_stat)
-
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
 
@@ -116,6 +113,72 @@ def fill(plots, read_variables = [], sequence=[], reduce_stat = 1):
 
             r.cleanUpTempFiles()
 
+def fill_with_draw(plots, weight_string = "(1)"):
+    '''Create and fill all plots using Sample.chain.Draw
+    '''
+
+    # Unique list of selection strings
+    selectionStrings    = list(set(p.selectionString for p in plots))
+
+    for selectionString in selectionStrings:
+        logger.info( "Now working on selection string %s"% selectionString )
+
+        # find all plots with current selection
+        plots_for_selection = [p for p in plots if p.selectionString == selectionString]
+
+        # Find all samples we have to loop over
+        samples = list(set(sum([p.stack.samples() for p in plots_for_selection], [])))
+        logger.info( "Found %i different samples for this selectionString."%len(samples) )
+
+        # Give histos to plot
+        for p in plots_for_selection:
+            p.histos = p.stack.make_histos(p)
+
+        for sample in samples:
+            logger.info( "Now working on sample %s" % sample.name )
+            # find all plots whose stack contains the current sample
+            plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples()]
+
+            # find the positions (indices)  of the stack in each plot
+            for plot in plots_for_sample:
+                plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
+
+            # Obviously can't use filler functions when drawing 
+            for variable in p.variables:
+                if variable.filler is not None:
+                    raise ValueError( "Variable %s has filler. Can't do that in fill_with_draw.", p.name )
+
+            # Scaling sample
+            sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
+
+            if hasattr(sample, "weight") and sample.weight is not None:
+                raise ValueError( "Sample %s has weight. Can't do that in fill_with-draw.", s.name )
+
+            for plot in plots_for_sample:
+                for index in plot.sample_indices:
+                    if len(plot.variables)>1:
+                        raise NotImplementedError( "So far can only do 1D plots with fill_with_draw.")
+                    if plot.weight is not None:
+                        raise ValueError( "Plot %s has weight function. Can't do that in fill_with_draw. Use 'weight_string' argument of fill_with_draw." % plot.name ) 
+                    args = ( plot.variables[0].name+">>"+plot.histos[index[0]][index[1]].GetName(), "("+weight_string+")*("+sample.combineWithSampleSelection( plot.selectionString )+")", 'goff')
+                    logger.debug( "Draw arguments: %s", ", ".join(args) )
+                    sample.chain.Draw( *args )
+                    logger.info( "Sample %s plot %s has integral %3.2f. weight_string %s", sample.name, plot.name, plot.histos[index[0]][index[1]].Integral(), weight_string )
+                    if sample_scale_factor != 1:
+                        logger.debug( "Scaling sample %s plot %s with factor %3.2f", sample.name, plot.name, sample_scale_factor )
+                        plot.histos[index[0]][index[1]].Scale( sample_scale_factor )
+
+            # Clean up
+            for plot in plots_for_sample:
+                del plot.sample_indices
+
+                # Add overflow bins for 1D plots
+                if isinstance(plot, Plot.Plot):
+                    if plot.addOverFlowBin is not None:
+                        for s in plot.histos:
+                            for p in s:
+                                Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
+
 def draw(plot, \
         yRange = "auto", 
         extensions = ["pdf", "png", "root"], 
@@ -135,7 +198,7 @@ def draw(plot, \
         ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
         scaling: {} (default). Scaling the i-th stach to the j-th is done by scaling = {i:j} with i,j integers
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
-        legend: "auto" (default) or [x_low, y_low, x_high, y_high] 
+        legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
@@ -205,7 +268,7 @@ def draw(plot, \
         scaleFacRatioPad = default_widths['y_width']/float( default_widths['y_ratio_width'] )
         y_border = default_widths['y_ratio_width']/float( default_widths['y_width'] )
 
-    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
+    c1 = ROOT.TCanvas("canvas","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
 
     if ratio is not None:
         c1.Divide(1,2,0,0)
@@ -257,7 +320,7 @@ def draw(plot, \
         yMax_ = yRange[1] if not yRange[1]=="auto" else yMax_
 
     #Avoid overlap with the legend
-    if yRange=="auto" or yRange[1]=="auto":
+    if yRange=="auto" or yRange[1]=="auto" and legend is not None:
         scaleFactor = 1
         # Get x-range and y
         legendMaskedArea = getLegendMaskedArea(legendCoordinates, topPad)
@@ -397,9 +460,12 @@ def draw(plot, \
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
 
+    c1.cd()
+
     for extension in extensions:
         filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
-        c1.Print( os.path.join( plot_directory, "%s.%s"%(filename, extension) ) )
+        ofile = os.path.join( plot_directory, "%s.%s"%(filename, extension) )
+        c1.Print( ofile )
 
     del c1
 
@@ -438,7 +504,7 @@ def draw2D(plot, \
     #if hasattr(histo, "style"):
     #    histo.style(histo)
         
-    c1 = ROOT.TCanvas("ROOT.c1","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
+    c1 = ROOT.TCanvas("canvas", "drawHistos", 200,10, default_widths['x_width'], default_widths['y_width'])
 
     c1.SetBottomMargin(0.13)
     c1.SetLeftMargin(0.15)

@@ -11,3 +11,4 @@ from RootTools.fwlite.FWLiteReader import FWLiteReader
 import RootTools.core.helpers as helpers
 import RootTools.plot.styles as styles
 import RootTools.plot.plotting as plotting
+from RootTools.plot.Binning import Binning
