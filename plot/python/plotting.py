@@ -10,6 +10,7 @@ import ROOT
 import os
 import copy
 from math import log
+import uuid
 
 # RootTools
 import RootTools.core.Variable as Variable
@@ -135,7 +136,7 @@ def fill_with_draw(plots, weight_string = "(1)"):
             p.histos = p.stack.make_histos(p)
 
         for sample in samples:
-            logger.info( "Now working on sample %s" % sample.name )
+            logger.info( "Now working on sample %s with weight_string %s",  sample.name, weight_string )
             # find all plots whose stack contains the current sample
             plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples()]
 
@@ -203,7 +204,6 @@ def draw(plot, \
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
     '''
-
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
     ROOT.setTDRStyle()
@@ -268,7 +268,9 @@ def draw(plot, \
         scaleFacRatioPad = default_widths['y_width']/float( default_widths['y_ratio_width'] )
         y_border = default_widths['y_ratio_width']/float( default_widths['y_width'] )
 
-    c1 = ROOT.TCanvas("canvas","drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
+    if hasattr("ROOT","c1"): 
+        del ROOT.c1 
+    c1 = ROOT.TCanvas(str(uuid.uuid4()).replace('-','_'), "drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
 
     if ratio is not None:
         c1.Divide(1,2,0,0)
@@ -407,7 +409,6 @@ def draw(plot, \
             o.Draw()
         else:
             logger.debug( "drawObjects has something I can't Draw(): %r", o)
-
     # Make a ratio plot
     if ratio is not None:
         bottomPad.cd()
@@ -466,7 +467,6 @@ def draw(plot, \
         filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
         ofile = os.path.join( plot_directory, "%s.%s"%(filename, extension) )
         c1.Print( ofile )
-
     del c1
 
 def draw2D(plot, \
@@ -503,8 +503,7 @@ def draw2D(plot, \
     ## Clone (including any attributes) and add up histos in stack
     #if hasattr(histo, "style"):
     #    histo.style(histo)
-        
-    c1 = ROOT.TCanvas("canvas", "drawHistos", 200,10, default_widths['x_width'], default_widths['y_width'])
+    c1 = ROOT.TCanvas("ROOT.c1", "drawHistos", 200,10, default_widths['x_width'], default_widths['y_width'])
 
     c1.SetBottomMargin(0.13)
     c1.SetLeftMargin(0.15)
