@@ -7,7 +7,7 @@ def errorStyle( color, markerStyle = 20):
         histo.SetMarkerStyle( 20 )
         histo.SetMarkerColor( color )
 #        histo.SetFillColor( color )
-        histo.SetLineWidth( 0 )
+        histo.SetLineWidth( 1 )
         histo.drawOption = "e1"
         return 
     return func

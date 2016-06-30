@@ -379,7 +379,6 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.3 )
             else:
                 h.GetYaxis().SetTitleOffset( 1.6 )
-
             h.Draw(drawOption+same)
             same = "same"
 
