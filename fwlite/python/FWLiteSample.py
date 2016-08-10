@@ -89,7 +89,7 @@ class FWLiteSample ( object ):
         return sample
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://xrootd.unl.edu/', maxN = None):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', maxN = None):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
