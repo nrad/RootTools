@@ -109,7 +109,7 @@ class FWLiteSample ( object ):
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
 
-        dbs='das_client.py --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+        dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
         dbsOut = _dasPopen(dbs).readlines()
         
         files = []
