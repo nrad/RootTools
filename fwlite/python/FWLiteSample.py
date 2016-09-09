@@ -89,7 +89,7 @@ class FWLiteSample ( object ):
         return sample
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://xrootd.unl.edu/', maxN = None):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', maxN = None):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -109,7 +109,7 @@ class FWLiteSample ( object ):
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
 
-        dbs='das_client.py --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+        dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
         dbsOut = _dasPopen(dbs).readlines()
         
         files = []
