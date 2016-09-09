@@ -21,7 +21,7 @@ from RootTools.core.helpers import shortTypeDict
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, variables, sequence = [], filled_variables = [], selectionString = None, allBranchesActive = False):
+    def __init__(self, sample, variables=[], sequence = [], filled_variables = [], selectionString = None, allBranchesActive = False):
 
         # The following checks are 'look before you leap' but I rather have the user know if the input is non-sensical
         if not isinstance(sample, Sample):

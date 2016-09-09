@@ -67,15 +67,15 @@ def checkRootFile(f, checkForObjects=[] ):
     rf.Close()
     return True
 
-def combineSelectionStrings( selectionStringList = [], stringOperator = "&&"):
+def combineStrings( stringList = [], stringOperator = "&&"):
     '''Expects a list of string based cuts and combines them to a single string using stringOperator
     '''
-    if selectionStringList is None: return "(1)"
+    if stringList is None: return "(1)"
 
-    if not all( (type(s) == type("") or s is None) for s in selectionStringList):
-        raise ValueError( "Don't know what to do with selectionStringList %r"%selectionStringList)
+    if not all( (type(s) == type("") or s is None) for s in stringList):
+        raise ValueError( "Don't know what to do with stringList %r"%stringList)
 
-    list_ = [s for s in selectionStringList if not s is None ]
+    list_ = [s for s in stringList if not s is None ]
     if len(list_)==0:
         return "(1)"
     elif len(list_)==1:
