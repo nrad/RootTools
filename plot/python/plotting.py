@@ -38,7 +38,12 @@ def fill(plots, read_variables = [], sequence=[]):
     # Unique list of selection strings
     selectionStrings    = list(set(p.selectionString for p in plots))
     # Convert extra arguments from text to Variable instance
-    read_variables      =list(helpers.fromString(read_variables))
+    read_variables_ = []
+    for v in read_variables:
+        if type(v) == type(""):
+            read_variables_.extend( helpers.fromString( v ) )
+        else: 
+            read_variables_.append( v )
 
     for selectionString in selectionStrings:
         logger.info( "Now working on selection string %s"% selectionString )
@@ -73,13 +78,18 @@ def fill(plots, read_variables = [], sequence=[]):
                     if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
 
             # Check if we need to add sample dependend variables
-            if hasattr(sample, "read_variables"): chain_variables += list(helpers.fromString(sample.read_variables))
+            if hasattr(sample, "read_variables"):
+                for v in sample.read_variables:
+                    if type(v) == type(""):
+                        chain_variables.extend( helpers.fromString( v ) )
+                    else: 
+                        chain_variables.append( v )
             
             # Check if we need to run a sequence for this sample? (Should run after a global sequence) 
             sequence_ = sequence + sample.sequence if hasattr(sample, "sequence") else sequence
 
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables_ + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
@@ -129,7 +139,8 @@ def fill_with_draw(plots, weight_string = "(1)"):
             p.histos = p.stack.make_histos(p)
 
         for sample in samples:
-            logger.info( "Now working on sample %s with weight_string %s",  sample.name, weight_string )
+            weight_string_ = sample.combineWithSampleWeight( weight_string )
+            logger.info( "Now working on sample %s with weight_string %s",  sample.name, weight_string_ )
             # find all plots whose stack contains the current sample
             plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples()]
 
@@ -154,10 +165,10 @@ def fill_with_draw(plots, weight_string = "(1)"):
                         raise NotImplementedError( "So far can only do 1D plots with fill_with_draw.")
                     if plot.weight is not None:
                         raise ValueError( "Plot %s has weight function. Can't do that in fill_with_draw. Use 'weight_string' argument of fill_with_draw." % plot.name ) 
-                    args = ( plot.variables[0].name+">>"+plot.histos[index[0]][index[1]].GetName(), "("+weight_string+")*("+sample.combineWithSampleSelection( plot.selectionString )+")", 'goff')
+                    args = ( plot.variables[0].name+">>"+plot.histos[index[0]][index[1]].GetName(), "("+weight_string_+")*("+sample.combineWithSampleSelection( plot.selectionString )+")", 'goff')
                     logger.debug( "Draw arguments: %s", ", ".join(args) )
                     sample.chain.Draw( *args )
-                    logger.info( "Sample %s plot %s has integral %3.2f. weight_string %s", sample.name, plot.name, plot.histos[index[0]][index[1]].Integral(), weight_string )
+                    logger.info( "Sample %s plot %s has integral %3.2f. weight_string %s", sample.name, plot.name, plot.histos[index[0]][index[1]].Integral(), weight_string_ )
                     if sample_scale_factor != 1:
                         logger.debug( "Scaling sample %s plot %s with factor %3.2f", sample.name, plot.name, sample_scale_factor )
                         plot.histos[index[0]][index[1]].Scale( sample_scale_factor )
@@ -324,7 +335,7 @@ def draw(plot, \
         yMax_ = yRange[1] if not yRange[1]=="auto" else yMax_
 
     #Avoid overlap with the legend
-    if yRange=="auto" or yRange[1]=="auto" and legend is not None:
+    if (yRange=="auto" or yRange[1]=="auto") and (legend is not None):
         scaleFactor = 1
         # Get x-range and y
         legendMaskedArea = getLegendMaskedArea(legendCoordinates, topPad)

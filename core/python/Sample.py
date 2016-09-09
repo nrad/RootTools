@@ -41,13 +41,23 @@ def readNormalization(file):
 
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
-    def __init__(self, name, treeName , files = [], normalization = None, selectionString = None, isData = False, color = 0, texName = None):
+    def __init__(self, 
+            name, 
+            treeName , 
+            files = [], 
+            normalization = None, 
+            selectionString = None, 
+            weightString = None, 
+            isData = False, 
+            color = 0, 
+            texName = None):
         ''' Handling of sample. Uses a TChain to handle root files with flat trees.
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
             'normalization': can be set in order to later calculate weights, 
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
             'selectionString': sample specific string based selection (can be list of strings)
+            'weightString': sample specific string based weight (can be list of strings)
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
@@ -60,31 +70,76 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
         self.normalization = normalization
         self._chain = None
-        
+       
+        self.__selectionStrings = [] 
         self.setSelectionString( selectionString )
+
+        self.__weightStrings = [] 
+        self.setWeightString( weightString )
 
         self.isData = isData
         self.color = color
         self.texName = texName if not texName is None else name
              
-        logger.debug("Created new sample %s with %i files, treeName %s and __selectionStrings %s.", 
-            name, len(self.files), treeName, self.__selectionStrings)
+        logger.debug("Created new sample %s with %i files, treeName %s,  selectionStrings %r and weightStrings %r.", 
+            name, len(self.files), treeName, self.__selectionStrings, self.__weightStrings)
 
     def setSelectionString(self, selectionString):
         if type(selectionString)==type(""):
-            self.__selectionStrings = [ selectionString ] 
+            self.__selectionStrings = [ selectionString ]
         elif type(selectionString)==type([]): 
             self.__selectionStrings =  selectionString 
         elif selectionString is None:
-            self.__selectionStrings = None
+            self.__selectionStrings = []
         else:
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
 
         self.clear()
 
+    def addSelectionString(self, selectionString):
+        if type(selectionString)==type(""):
+            self.__selectionStrings += [ selectionString ] 
+            self.clear()
+        elif type(selectionString)==type([]): 
+            self.__selectionStrings +=  selectionString 
+            self.clear()
+        elif (selectionString is None ) or selectionString == []:
+            pass 
+        else:
+            raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
+
+    def setWeightString(self, weightString):
+        if type(weightString)==type(""):
+            self.__weightStrings = [ weightString ]
+        elif type(weightString)==type([]): 
+            self.__weightStrings =  weightString 
+        elif weightString is None:
+            self.__weightStrings = []
+        else:
+            raise ValueError( "Don't know what to do with weightString %r"%weightString )
+
+        self.clear()
+
+    def addWeightString(self, weightString):
+        if type(weightString)==type(""):
+            self.__weightStrings += [ weightString ] 
+            self.clear()
+        elif type(weightString)==type([]): 
+            self.__weightStrings +=  weightString 
+            self.clear()
+        elif (weightString is None ) or weightString == []:
+            pass 
+        else:
+            raise ValueError( "Don't know what to do with weightString %r"%weightString )
+
+
     @property
     def selectionString(self):
-        return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineSelectionStrings(self.__selectionStrings) 
+        return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineStrings(self.__selectionStrings, stringOperator = "&&") 
+
+    @property
+    def weightString(self):
+        return self.__weightStrings if type(self.__weightStrings)==type("") else helpers.combineStrings(self.__weightStrings, stringOperator = "*") 
 
     @classmethod
     def combine(cls, name, samples, texName = None, maxN = None):
@@ -115,7 +170,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             )
  
     @classmethod
-    def fromFiles(cls, name, files, treeName=None, normalization = None, selectionString = None, isData = False, color = 0, texName = None, maxN = None):
+    def fromFiles(cls, name, files, 
+        treeName=None, normalization = None, 
+        selectionString = None, weightString = None, 
+        isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
         '''
 
@@ -132,15 +190,17 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString,\
-                        isData = isData, color=color, texName = texName)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+                selectionString = selectionString, weightString = weightString,
+                isData = isData, color=color, texName = texName)
 
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = None, normalization = None, selectionString = None, \
-                        isData = False, color = 0, texName = None, maxN = None):
+    def fromDirectory(cls, name, directory, treeName = None, normalization = None, \
+                selectionString = None, weightString = None,
+                isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
         '''
         # Work with directories and list of directories
@@ -164,14 +224,16 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
-                        isData = isData, color=color, texName = texName)
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+            selectionString = selectionString, weightString = weightString,
+            isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, selectionString = None, \
-                        isData = False, color = 0, texName = None):
+    def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
+            selectionString = None, weightString = None, 
+            isData = False, color = 0, texName = None):
         '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
            Expects the presence of the tree root file and the SkimReport.txt
         ''' 
@@ -243,11 +305,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         for chunk in failedChunks:
             logger.debug( "Failed to load chunk %s", chunk)
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
-        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
-                    isData = isData, color = color, texName = texName )
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
+            selectionString = selectionString, weightString = weightString,
+            isData = isData, color = color, texName = texName )
+
     @classmethod
-    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, selectionString = None, \
-                        isData = False, color = 0, texName = None):
+    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, \
+            selectionString = None, weightString = weightString,
+            isData = False, color = 0, texName = None):
         '''Load a CMG crab output directory
         ''' 
         import tarfile
@@ -316,8 +381,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                           name, len(pairs), n_jobs, normalization, len(failedJobs), eff)
 
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
-        return cls( name = name, treeName = treeName, files = files, normalization = normalization, selectionString = selectionString, \
-                    isData = isData, color = color, texName = texName )
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
+                selectionString = selectionString, weightString = weightString, 
+                isData = isData, color = color, texName = texName )
 
     # Handle loading of chain -> load it when first used 
     @property
@@ -399,11 +465,23 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if self.__selectionStrings:
             logger.debug("For Sample %s: Combining selectionString %s with sample selectionString %s", \
                 self.name, selectionString, self.selectionString )
-            return helpers.combineSelectionStrings( [selectionString]+self.__selectionStrings )
+            return helpers.combineStrings( [selectionString]+self.__selectionStrings, stringOperator = "&&")
         else:
             logger.debug("For Sample %s: Return selectionString %s because sample has no selectionString", \
                 self.name, selectionString )
             return selectionString
+
+    def combineWithSampleWeight(self, weightString):
+        if weightString is None: return self.weightString
+        if not type(weightString)==type(""): raise ValueError( "Need 'None' or string for weightString, got %s" % weightString )
+        if self.__weightStrings:
+            logger.debug("For Sample %s: Combining weightString %s with sample weightString %s", \
+                self.name, weightString, self.weightString )
+            return helpers.combineStrings( [weightString]+self.__weightStrings, stringOperator = "*")
+        else:
+            logger.debug("For Sample %s: Return weightString %s because sample has no weightString", \
+                self.name, weightString )
+            return weightString
 
     def getEventList(self, selectionString=None, name=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
@@ -428,13 +506,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         ''' 
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
+        weightString_    = self.combineWithSampleWeight( weightString )
 
         tmp=str(uuid.uuid4())
         h = ROOT.TH1D(tmp, tmp, 1,0,2)
         h.Sumw2()
-        weight = weightString if weightString else "1"
+        #weight = weightString if weightString else "1"
         logger.debug( "getYieldFromDraw for sample %s with chain %r", self.name, self.chain )
-        self.chain.Draw("1>>"+tmp, "("+weight+")*("+selectionString_+")", 'goff')
+        self.chain.Draw("1>>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
         res = h.GetBinContent(1)
         resErr = h.GetBinError(1)
         del h
@@ -451,6 +530,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             the corresponding overflow bin to the last bin of a 1D histogram'''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
+        weightString_    = self.combineWithSampleWeight( weightString )
 
         tmp=str(uuid.uuid4())
         if binningIsExplicit:
@@ -462,9 +542,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         res = cls(tmp, tmp, *binningArgs)
 
-        weight = weightString if weightString else "1"
+        #weight = weightString if weightString else "1"
 
-        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
+        self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
        
         Plot.addOverFlowBin1D( res, addOverFlowBin )
  
@@ -476,6 +556,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
+        weightString_    = self.combineWithSampleWeight( weightString )
 
         tmp=str(uuid.uuid4())
         if binningIsExplicit:
@@ -494,8 +575,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         res = cls(tmp, tmp, *binningArgs)
 
-        weight = weightString if weightString else "1"
+        #weight = weightString if weightString else "1"
 
-        self.chain.Draw(variableString+">>"+tmp, weight+"*("+selectionString_+")", 'goff')
+        self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
