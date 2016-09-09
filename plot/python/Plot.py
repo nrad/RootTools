@@ -13,8 +13,7 @@ def addOverFlowBin1D( histo, addOverFlowBin = None):
     if not any( isinstance(histo, o) for o in [ROOT.TH1, ROOT.TProfile]):
         raise NotImplementedError( "Can add overflow bin only to 1D histos. Got %r" %histo )
 
-    if addOverFlowBin is not None:
-        if hasattr(histo, 'overflowApplied'): continue
+    if addOverFlowBin is not None and hasattr(histo, 'overflowApplied')
         if addOverFlowBin.lower() == "upper" or addOverFlowBin.lower() == "both":
             nbins = histo.GetNbinsX()
             histo.SetBinContent(nbins , histo.GetBinContent(nbins) + histo.GetBinContent(nbins + 1))
