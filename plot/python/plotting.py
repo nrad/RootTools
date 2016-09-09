@@ -115,13 +115,6 @@ def fill(plots, read_variables = [], sequence=[]):
             for plot in plots_for_sample:
                 del plot.sample_indices
 
-                # Add overflow bins for 1D plots
-                if isinstance(plot, Plot.Plot):
-                    if plot.addOverFlowBin is not None:
-                        for s in plot.histos:
-                            for p in s:
-                                Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
-
             r.cleanUpTempFiles()
 
 def fill_with_draw(plots, weight_string = "(1)"):
@@ -239,6 +232,15 @@ def draw(plot, \
 
     # Clone (including any attributes) and add up histos in stack
     histos = map(lambda l:map(lambda h:helpers.clone(h), l), plot.histos)
+
+    # Add overflow bins for 1D plots
+    if isinstance(plot, Plot.Plot):
+	if plot.addOverFlowBin is not None:
+	    for s in histos:
+		for p in s:
+		    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
+
+
     for i, l in enumerate(histos):
 
         # recall the sample for use in the legend
@@ -318,7 +320,7 @@ def draw(plot, \
     #Calculate legend coordinates in gPad coordinates
     if legend is not None:
         if legend=="auto":
-            legendCoordinates = (0.50,0.93-0.05*sum(map(len, plot.histos)),0.95,0.93)
+            legendCoordinates = (0.50,0.93-0.05*sum(map(len, plot.histos)),0.92,0.93)
         else:
             legendCoordinates = legend 
 
@@ -390,6 +392,7 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.3 )
             else:
                 h.GetYaxis().SetTitleOffset( 1.6 )
+
             h.Draw(drawOption+same)
             same = "same"
 
@@ -397,10 +400,11 @@ def draw(plot, \
     # Make the legend
     if legend is not None:
         legend_ = ROOT.TLegend(*legendCoordinates)
-        legend_.SetFillColor(0)
+        legend_.SetFillStyle(0)
+#        legend_.SetFillColor(0)
         legend_.SetShadowColor(ROOT.kWhite)
         legend_.SetBorderSize(0)
-        legend_.SetBorderSize(1)
+#        legend_.SetBorderSize(1)
         for l in histos:
             for h in l:
                 if hasattr(h, "texName"): 
