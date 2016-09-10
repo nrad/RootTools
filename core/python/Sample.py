@@ -311,7 +311,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
     @classmethod
     def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, \
-            selectionString = None, weightString = weightString,
+            selectionString = None, weightString = None,
             isData = False, color = 0, texName = None):
         '''Load a CMG crab output directory
         ''' 
