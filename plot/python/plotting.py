@@ -177,13 +177,6 @@ def fill_with_draw(plots, weight_string = "(1)"):
             for plot in plots_for_sample:
                 del plot.sample_indices
 
-                # Add overflow bins for 1D plots
-                if isinstance(plot, Plot.Plot):
-                    if plot.addOverFlowBin is not None:
-                        for s in plot.histos:
-                            for p in s:
-                                Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
-
 def draw(plot, \
         yRange = "auto", 
         extensions = ["pdf", "png", "root"], 
