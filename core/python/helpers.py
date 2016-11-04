@@ -92,12 +92,6 @@ def fromString(*args):
         raise ValueError( "Need string or Variable instance or list of these as argument, got %r"%args)
     return tuple(map(lambda s:Variable.fromString(s) if type(s)==type("") else s, args))
 
-def uses(func, args):
-    ''' Decorates a filler function with a list of strings of the used branch names
-    '''
-    func.used_variables = fromString( args )
-    return func
-
 def clone(root_object, new_name = None):
     ''' Cloning a ROOT class instance and preserving attributes
     '''

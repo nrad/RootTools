@@ -16,13 +16,9 @@ class TreeMaker( LooperBase ):
 
     def __init__(self, variables, filler = None, treeName = "Events"):
         
-        if not type(variables)==type([]):
-            variables = [variables]
         for v in variables:
             if not isinstance(v, Variable):
                 raise ValueError( "Not a proper variable: %r '%s'"%(v,v) )
-            if  hasattr(v, 'filler') and v.filler and not hasattr(v.filler, '__call__'):
-                raise ValueError( "Something wrong with the filler %r for variable  %r '%s'"%(v.filler, v, v) )
 
         super(TreeMaker, self).__init__( variables = variables)
 
@@ -69,6 +65,7 @@ class TreeMaker( LooperBase ):
                 self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), '%s/%s'%(s['name'], s['type']))
             )
             scalerCount+=1
+
         vectorCount = 0
         for s in LooperBase._branchInfo( self.variables, restrictType = VectorType, addVectorCounters = True ):
             self.branches.append(
@@ -96,19 +93,11 @@ class TreeMaker( LooperBase ):
 
     def _execute(self):
         ''' Use filler to fill struct and then fill struct to tree'''
-
-
+        # FIXME for sequence!
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
 
         # Call external filler method: variables first
-        # FIXME: Here, could do a better job by filling with return value for scalars and some
-        # vector filler that handles the filling of the components and nVecname.
-        for v in self.variables:
-            if hasattr(v, 'filler') and v.filler:
-                raise NotImplementedError( "Still need to decide whether this is a good idea." )
-                self.filler( self.data )
-
         if self.filler:
             self.filler( self.data )
 
