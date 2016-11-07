@@ -27,11 +27,11 @@ logger = get_logger(args.logLevel, logFile = None)
 # from files
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 
-read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
-                + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
+read_variables =  [ TreeVariable.fromString( "nJet/I"), TreeVariable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
+                + [ TreeVariable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
-new_variables =     [ Variable.fromString('MyJet[pt2/F]' ) ] \
-                  + [ Variable.fromString(x) for x in [ 'myMetOver2/F' ] ]
+new_variables =     [ TreeVariable.fromString('MyJet[pt2/F]' ) ] \
+                  + [ TreeVariable.fromString(x) for x in [ 'myMetOver2/F' ] ]
 
 # Define a reader
 reader = s0.treeReader( variables = read_variables,  selectionString = "met_pt>50")

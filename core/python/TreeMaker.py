@@ -11,13 +11,13 @@ logger = logging.getLogger(__name__)
 
 # RootTools
 from RootTools.core.LooperBase import LooperBase
-from RootTools.core.Variable import ScalarType, VectorType, Variable
+from RootTools.core.TreeVariable import ScalarTreeVariable, VectorTreeVariable, TreeVariable
 class TreeMaker( LooperBase ):
 
     def __init__(self, variables, filler = None, treeName = "Events"):
         
         for v in variables:
-            if not isinstance(v, Variable):
+            if not isinstance(v, TreeVariable):
                 raise ValueError( "Not a proper variable: %r '%s'"%(v,v) )
 
         super(TreeMaker, self).__init__( variables = variables)
@@ -60,14 +60,14 @@ class TreeMaker( LooperBase ):
     def makeBranches(self):
 
         scalerCount = 0
-        for s in LooperBase._branchInfo( self.variables, restrictType = ScalarType, addVectorCounters = True):
+        for s in LooperBase._branchInfo( self.variables, restrictType = ScalarTreeVariable, addVectorCounters = True):
             self.branches.append( 
                 self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), '%s/%s'%(s['name'], s['type']))
             )
             scalerCount+=1
 
         vectorCount = 0
-        for s in LooperBase._branchInfo( self.variables, restrictType = VectorType, addVectorCounters = True ):
+        for s in LooperBase._branchInfo( self.variables, restrictType = VectorTreeVariable, addVectorCounters = True ):
             self.branches.append(
                 self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name'] ), "%s[%s]/%s"%(s['name'], s['counterInt'], s['type']) )
             )

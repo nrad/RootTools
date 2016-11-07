@@ -86,11 +86,11 @@ def combineStrings( stringList = [], stringOperator = "&&"):
 def fromString(*args):
     ''' Make a list of Variables from the input arguments
     '''
-    from RootTools.core.Variable import Variable
+    from RootTools.core.TreeVariable import TreeVariable
     args = sum( [ [s] if type(s)==type("") else s for s in args if s is not None], [])
-    if not all(type(s)==type("") or isinstance(s, Variable) for s in args):
-        raise ValueError( "Need string or Variable instance or list of these as argument, got %r"%args)
-    return tuple(map(lambda s:Variable.fromString(s) if type(s)==type("") else s, args))
+    if not all(type(s)==type("") or isinstance(s, TreeVariable) for s in args):
+        raise ValueError( "Need string or TreeVariable instance or list of these as argument, got %r"%args)
+    return tuple(map(lambda s:TreeVariable.fromString(s) if type(s)==type("") else s, args))
 
 def clone(root_object, new_name = None):
     ''' Cloning a ROOT class instance and preserving attributes

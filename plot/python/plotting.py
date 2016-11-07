@@ -13,7 +13,7 @@ from math import log
 import uuid
 
 # RootTools
-import RootTools.core.Variable as Variable
+import RootTools.core.TreeVariable as TreeVariable
 import RootTools.plot.Plot as Plot
 import RootTools.core.helpers as helpers
 
@@ -37,7 +37,7 @@ def fill(plots, read_variables = [], sequence=[]):
 
     # Unique list of selection strings
     selectionStrings    = list(set(p.selectionString for p in plots))
-    # Convert extra arguments from text to Variable instance
+    # Convert extra arguments from text to TreeVariable instance
     read_variables_ = []
     for v in read_variables:
         if type(v) == type(""):
@@ -70,12 +70,10 @@ def fill(plots, read_variables = [], sequence=[]):
 
             # Make reader
             # Keep sequence of filled variables
-            filled_variables = []
             chain_variables  = []
             for p in plots_for_sample:
                 for variable in p.variables:
-                    if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
-                    if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
+                    if variable not in chain_variables:  chain_variables.append( variable )
 
             # Check if we need to add sample dependend variables
             if hasattr(sample, "read_variables"):
@@ -89,7 +87,7 @@ def fill(plots, read_variables = [], sequence=[]):
             sequence_ = sequence + sample.sequence if hasattr(sample, "sequence") else sequence
 
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables_ + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables_ + chain_variables, sequence = sequence_, selectionString = selectionString)
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
@@ -147,11 +145,6 @@ def fill_with_draw(plots, weight_string = "(1)"):
             # find the positions (indices)  of the stack in each plot
             for plot in plots_for_sample:
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
-
-            # Obviously can't use filler functions when drawing 
-            for variable in p.variables:
-                if variable.filler is not None:
-                    raise ValueError( "Variable %s has filler. Can't do that in fill_with_draw.", p.name )
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale

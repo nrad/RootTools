@@ -56,7 +56,7 @@ class Plot( PlotBase ):
                  texX = None, texY = None, addOverFlowBin = None):
         ''' A plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], 
-        'variable' instance, either with a filler or with the name of a data member, 
+        'variable' instance,  
         'selectionString' to be used on top of each samples selectionString, 
         'weight' function, 
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D

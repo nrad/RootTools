@@ -61,7 +61,7 @@ plot1 = Plot(\
     name = "met_coarseBinning", # Name is not needed. If not provided, variable.name is used as filename instead.
     stack = stack,
     # met_pt is in the chain
-    variable = Variable.fromString( "met_pt/F" ), 
+    variable = TreeVariable.fromString( "met_pt/F" ), 
     binning = [10,0,200], 
     selectionString = selectionString,
     weight = plot_weight 
@@ -72,7 +72,7 @@ plot2 = Plot(\
     # Here, I create a new variable that was not in the chain. I add a filler function to compute it.
     # The uses statement tells the filler which variables are needed and reads them from the branch.
     # Alternatively, specify read_variables
-    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( 
+    variable = TreeVariable.fromString( "met_plus_jet0Pt/F").addFiller( 
         helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]) , ["Jet[pt/F]", "met_pt/F"] )
         ), 
     binning = [20,0,200], 
@@ -81,7 +81,7 @@ plot2 = Plot(\
 )
 
 # Nothing new wrt plot 2
-cosMetPhi = Variable.fromString('cosMetPhi/F') 
+cosMetPhi = TreeVariable.fromString('cosMetPhi/F') 
 cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
 plot3 = Plot(\
     stack = stack, 

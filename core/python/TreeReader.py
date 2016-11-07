@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.core.Sample import Sample
 import RootTools.core.helpers as helpers
-from RootTools.core.Variable import Variable, ScalarType, VectorType
+from RootTools.core.Variable import Variable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.helpers import shortTypeDict
 
 class TreeReader( LooperBase ):

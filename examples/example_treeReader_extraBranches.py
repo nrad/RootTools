@@ -27,11 +27,11 @@ logger = get_logger(args.logLevel, logFile = None)
 # Samplefrom files
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 
-variables =  [ Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
-           + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
+variables =  [ TreeVariable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
+           + [ TreeVariable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
 # Defining a variable and giving it a filler
-cosMetPhi = Variable.fromString('cosMetPhi/F') 
+cosMetPhi = TreeVariable.fromString('cosMetPhi/F') 
 cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
 filled_variables = [ cosMetPhi ]
 

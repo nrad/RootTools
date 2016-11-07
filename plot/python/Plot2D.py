@@ -36,7 +36,7 @@ class Plot2D( PlotBase ):
                  texX = None, texY = None):
         ''' A 2D plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
-        'variables' list of instances of Variable (x,y), either with a filler or with the name of a data member, a
+        'variables' list of instances of TreeVariable (x,y), a
         'selectionString' to be used on top of each samples selectionString, a
         'weight' function, a 
         'hist_class', e.g. ROOT.TH2F or ROOT.TProfile2D

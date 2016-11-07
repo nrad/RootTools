@@ -11,7 +11,7 @@ import RootTools.core.helpers as helpers
 allTypes  = set(helpers.cStringTypeDict.keys())
 allCTypes = set(helpers.cStringTypeDict.values())
 
-class Variable( object ):
+class TreeVariable( object ):
     __metaclass__ = abc.ABCMeta
    
     @abc.abstractmethod
@@ -21,12 +21,12 @@ class Variable( object ):
     @classmethod
     def fromString( cls, string ):
         try:
-            return VectorType.fromString( string )
+            return VectorTreeVariable.fromString( string )
 
         except ( ValueError, AssertionError ):
-            return ScalarType.fromString( string )
+            return ScalarTreeVariable.fromString( string )
 
-class ScalarType( Variable ):
+class ScalarTreeVariable( TreeVariable ):
 
     def __init__( self, name, tp, defaultCString = None ):
         ''' Initialize variable. 
@@ -71,17 +71,17 @@ class ScalarType( Variable ):
     def __str__(self):
         return "%s(scalar, type: %s)" %(self. name, self.tp)
 
-class VectorType( Variable ):
+class VectorTreeVariable( TreeVariable ):
 
     def __init__( self, name, components, nMax = None):
         ''' Initialize variable.
-            'components': list of ScalarType 
+            'components': list of ScalarTreeVariable 
             default is the value the variable will be initialized with,
             nMax is the maximal length of the vector in memory (if not specified: 100)
         '''
         self.name = name
         # Scalar components
-        self._components = [ ScalarType.fromString("%s_%s"%(self.name, x) ) if type(x)==type("") else x for x in components ]
+        self._components = [ ScalarTreeVariable.fromString("%s_%s"%(self.name, x) ) if type(x)==type("") else x for x in components ]
 
         self.nMax = int(nMax) if nMax is not None else 100
 
@@ -106,7 +106,7 @@ class VectorType( Variable ):
     def counterVariable(self):
         ''' Return a scalar counter variable 'nVectorname/I'
         '''
-        return ScalarType('n'+self.name, 'I')
+        return ScalarTreeVariable('n'+self.name, 'I')
 
     def __str__(self):
         return "%s(vector[%s], components: %s )" %(self. name, self.nMax, ",".join(str(c) for c in self.components) )

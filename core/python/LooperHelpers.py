@@ -1,6 +1,6 @@
 # RootTools imports
 
-from RootTools.core.Variable import Variable, VectorType, ScalarType
+from RootTools.core.TreeVariable import TreeVariable, VectorTreeVariable, ScalarTreeVariable
 from RootTools.core.helpers import cStringTypeDict, defaultCTypeDict
 
 def getCTypeString(typeString):
@@ -23,8 +23,8 @@ def createClassString(variables, useSTDVectors = False, addVectorCounters = Fals
     '''Create class string from scalar and vector variables
     '''
 
-    vectors = [v for v in variables if isinstance(v, VectorType) ]
-    scalars = [s for s in variables if isinstance(s, ScalarType) ]
+    vectors = [v for v in variables if isinstance(v, VectorTreeVariable) ]
+    scalars = [s for s in variables if isinstance(s, ScalarTreeVariable) ]
 
     # Adding default counterVariable 'nVectorname/I' if specified
     if addVectorCounters: scalars += [v.counterVariable() for v in vectors]
