@@ -14,7 +14,7 @@ from RootTools.core.LooperBase import LooperBase
 from RootTools.core.TreeVariable import ScalarTreeVariable, VectorTreeVariable, TreeVariable
 class TreeMaker( LooperBase ):
 
-    def __init__(self, variables, filler = None, treeName = "Events"):
+    def __init__(self, variables, sequence = [], treeName = "Events"):
         
         for v in variables:
             if not isinstance(v, TreeVariable):
@@ -22,7 +22,7 @@ class TreeMaker( LooperBase ):
 
         super(TreeMaker, self).__init__( variables = variables)
 
-        self.makeClass( "data", variables = variables, useSTDVectors = False, addVectorCounters = True)
+        self.makeClass( "event", variables = variables, useSTDVectors = False, addVectorCounters = True)
 
         # Create tree to store the information and store also the branches
         self.treeIsExternal = False
@@ -30,8 +30,8 @@ class TreeMaker( LooperBase ):
         self.branches = []
         self.makeBranches()
 
-        # function to fill the data 
-        self.filler = filler
+        # function to fill the event 
+        self.sequence = sequence
 
     def cloneWithoutCompile(self, externalTree = None):
         ''' make a deep copy of self to e.g. avoid re-compilation of class in a loop. 
@@ -60,18 +60,28 @@ class TreeMaker( LooperBase ):
     def makeBranches(self):
 
         scalerCount = 0
-        for s in LooperBase._branchInfo( self.variables, restrictType = ScalarTreeVariable, addVectorCounters = True):
-            self.branches.append( 
-                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name']), '%s/%s'%(s['name'], s['type']))
-            )
-            scalerCount+=1
-
         vectorCount = 0
-        for s in LooperBase._branchInfo( self.variables, restrictType = VectorTreeVariable, addVectorCounters = True ):
-            self.branches.append(
-                self.tree.Branch(s['name'], ROOT.AddressOf( self.data, s['name'] ), "%s[%s]/%s"%(s['name'], s['counterInt'], s['type']) )
-            )
-            vectorCount+=1
+        for s in self.variables:
+            if isinstance(s, ScalarTreeVariable):
+                self.branches.append( 
+                    self.tree.Branch(s.name, ROOT.AddressOf( self.event, s.name), '%s/%s'%(s.name, s.type))
+                )
+                scalerCount+=1
+            elif isinstance(s, VectorTreeVariable):
+                # first add counter counter
+                counter = s.counterVariable()
+                self.branches.append( 
+                    self.tree.Branch(counter.name, ROOT.AddressOf( self.event, counter.name ), '%s/%s'%(counter.name, counter.type))
+                )
+                # then add vector components
+                for comp in s.components:
+                    self.branches.append(
+                        self.tree.Branch(comp.name, ROOT.AddressOf( self.event, comp.name ), "%s[%s]/%s"%(comp.name, counter.name, comp.type) )
+                    )
+                vectorCount+=1
+            else:
+                raise ValueError( "Don't know what variable %r is." % s )
+
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", scalerCount, vectorCount )
 
     def clear(self):
@@ -88,22 +98,21 @@ class TreeMaker( LooperBase ):
     def _initialize(self):
         self.position = 0
         # Initialize struct
-        self.data.init()
+        self.event.init()
         pass
 
     def _execute(self):
-        ''' Use filler to fill struct and then fill struct to tree'''
-        # FIXME for sequence!
+        ''' Use sequence to fill struct and then fill struct to tree'''
+
         if (self.position % 10000)==0:
             logger.info("TreeMaker is at position %6i", self.position)
 
-        # Call external filler method: variables first
-        if self.filler:
-            self.filler( self.data )
+        for func in self.sequence:
+            func( event = self.event )
 
         self.fill()
 
         # Initialize struct
-        self.data.init()
+        self.event.init()
  
         return 1 

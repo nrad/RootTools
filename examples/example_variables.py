@@ -18,7 +18,7 @@ from RootTools.core.standard import *
 args = argParser.parse_args()
 logger = get_logger(args.logLevel, logFile = None)
 
-s1 = ScalarType('x', 'F')
+s1 = ScalarTreeVariable('x', 'F')
 s2 = TreeVariable.fromString('phi/F')
 s3 = TreeVariable.fromString('y/I')
 
@@ -29,7 +29,7 @@ print s3
 
 print
 
-v1 = VectorType('Jet', ['pt/F', 'eta/F', s2], nMax = 10)
+v1 = VectorTreeVariable('Jet', ['pt/F', 'eta/F', s2], nMax = 10)
 v2 = TreeVariable.fromString('Lepton[pt/F,eta/F,phi/F]')
 
 print "Vectors:"

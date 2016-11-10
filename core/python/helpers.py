@@ -98,3 +98,8 @@ def clone(root_object, new_name = None):
     new = root_object.Clone() if new_name is None else root_object.Clone(new_name)
     new.__dict__.update(root_object.__dict__)
     return new 
+
+
+def add_to_sequence( func, sequence ):
+    sequence.append( func )
+    return func

@@ -18,26 +18,18 @@ logger = logging.getLogger(__name__)
 import RootTools.core.helpers as helpers
 import RootTools.plot.Plot as Plot
 
-@helpers.static_vars(sampleCounter = 0)
-def newName():
-    result = "Sample_"+str(newName.sampleCounter)
-    newName.sampleCounter += 1
+# new_name method for sample counting
+@helpers.static_vars( sample_counter = 0 )
+def new_name():
+    result = "Sample_"+str( new_name.sample_counter )
+    new_name.sample_counter += 1
     return result
 
-def checkEqual_(vals):
+def check_equal_(vals):
     if not len(set(vals)) == 1:
         raise ValueError( "These values should be identical but are not: %r"%vals )
     else:
         return vals[0]
-
-def readNormalization(file):
-    sumW = None
-    allEvents = None
-    for line in file:
-      if "Sum Weights" in line: sumW = float(line.split()[2])
-      if 'All Events'  in line: allEvents = float(line.split()[2])
-    if sumW is not None: return sumW
-    else:                return allEvents
 
 class Sample ( object ): # 'object' argument will disappear in Python 3
 
@@ -66,8 +58,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.name = name
         self.treeName = treeName
         self.files = files
+
         if not len(self.files)>0:
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
+
         self.normalization = normalization
         self._chain = None
        
@@ -132,7 +126,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         else:
             raise ValueError( "Don't know what to do with weightString %r"%weightString )
 
-
     @property
     def selectionString(self):
         return self.__selectionStrings if type(self.__selectionStrings)==type("") else helpers.combineStrings(self.__selectionStrings, stringOperator = "&&") 
@@ -160,11 +153,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         files = files[:maxN]
 
         return cls(name = name, \
-                   treeName = checkEqual_([s.treeName for s in samples]),
+                   treeName = check_equal_([s.treeName for s in samples]),
                    normalization = normalization,
                    files = files,
-                   selectionString = checkEqual_([s.selectionString for s in samples]),
-                   isData = checkEqual_([s.isData for s in samples]),
+                   selectionString = check_equal_([s.selectionString for s in samples]),
+                   isData = check_equal_([s.isData for s in samples]),
                    # color = checkEqual([s.color for s in samples]), # not practical
                    texName = texName
             )
@@ -181,7 +174,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         files = [files] if type(files)==type("") else files
 
         # If no name, enumerate them.
-        if not name: name = newName()
+        if not name: name = new_name()
         if not treeName: 
             treeName = "Events"
             logger.debug("Argument 'treeName' not provided for sample %s, using 'Events'."%name) 
@@ -207,7 +200,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         directories = [directory] if type(directory)==type("") else directory 
 
         # If no name, enumerate them.
-        if not name: name = newName()
+        if not name: name = new_name()
 
         # find all files
         files = [] 
@@ -237,6 +230,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
            Expects the presence of the tree root file and the SkimReport.txt
         ''' 
+        from cmg_helpers import read_cmg_normalization
         maxN = maxN if maxN is not None and maxN>0 else None
 
         # Reading all subdirectories in base directory. If chunkString != None, require cmg output name formatting
@@ -267,7 +261,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 if 'SkimReport.txt' in filenames:
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
                     with open(skimReportFilename, 'r') as fin:
-                      sumW = readNormalization(fin)
+                      sumW = read_cmg_normalization(fin)
                     if not sumW:
                         logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
                                              chunkDirectory, skimReportFilename )
@@ -316,8 +310,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         '''Load a CMG crab output directory
         ''' 
         import tarfile
-#        def readNormalization(filename):
-#            with open(filename, 'r') as fin:
+        from cmg_helpers import read_cmg_normalization
 
         maxN = maxN if maxN is not None and maxN>0 else None
 
@@ -350,7 +343,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             tf = tarfile.open( zipFiles[n], 'r:gz' )
             for f in tf.getmembers():
                 if "SkimReport.txt" in f.name:
-                    sumW = readNormalization(tf.extractfile(f))
+                    sumW = read_cmg_normalization(tf.extractfile(f))
                 if sumW is not None: break
             if sumW is None:
                 logger.warning( "No normalization found when reading tar file %s", zipFiles[n] )
@@ -413,13 +406,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     logger.warning( "Could not load file %s", f )
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
-    def clear(self): #FIXME How to promote to destructor without making it segfault?
+    # branch information
+    @property
+    def leaves( self ):
+        ''' Get the leaves in the chain
+        '''
+        if hasattr( self, "__leaves" ):
+            return self.__leaves
+        else:
+            self.__leaves = [ {'name':s.GetName(), 'type':s.GetTypeName()} for s in  self.chain.GetListOfLeaves() ]
+            return self.__leaves 
+
+    def clear(self): 
         ''' Really (in the ROOT namespace) delete the chain
         '''
         if self._chain:
             self._chain.IsA().Destructor( self._chain )
             self._chain = None
+            if hasattr(self, "__leaves"):
+                del self.__leaves
+
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
+            
         return
 
     def reduceFiles( self, factor = 1, to = None ):
@@ -448,7 +456,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
 
         return
-
 
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
@@ -574,9 +581,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             cls = ROOT.TH2D
 
         res = cls(tmp, tmp, *binningArgs)
-
-        #weight = weightString if weightString else "1"
-
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res

@@ -38,27 +38,6 @@ class LooperBase( object ):
 
         self.classUUIDs = []
 
-    @staticmethod
-    def _branchInfo( variables, addVectorCounters = False, restrictType = None):
-        ''' Get a list of the form [(var, type), (vectorComponent, type, counterName)...] for all branches which is
-            needed for handling the branches.
-        '''
-        res = []
-        for s in variables:
-            if isinstance(s, ScalarTreeVariable):
-                if not restrictType or restrictType == ScalarTreeVariable:
-                    res.append( {'name':s.name, 'type':s.type} )
-            elif isinstance(s, VectorTreeVariable):
-                tmp = s.counterVariable()
-                for c in s.components:
-                    if restrictType is None or restrictType == VectorTreeVariable:
-                        res.append( { 'name':c.name, 'type':c.type, 'counterInt':tmp.name} )
-                if addVectorCounters: 
-                    if restrictType is None or restrictType == ScalarTreeVariable:
-                        res.append( {'name':tmp.name, 'type':tmp.type} )
-            else: raise ValueError( "Found an element in that is not a ScalarTreeVariable or VectorTreeVariable instance: %r"%s )
-        return res
-
     def makeClass(self, attr, variables, addVectorCounters, useSTDVectors = False):
 
         if not os.path.exists(self.tmpDir):

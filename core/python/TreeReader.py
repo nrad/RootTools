@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.core.Sample import Sample
 import RootTools.core.helpers as helpers
-from RootTools.core.Variable import Variable, ScalarTreeVariable, VectorTreeVariable
+from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.helpers import shortTypeDict
 
 class TreeReader( LooperBase ):
@@ -27,14 +27,14 @@ class TreeReader( LooperBase ):
             raise ValueError( "Need instance of Sample to initialize any Looper instance. Got %r."%sample )
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r."%variables )
-        if not all (isinstance(v, Variable) for v in variables):
+        if not all (isinstance(v, TreeVariable) for v in variables):
             raise ValueError( "Not all elements in 'variables' are instances of Variable. Got %r."%variables )
         if selectionString is not None and not type(selectionString) == type(""):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
         # Selection string to be applied to the chain
         self.selectionString = selectionString
 
-        # Sequence of precomputed attributes for data
+        # Sequence of precomputed attributes for event
         for i, s in enumerate(sequence):
             if not (hasattr(s, '__call__') and len( inspect.getargspec( s ).args )<=2):
                 raise ValueError( "Element %i in sequence is not a function with less than two arguments." % i )
@@ -55,7 +55,7 @@ class TreeReader( LooperBase ):
             logger.debug( "Making class with variable %s" %s)
 
         # make class
-        self.makeClass( "data", list(self.variables), useSTDVectors = False, addVectorCounters = False)
+        self.makeClass( "event", list(self.variables), useSTDVectors = False, addVectorCounters = False)
 
         # set the addresses of the branches corresponding to 'variables'
         self.setAddresses()
@@ -75,10 +75,17 @@ class TreeReader( LooperBase ):
     def setAddresses(self):
         ''' Set all the branch addresses to the members in the class instance
         '''
-        for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
-            #logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
-            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
-
+        #for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
+        for s in self.variables:
+            if isinstance(s, ScalarTreeVariable ):
+                self.sample.chain.SetBranchAddress(s.name, ROOT.AddressOf(self.event, s.name ))
+            elif isinstance(s, VectorTreeVariable ):
+                for comp in s.components:
+                    self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
+            else:
+                raise ValueError( "Don't know what variable %r is." % s )
+             
+ 
     def cloneTree(self, branchList = [], newTreename = None, rootfile = None):
         '''Clone tree after preselection and event range
         '''
@@ -149,8 +156,13 @@ class TreeReader( LooperBase ):
                 return
 
             # Turn on all branches
-            for s in LooperBase._branchInfo( self.variables, addVectorCounters = False):
-                self.sample.chain.SetBranchStatus(s['name'], 1)
+            for s in self.variables:
+                if isinstance(s, ScalarTreeVariable ):
+                    self.sample.chain.SetBranchStatus(s.name, 1)
+                elif isinstance(s, VectorTreeVariable ):
+                    for comp in s.components:
+                        self.sample.chain.SetBranchStatus(comp.name, 1)
+
         for b in branchList:
             self.sample.chain.SetBranchStatus(b, 1)
 
@@ -237,10 +249,13 @@ class TreeReader( LooperBase ):
         # set to the first position, either 0 or the lower eventRange deliminator
         self.position = self.eventRange[0]
 
+        # Check if we need to run a sequence for our sample. 
+        self.__sequence = self.sequence + self.sample.sequence if hasattr(self.sample, "sequence") else self.sequence
+
         return
 
     def _execute(self):  
-        ''' Does what a reader should do: 'GetEntry' into the data struct.
+        ''' Does what a reader should do: 'GetEntry' into the event struct.
             Returns 0 if upper eventRange is hit. 
         '''
 
@@ -253,7 +268,7 @@ class TreeReader( LooperBase ):
                 self.sample.name, self.position, self.nEvents )
 
         # init struct
-        self.data.init()
+        self.event.init()
 
         # get entry 
         errorLevel = ROOT.gErrorIgnoreLevel
@@ -261,17 +276,9 @@ class TreeReader( LooperBase ):
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
         ROOT.gErrorIgnoreLevel = errorLevel
 
-        # precompute sequence
-        for s in self.sequence:
-            n_args = len( inspect.getargspec( s ).args )
-            if n_args == 1:
-                # element may depend on the data only
-                s( self.data )
-            elif n_args == 2:
-                # ... or on the sample as well (for normalization)
-                s( self.data, self.sample ) 
-            else:
-                raise  NotImplementedError( "Member of sequence with %i arguments in variable %s. Don't know what to do" % (n_args, v.name) )
+        # sequence
+        for func in self.__sequence:
+            func ( event = self.event, sample = self.sample ) 
 
         return 1
 
