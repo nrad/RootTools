@@ -18,7 +18,7 @@ class TreeMaker( LooperBase ):
         
         for v in variables:
             if not isinstance(v, TreeVariable):
-                raise ValueError( "Not a proper variable: %r '%s'"%(v,v) )
+                raise ValueError( "Not a proper variable: %r"% v  )
 
         super(TreeMaker, self).__init__( variables = variables)
 
