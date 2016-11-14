@@ -70,21 +70,22 @@ def fill(plots, read_variables = [], sequence=[]):
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
 
             # Make reader
-            # Add variables from the plots (if any) 
+            # Add variables from the plots (if any)
             for p in plots_for_sample:
                 for variable in p.tree_variables:
                     if variable not in read_variables_:  read_variables_.append( variable )
 
             # Check if we need to add sample dependend variables
+            read_variables_sample = []
             if hasattr(sample, "read_variables"): 
                 for v in sample.read_variables:
                     if type(v) == type(""):
-                        read_variables_.extend( helpers.fromString( v ) )
+                        read_variables_sample.extend( helpers.fromString( v ) )
                     else: 
-                        read_variables_.append( v )
+                        read_variables_sample.append( v )
             
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables_, sequence = sequence, selectionString = selectionString )
+            r = sample.treeReader( variables = read_variables_ + read_variables_sample, sequence = sequence, selectionString = selectionString )
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
