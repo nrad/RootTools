@@ -57,50 +57,48 @@ plot_weight   = lambda data:1
 selectionString = "nJet>0"
 selectionString_2 = "nJet>1"
 
+# Variables to be read from the tree
+read_variables = []
+#Sequence to be executed
+sequence = []
+
 plot1 = Plot(\
     name = "met_coarseBinning", # Name is not needed. If not provided, variable.name is used as filename instead.
     stack = stack,
     # met_pt is in the chain
-    variable = Variable.fromString( "met_pt/F" ), 
-    binning = [10,0,200], 
+    attribute = TreeVariable.fromString( "met_pt/F" ), 
+    binning = [40,0,500], 
     selectionString = selectionString,
     weight = plot_weight 
 )
 
+def make_met_sqrtpt2( event, sample ):
+    event.met_sqrtpt2 = sqrt(event.met_pt**2)
+
+sequence.append( make_met_sqrtpt2 )
 plot2 = Plot(\
+    name = "met", # Name is not needed. If not provided, variable.name is used as filename instead.
     stack = stack,
-    # Here, I create a new variable that was not in the chain. I add a filler function to compute it.
-    # The uses statement tells the filler which variables are needed and reads them from the branch.
-    # Alternatively, specify read_variables
-    variable = Variable.fromString( "met_plus_jet0Pt/F").addFiller( 
-        helpers.uses( lambda data:sqrt(data.met_pt + data.Jet_pt[0]) , ["Jet[pt/F]", "met_pt/F"] )
-        ), 
-    binning = [20,0,200], 
+    # met_pt is in the chain
+    attribute = "met_sqrtpt2", 
+    binning = [10,0,500], 
+    selectionString = selectionString,
+    weight = plot_weight 
+)
+
+read_variables +=  ["Jet[pt/F]", "met_pt/F"]
+plot3 = Plot(\
+    name = "met_plus_jet0Pt",
+    stack = stack,
+    # Here, I create a new variable that was not in the chain. 
+    attribute = lambda event, sample: event.met_pt + event.Jet_pt[0], 
+    binning = [20,0,500], 
     selectionString = selectionString,
     weight = plot_weight
 )
 
-# Nothing new wrt plot 2
-cosMetPhi = Variable.fromString('cosMetPhi/F') 
-cosMetPhi.filler = helpers.uses(lambda data: cos( data.met_phi ) , "met_phi/F")
-plot3 = Plot(\
-    stack = stack, 
-    variable = cosMetPhi, 
-    binning = [10,-1,1], 
-    selectionString = selectionString,
-    weight = plot_weight,
-    texX = "cos(#phi(#slash{E}_{T}))",
-    texY = "Number of Events "
-)
 
-# I will specified all 'uses' variables when I declare the filler functions,
-# therefore I don't specify any variables to be read..
-read_variables =  []
-#Alternative to the uses statements:
-#read_variables =  ["Jet[pt/F]", "met_pt/F"]
-
-
-plotting.fill([plot1, plot2, plot3], read_variables = read_variables)
+plotting.fill([plot1, plot2, plot3], read_variables = read_variables, sequence = sequence)
 
 if not os.path.exists( args.plotPath ): os.makedirs( args.plotPath )
 for plot in [plot1, plot2, plot3]:

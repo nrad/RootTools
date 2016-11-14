@@ -13,7 +13,7 @@ from math import log
 import uuid
 
 # RootTools
-import RootTools.core.Variable as Variable
+import RootTools.core.TreeVariable as TreeVariable
 import RootTools.plot.Plot as Plot
 import RootTools.core.helpers as helpers
 
@@ -32,12 +32,13 @@ def getLegendMaskedArea(legend_coordinates, pad):
         }
 
 def fill(plots, read_variables = [], sequence=[]):
-    '''Create and fill all plots
+    '''Create histos and fill all plots
     '''
 
     # Unique list of selection strings
     selectionStrings    = list(set(p.selectionString for p in plots))
-    # Convert extra arguments from text to Variable instance
+
+    # Collect all tree variables 
     read_variables_ = []
     for v in read_variables:
         if type(v) == type(""):
@@ -69,27 +70,21 @@ def fill(plots, read_variables = [], sequence=[]):
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
 
             # Make reader
-            # Keep sequence of filled variables
-            filled_variables = []
-            chain_variables  = []
+            # Add variables from the plots (if any) 
             for p in plots_for_sample:
-                for variable in p.variables:
-                    if variable.filler is not None and variable not in filled_variables: filled_variables.append( variable )
-                    if variable.filler is None     and variable not in chain_variables:  chain_variables.append( variable )
+                for variable in p.tree_variables:
+                    if variable not in read_variables_:  read_variables_.append( variable )
 
             # Check if we need to add sample dependend variables
-            if hasattr(sample, "read_variables"):
+            if hasattr(sample, "read_variables"): 
                 for v in sample.read_variables:
                     if type(v) == type(""):
-                        chain_variables.extend( helpers.fromString( v ) )
+                        read_variables_.extend( helpers.fromString( v ) )
                     else: 
-                        chain_variables.append( v )
+                        read_variables_.append( v )
             
-            # Check if we need to run a sequence for this sample? (Should run after a global sequence) 
-            sequence_ = sequence + sample.sequence if hasattr(sample, "sequence") else sequence
-
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables_ + chain_variables, filled_variables = filled_variables, sequence = sequence_, selectionString = selectionString)
+            r = sample.treeReader( variables = read_variables_, sequence = sequence, selectionString = selectionString )
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
@@ -97,23 +92,28 @@ def fill(plots, read_variables = [], sequence=[]):
             if not hasattr(sample, "weight"):
                 sample.weight = None
 
+            # Buffer the fillers for the event loop ... could be done with a decorator but prefer to be explicit. 
+            for plot in plots_for_sample:
+                plot.store_fillers = plot.fillers
+
             r.start()
             while r.run():
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
 
                         #Get x,y or just x
-                        TH_fill_args = [ getattr(r.data, variable.name ) for variable in plot.variables ]
+                        TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]
 
                         #Get weight
-                        weight  = 1 if plot.weight is None else plot.weight( r.data )
-                        if sample.weight is not None: weight *= sample.weight( r.data )
+                        weight  = 1 if plot.weight is None else plot.weight( r.event, sample )
+                        if sample.weight is not None: weight *= sample.weight( r.event, sample )
                         TH_fill_args.append( weight*sample_scale_factor )
-                        plot.histos[index[0]][index[1]].Fill(*TH_fill_args)
+                        plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
 
             # Clean up
             for plot in plots_for_sample:
                 del plot.sample_indices
+                del plot.store_fillers
 
             r.cleanUpTempFiles()
 
@@ -148,11 +148,6 @@ def fill_with_draw(plots, weight_string = "(1)"):
             for plot in plots_for_sample:
                 plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
 
-            # Obviously can't use filler functions when drawing 
-            for variable in p.variables:
-                if variable.filler is not None:
-                    raise ValueError( "Variable %s has filler. Can't do that in fill_with_draw.", p.name )
-
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
 
@@ -161,14 +156,22 @@ def fill_with_draw(plots, weight_string = "(1)"):
 
             for plot in plots_for_sample:
                 for index in plot.sample_indices:
-                    if len(plot.variables)>1:
+
+                    if len(plot.attributes)>1:
                         raise NotImplementedError( "So far can only do 1D plots with fill_with_draw.")
                     if plot.weight is not None:
-                        raise ValueError( "Plot %s has weight function. Can't do that in fill_with_draw. Use 'weight_string' argument of fill_with_draw." % plot.name ) 
-                    args = ( plot.variables[0].name+">>"+plot.histos[index[0]][index[1]].GetName(), "("+weight_string_+")*("+sample.combineWithSampleSelection( plot.selectionString )+")", 'goff')
+                        raise ValueError( "Plot %s has weight function. Can't do that in fill_with_draw. Use 'weight_string' argument of fill_with_draw." % plot.name )
+                    if type(plot.attributes[0])!=str:
+                        raise NotImplementedError( "Please provide a string to draw. Got %r." % plot.attributes[0] ) 
+
+                    args = ( plot.attributes[0]+">>"+plot.histos[index[0]][index[1]].GetName(), "("+weight_string_+")*("+sample.combineWithSampleSelection( plot.selectionString )+")", 'goff')
+
                     logger.debug( "Draw arguments: %s", ", ".join(args) )
+
                     sample.chain.Draw( *args )
+
                     logger.info( "Sample %s plot %s has integral %3.2f. weight_string %s", sample.name, plot.name, plot.histos[index[0]][index[1]].Integral(), weight_string_ )
+
                     if sample_scale_factor != 1:
                         logger.debug( "Scaling sample %s plot %s with factor %3.2f", sample.name, plot.name, sample_scale_factor )
                         plot.histos[index[0]][index[1]].Scale( sample_scale_factor )

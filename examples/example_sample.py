@@ -38,15 +38,15 @@ afsRootToolsExamples = "/afs/hephy.at/data/rschoefbeck01/RootTools/examples"
 if os.path.exists(afsRootToolsExamples):
 
     # from files
-    s1 = Sample.fromFiles("TTZToQQ", files = [os.path.join( afsRootToolsExamples, "TTZToQQ/TTZToQQ_0.root" )], treeName = "Events")
+    s1 = Sample.fromFiles("TTZToQQ", files = [os.path.join( afsRootToolsExamples, "TTZToQQ/TTZToQQ_reHadd_0.root" )], treeName = "Events")
     s1.chain
 
     # from CMG output
     td = os.path.join( afsRootToolsExamples, \
-            "WJetsToLNu_HT-600ToInf_TuneCUETP8M1_13TeV-madgraphMLM-pythia8_RunIISpring15MiniAODv2-74X_mcRun2_asymptotic_v2-v1" )
-    s2 = Sample.fromCMGOutput("WJets_HT600", baseDirectory = td, treeName = "tree")
+            "DoubleMuon_Run2016D-PromptReco-v2" )
+    s2 = Sample.fromCMGOutput("DoubleMuon_Run2016D", baseDirectory = td, treeName = "tree")
     s2.chain
 
     # from a directory with root files
-    s3=Sample.fromDirectory(name="TTJets", directory = os.path.join( afsRootToolsExamples, "ttJetsCSA1450ns" ), treeName = "Events")
+    s3=Sample.fromDirectory(name="same_as_s2", directory = os.path.join( afsRootToolsExamples, "sample_data" ), treeName = "Events")
     s3.chain

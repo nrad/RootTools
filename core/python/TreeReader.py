@@ -15,34 +15,26 @@ logger = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.core.Sample import Sample
 import RootTools.core.helpers as helpers
-from RootTools.core.Variable import Variable, ScalarType, VectorType
+from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.helpers import shortTypeDict
-
 
 class TreeReader( LooperBase ):
 
-    def __init__(self, sample, variables=[], sequence = [], filled_variables = [], selectionString = None, allBranchesActive = False):
+    def __init__(self, sample, variables=[], sequence = [], selectionString = None, allBranchesActive = False):
 
         # The following checks are 'look before you leap' but I rather have the user know if the input is non-sensical
         if not isinstance(sample, Sample):
             raise ValueError( "Need instance of Sample to initialize any Looper instance. Got %r."%sample )
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r."%variables )
-        if not all (isinstance(v, Variable) for v in variables):
+        if not all (isinstance(v, TreeVariable) for v in variables):
             raise ValueError( "Not all elements in 'variables' are instances of Variable. Got %r."%variables )
-        if not type(filled_variables) == type([]):
-            raise ValueError( "Argument 'filled_variables' must be list. Got %r."%filled_variables )
-        if not all (isinstance(v, Variable) for v in filled_variables):
-            raise ValueError( "Not all elements in 'filled_variables' are instances of Variable. Got %r."%filled_variables )
-        for v in filled_variables:
-            if not hasattr(v, "filler") or not v.filler or not hasattr(v.filler, "__call__"):
-                raise ValueError( "Variable %s in 'filled_variables' does not have a proper filler function" )
         if selectionString is not None and not type(selectionString) == type(""):
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
         # Selection string to be applied to the chain
         self.selectionString = selectionString
 
-        # Sequence of precomputed attributes for data
+        # Sequence of precomputed attributes for event
         for i, s in enumerate(sequence):
             if not (hasattr(s, '__call__') and len( inspect.getargspec( s ).args )<=2):
                 raise ValueError( "Element %i in sequence is not a function with less than two arguments." % i )
@@ -56,29 +48,14 @@ class TreeReader( LooperBase ):
         # Read branch information from the chain
         self.readLeafInfo()
 
-        # 'filled_variables' are calculated from variables from the chain, they are in the class but no branch 
-        # has its address set to it.
-        self.filled_variables = filled_variables
-
-        # Get all the variables that should be read
-        all_variables  = set()
-        for v in self.filled_variables:
-            if not v.filler or not hasattr(v.filler, "__call__"):
-                raise ValueError( "A Variable to be filled has no proper filler function: %r"%v )
-            if hasattr(v.filler, "used_variables"):
-                all_variables.update(v.filler.used_variables)
-
-        # Add 'variables' 
-        if variables:  all_variables.update(variables)
-
         # 'variables' are read from the chain
-        super(TreeReader, self).__init__( variables = list(all_variables) ) 
+        super(TreeReader, self).__init__( variables = list(set(variables)) ) 
 
         for s in list(self.variables):
             logger.debug( "Making class with variable %s" %s)
 
         # make class
-        self.makeClass( "data", list(self.variables), useSTDVectors = False, addVectorCounters = False)
+        self.makeClass( "event", list(self.variables), useSTDVectors = False, addVectorCounters = False)
 
         # set the addresses of the branches corresponding to 'variables'
         self.setAddresses()
@@ -98,10 +75,17 @@ class TreeReader( LooperBase ):
     def setAddresses(self):
         ''' Set all the branch addresses to the members in the class instance
         '''
-        for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
-            #logger.debug( "Setting address of %s to %s", s['name'], ROOT.AddressOf(self.data, s['name'] ) )
-            self.sample.chain.SetBranchAddress(s['name'], ROOT.AddressOf(self.data, s['name'] ))
-
+        #for s in LooperBase._branchInfo(self.variables, addVectorCounters = False):
+        for s in self.variables:
+            if isinstance(s, ScalarTreeVariable ):
+                self.sample.chain.SetBranchAddress(s.name, ROOT.AddressOf(self.event, s.name ))
+            elif isinstance(s, VectorTreeVariable ):
+                for comp in s.components:
+                    self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
+            else:
+                raise ValueError( "Don't know what variable %r is." % s )
+             
+ 
     def cloneTree(self, branchList = [], newTreename = None, rootfile = None):
         '''Clone tree after preselection and event range
         '''
@@ -170,17 +154,15 @@ class TreeReader( LooperBase ):
             if self.allBranchesActive:
                 self.activateAllBranches()
                 return
-            # Turn on all branches from the variables to read
-            # First, arguments used in any of the filler functions
-            filler_variables = set()
-            for v in self.filled_variables:
-                if hasattr(v.filler, "used_variables"): 
-                    filler_variables.update( v.filler.used_variables )
-                    logger.debug( "Variable %s has filler which uses variables: %s", v.name, ",".join(vn.name for vn in v.filler.used_variables) ) 
 
             # Turn on all branches
-            for s in LooperBase._branchInfo( self.variables + list(filler_variables), addVectorCounters = False):
-                self.sample.chain.SetBranchStatus(s['name'], 1)
+            for s in self.variables:
+                if isinstance(s, ScalarTreeVariable ):
+                    self.sample.chain.SetBranchStatus(s.name, 1)
+                elif isinstance(s, VectorTreeVariable ):
+                    for comp in s.components:
+                        self.sample.chain.SetBranchStatus(comp.name, 1)
+
         for b in branchList:
             self.sample.chain.SetBranchStatus(b, 1)
 
@@ -267,10 +249,13 @@ class TreeReader( LooperBase ):
         # set to the first position, either 0 or the lower eventRange deliminator
         self.position = self.eventRange[0]
 
+        # Check if we need to run a sequence for our sample. 
+        self.__sequence = self.sequence + self.sample.sequence if hasattr(self.sample, "sequence") else self.sequence
+
         return
 
     def _execute(self):  
-        ''' Does what a reader should do: 'GetEntry' into the data struct.
+        ''' Does what a reader should do: 'GetEntry' into the event struct.
             Returns 0 if upper eventRange is hit. 
         '''
 
@@ -283,7 +268,7 @@ class TreeReader( LooperBase ):
                 self.sample.name, self.position, self.nEvents )
 
         # init struct
-        self.data.init()
+        self.event.init()
 
         # get entry 
         errorLevel = ROOT.gErrorIgnoreLevel
@@ -291,30 +276,10 @@ class TreeReader( LooperBase ):
         self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
         ROOT.gErrorIgnoreLevel = errorLevel
 
-        # precompute sequence
-        for s in self.sequence:
-            n_args = len( inspect.getargspec( s ).args )
-            if n_args == 1:
-                # element may depend on the data only
-                s( self.data )
-            elif n_args == 2:
-                # ... or on the sample as well (for normalization)
-                s( self.data, self.sample ) 
-            else:
-                raise  NotImplementedError( "Got filler with %i arguments in variable %s. Don't know what to do" % (n_args, v.name) )
-        for v in self.filled_variables: # Keep the sequence!
-            if isinstance(v, ScalarType):
-                n_args = len( inspect.getargspec( v.filler ).args )
-                if n_args == 1:
-                    # filler may depend on the data only
-                    setattr(self.data, v.name, v.filler( self. data ) )
-                elif n_args == 2:
-                    # ... or on the sample as well (for normalization)
-                    setattr(self.data, v.name, v.filler( self. data, self.sample ) )
-                else:
-                    raise  NotImplementedError( "Got filler with %i arguments in variable %s. Don't know what to do" % (n_args, v.name) )
-            else:
-                raise NotImplementedError( "Haven't yet implemented vector type filled variables." )
+        # sequence
+        for func in self.__sequence:
+            func ( event = self.event, sample = self.sample ) 
+
         return 1
 
     def goToPosition(self, position):

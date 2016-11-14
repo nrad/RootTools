@@ -27,11 +27,11 @@ logger = get_logger(args.logLevel, logFile = None)
 # from files
 s0 = Sample.fromFiles("s0", files = ["example_data/file_0.root"], treeName = "Events")
 
-read_variables =  [ Variable.fromString( "nJet/I"), Variable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
-                + [ Variable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
+read_variables =  [ TreeVariable.fromString( "nJet/I"), TreeVariable.fromString('Jet[pt/F,eta/F,phi/F]' ) ] \
+                + [ TreeVariable.fromString(x) for x in [ 'met_pt/F', 'met_phi/F' ] ]
 
-new_variables =     [ Variable.fromString('MyJet[pt2/F]' ) ] \
-                  + [ Variable.fromString(x) for x in [ 'myMetOver2/F' ] ]
+new_variables =     [ TreeVariable.fromString('MyJet[pt2/F]' ) ] \
+                  + [ TreeVariable.fromString(x) for x in [ 'myMetOver2/F' ] ]
 
 # Define a reader
 reader = s0.treeReader( variables = read_variables,  selectionString = "met_pt>50")
@@ -39,14 +39,14 @@ reader = s0.treeReader( variables = read_variables,  selectionString = "met_pt>5
 # Define a filler
 
 #A simple eample
-def filler(struct):
-    struct.nMyJet = reader.data.nJet
-    for i in range(reader.data.nJet):
-        struct.MyJet_pt2[i] = reader.data.Jet_pt[i]**2
-    struct.myMetOver2 = reader.data.met_pt/2.
+def filler(event):
+    event.nMyJet = reader.event.nJet
+    for i in range(reader.event.nJet):
+        event.MyJet_pt2[i] = reader.event.Jet_pt[i]**2
+    event.myMetOver2 = reader.event.met_pt/2.
     return
 
-maker  =    TreeMaker( filler = filler, variables = new_variables )
+maker  =    TreeMaker( sequence = [filler], variables = new_variables )
 reader.start()
 maker.start()
 while reader.run():

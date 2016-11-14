@@ -15,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # RootTools
 from RootTools.core.LooperHelpers import createClassString
-from RootTools.core.Variable import Variable, ScalarType, VectorType
+from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
@@ -24,8 +24,8 @@ class LooperBase( object ):
 
         if not type(variables) == type([]):
             raise ValueError( "Argument 'variables' must be list. Got %r"%variables )
-        if not all (isinstance(v, Variable) for v in variables):
-            raise ValueError( "Not all elements in variable list are instances of Variable. Got %r"%variables )
+        if not all (isinstance(v, TreeVariable) for v in variables):
+            raise ValueError( "Not all elements in variable list are instances of TreeVariable. Got %r"%variables )
 
         self.variables = variables
 
@@ -37,27 +37,6 @@ class LooperBase( object ):
         self.eList = None
 
         self.classUUIDs = []
-
-    @staticmethod
-    def _branchInfo( variables, addVectorCounters = False, restrictType = None):
-        ''' Get a list of the form [(var, type), (vectorComponent, type, counterName)...] for all branches which is
-            needed for handling the branches.
-        '''
-        res = []
-        for s in variables:
-            if isinstance(s, ScalarType):
-                if not restrictType or restrictType == ScalarType:
-                    res.append( {'name':s.name, 'type':s.type} )
-            elif isinstance(s, VectorType):
-                tmp = s.counterVariable()
-                for c in s.components:
-                    if restrictType is None or restrictType == VectorType:
-                        res.append( { 'name':c.name, 'type':c.type, 'counterInt':tmp.name} )
-                if addVectorCounters: 
-                    if restrictType is None or restrictType == ScalarType:
-                        res.append( {'name':tmp.name, 'type':tmp.type} )
-            else: raise ValueError( "Found an element in that is not a ScalarType or VectorType instance: %r"%s )
-        return res
 
     def makeClass(self, attr, variables, addVectorCounters, useSTDVectors = False):
 

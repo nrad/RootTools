@@ -7,6 +7,7 @@ from math import sqrt
 
 #RootTools
 from RootTools.plot.PlotBase import PlotBase
+from RootTools.core.TreeVariable import ScalarTreeVariable
 
 def addOverFlowBin1D( histo, addOverFlowBin = None):
 
@@ -27,7 +28,7 @@ def addOverFlowBin1D( histo, addOverFlowBin = None):
 class Plot( PlotBase ):
 
     defaultStack           = None
-    defaultVariables       = None
+    defaultAttribute       = None
     defaultBinning         = None
     defaultName            = None
     defaultSelectionString = None
@@ -38,10 +39,10 @@ class Plot( PlotBase ):
     defaultAddOverFlowBin  = None
 
     @staticmethod
-    def setDefaults(stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
+    def setDefaults(stack = None, attribute = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH1F,
                  texX = "", texY = "Number of events", addOverFlowBin = None):
         Plot.defaultStack           = stack
-        Plot.defaultVariables       = [variable]
+        Plot.defaultAttribute       = attribute
         Plot.defaultBinning         = binning
         Plot.defaultName            = name
         Plot.defaultSelectionString = selectionString
@@ -52,11 +53,11 @@ class Plot( PlotBase ):
         Plot.defaultAddOverFlowBin  = addOverFlowBin
 
 
-    def __init__(self, stack = None, variable = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
-                 texX = None, texY = None, addOverFlowBin = None):
+    def __init__(self, stack = None, attribute = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
+                 texX = None, texY = None, addOverFlowBin = None, read_variables = []):
         ''' A plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], 
-        'variable' instance, either with a filler or with the name of a data member, 
+        'attribute' Can be string -> getattr( event, attribute),  Variable instance 
         'selectionString' to be used on top of each samples selectionString, 
         'weight' function, 
         'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
@@ -69,18 +70,18 @@ class Plot( PlotBase ):
             weight          = weight           if weight          is not None else Plot.defaultWeight,
             texX            = texX             if texX            is not None else Plot.defaultTexX,
             texY            = texY             if texY            is not None else Plot.defaultTexY,
-            name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else variable.name,
-            variables       = [variable]       if variable        is not None else Plot.defaultVariables
+            name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else attribute.name,
+            read_variables  = read_variables,
+            attributes      = [ attribute ]    if attribute       is not None else [ Plot.defaultAttribute ]
         )
 
         self.binning         = binning          if binning         is not None else Plot.defaultBinning
-
         self.histo_class     = histo_class      if histo_class     is not None else Plot.defaultHistoClass
         self.addOverFlowBin  = addOverFlowBin   if addOverFlowBin  is not None else Plot.defaultAddOverFlowBin
 
     @classmethod
     def fromHisto(cls, name, histos, texX = defaultTexX, texY = defaultTexY):
-        res = cls(stack=None, name=name, variable=None, binning=None, selectionString = None, weight = None, histo_class = None,\
+        res = cls(stack=None, name=name, attribute=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
