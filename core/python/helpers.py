@@ -50,7 +50,8 @@ def checkRootFile(f, checkForObjects=[] ):
     ''' Checks whether a root file exists, was not recoverd or otherwise broken and
     contains the objects in 'checkForObjects'
     '''
-    if not os.path.exists(f): raise IOError("File {0} not found".format(f))
+    if not f.startswith('root://'):
+        if not os.path.exists(f): raise IOError("File {0} not found".format(f))
     rf = ROOT.TFile.Open(f)
     if not rf: raise IOError("File {0} could not be opened. Not a root file?".format(f))
     good = (not rf.IsZombie()) and (not rf.TestBit(ROOT.TFile.kRecovered))

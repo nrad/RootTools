@@ -421,12 +421,15 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         ''' Really (in the ROOT namespace) delete the chain
         '''
         if self._chain:
-            self._chain.IsA().Destructor( self._chain )
-            self._chain = None
-            if hasattr(self, "__leaves"):
-                del self.__leaves
 
+            self._chain.IsA().Destructor( self._chain )
             logger.debug("Called TChain Destructor for sample '%s'.", self.name)
+
+            self._chain = None
+
+        if hasattr(self, "__leaves"):
+            del self.__leaves
+
             
         return
 
