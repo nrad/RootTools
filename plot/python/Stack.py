@@ -28,6 +28,7 @@ class Stack ( list ):
 
         super(Stack, self).__init__( stackList )
 
+    @property
     def samples(self):
         ''' Get all unique samples for this stack
         '''
