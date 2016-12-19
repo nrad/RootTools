@@ -53,7 +53,7 @@ def fill(plots, read_variables = [], sequence=[]):
         plots_for_selection = [p for p in plots if p.selectionString == selectionString]
 
         # Find all samples we have to loop over
-        samples = list(set(sum([p.stack.samples() for p in plots_for_selection], [])))
+        samples = list(set(sum([p.stack.samples for p in plots_for_selection], [])))
         logger.info( "Found %i different samples for this selectionString."%len(samples) )
 
         # Give histos to plot
@@ -63,7 +63,7 @@ def fill(plots, read_variables = [], sequence=[]):
         for sample in samples:
             logger.info( "Now working on sample %s" % sample.name )
             # find all plots whose stack contains the current sample
-            plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples()]
+            plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples]
 
             # find the positions (indices)  of the stack in each plot
             for plot in plots_for_sample:
@@ -132,7 +132,7 @@ def fill_with_draw(plots, weight_string = "(1)"):
         plots_for_selection = [p for p in plots if p.selectionString == selectionString]
 
         # Find all samples we have to loop over
-        samples = list(set(sum([p.stack.samples() for p in plots_for_selection], [])))
+        samples = list(set(sum([p.stack.samples for p in plots_for_selection], [])))
         logger.info( "Found %i different samples for this selectionString."%len(samples) )
 
         # Give histos to plot
@@ -143,7 +143,7 @@ def fill_with_draw(plots, weight_string = "(1)"):
             weight_string_ = sample.combineWithSampleWeight( weight_string )
             logger.info( "Now working on sample %s with weight_string %s",  sample.name, weight_string_ )
             # find all plots whose stack contains the current sample
-            plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples()]
+            plots_for_sample = [p for p in plots_for_selection if sample in p.stack.samples]
 
             # find the positions (indices)  of the stack in each plot
             for plot in plots_for_sample:
