@@ -11,11 +11,21 @@ import os
 import copy
 from math import log
 import uuid
+import shutil
 
 # RootTools
 import RootTools.core.TreeVariable as TreeVariable
 import RootTools.plot.Plot as Plot
 import RootTools.core.helpers as helpers
+
+
+def copyIndexPHP( directory ):
+    ''' Copy index.php to directory
+    '''
+    index_php = os.path.join( directory, 'index.php' )
+    if not os.path.exists( directory ): os.makedirs( directory )  
+    if not os.path.exists( index_php ):
+      shutil.copyfile( os.path.expandvars( '$CMSSW_BASE/src/StopsDilepton/plot/php/index.php' ), index_php )
 
 
 def getLegendMaskedArea(legend_coordinates, pad):
@@ -472,6 +482,8 @@ def draw(plot, \
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
 
+    copyIndexPHP( plot_directory )
+
     c1.cd()
 
     for extension in extensions:
@@ -554,6 +566,8 @@ def draw2D(plot, \
 
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
+
+    copyIndexPHP( plot_directory )
 
     for extension in extensions:
         filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
