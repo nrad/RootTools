@@ -11,7 +11,6 @@ import os
 import copy
 from math import log
 import uuid
-import shutil
 
 # RootTools
 import RootTools.core.TreeVariable as TreeVariable

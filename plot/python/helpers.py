@@ -1,4 +1,4 @@
-
+import os, shutil
 def copyIndexPHP( directory ):
     ''' Copy index.php to directory
     '''
