@@ -17,15 +17,7 @@ import shutil
 import RootTools.core.TreeVariable as TreeVariable
 import RootTools.plot.Plot as Plot
 import RootTools.core.helpers as helpers
-
-
-def copyIndexPHP( directory ):
-    ''' Copy index.php to directory
-    '''
-    index_php = os.path.join( directory, 'index.php' )
-    if not os.path.exists( directory ): os.makedirs( directory )  
-    if not os.path.exists( index_php ):
-      shutil.copyfile( os.path.expandvars( '$CMSSW_BASE/src/RootTools/plot/php/index.php' ), index_php )
+import RootTools.plot.helpers as plot_helpers
 
 
 def getLegendMaskedArea(legend_coordinates, pad):
@@ -202,7 +194,8 @@ def draw(plot, \
         legend = "auto", 
         drawObjects = [],
         widths = {},
-        canvasModifications = []
+        canvasModifications = [],
+        copyIndexPHP = False
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
@@ -214,6 +207,7 @@ def draw(plot, \
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
+        copyIndexPHP: whether or not to copy index.php to the plot directory
     '''
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
@@ -482,7 +476,7 @@ def draw(plot, \
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
 
-    copyIndexPHP( plot_directory )
+    if copyIndexPHP: plot_helpers.copyIndexPHP( plot_directory )
 
     c1.cd()
 
@@ -497,12 +491,15 @@ def draw2D(plot, \
         plot_directory = ".", 
         logX = False, logY = False, logZ = True, 
         drawObjects = [],
-        widths = {}):
+        widths = {},
+        copyIndexPHP = False
+        ):
     ''' plot: a Plot2D instance
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True/False(default), logZ: True/False(default)
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+        copyIndexPHP: whether or not to copy index.php to the plot directory
     '''
 
     # FIXME -> Introduces CMSSW dependence
@@ -567,7 +564,7 @@ def draw2D(plot, \
     if not os.path.exists(plot_directory):
         os.makedirs(plot_directory)
 
-    copyIndexPHP( plot_directory )
+    if copyIndexPHP: plot_helpers.copyIndexPHP( plot_directory )
 
     for extension in extensions:
         filename = plot.name# if plot.name is not None else plot.variable.name #FIXME -> the replacement with variable.name should already be in the Plot constructors
