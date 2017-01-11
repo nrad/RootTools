@@ -46,7 +46,7 @@ def fill(plots, read_variables = [], sequence=[] ):
             read_variables_.extend( helpers.fromString( v ) )
         else: 
             read_variables_.append( v )
-            
+        
     for selectionString in selectionStrings:
         logger.info( "Now working on selection string %s"% selectionString )
 
@@ -72,10 +72,10 @@ def fill(plots, read_variables = [], sequence=[] ):
 
             # Make reader
             # Add variables from the plots (if any)
-            read_variables__ = read_variables_
+            read_variables_plot = [] 
             for p in plots_for_sample:
                 for variable in p.tree_variables:
-                    if variable not in read_variables__:  read_variables__.append( variable )
+                    if variable not in read_variables_plot:  read_variables_plot.append( variable )
 
             # Check if we need to add sample dependend variables
             read_variables_sample = []
@@ -86,7 +86,7 @@ def fill(plots, read_variables = [], sequence=[] ):
                     else: 
                         read_variables_sample.append( v )
             # Create reader and run it over sample, fill the plots
-            r = sample.treeReader( variables = read_variables__ + read_variables_sample, sequence = sequence, selectionString = selectionString )
+            r = sample.treeReader( variables = read_variables_ + read_variables_plot + read_variables_sample, sequence = sequence, selectionString = selectionString )
 
             # Scaling sample
             sample_scale_factor = 1 if not hasattr(sample, "scale") else sample.scale
