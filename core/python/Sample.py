@@ -164,7 +164,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
  
     @classmethod
     def fromFiles(cls, name, files, 
-        treeName=None, normalization = None, 
+        treeName = "Events", normalization = None, 
         selectionString = None, weightString = None, 
         isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
@@ -175,9 +175,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         # If no name, enumerate them.
         if not name: name = new_name()
-        if not treeName: 
-            treeName = "Events"
-            logger.debug("Argument 'treeName' not provided for sample %s, using 'Events'."%name) 
 
         # restrict files 
         maxN = maxN if maxN is not None and maxN>0 else None
@@ -191,7 +188,31 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = None, normalization = None, \
+    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, \
+                selectionString = None, weightString = None,
+                isData = False, color = 0, texName = None, maxN = None):
+
+        import subprocess
+        if not directory.startswith("/dpm"): raise ValueError( "DPM directory does not start with /dpm/: %s" % directory )
+
+        p = subprocess.Popen(["dpns-ls -l %s" % directory], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        files = []
+        for line in p.stdout.readlines():
+                line = line[:-1]
+                filename = line.split()[-1] # The filename is the last string of the output of dpns-ls
+                if filename.endswith(".root"):
+                    files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( directory, filename ) )
+                if maxN is not None and maxN>0 and len(files)>=maxN:
+                    break
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+            selectionString = selectionString, weightString = weightString,
+            isData = isData, color=color, texName = texName)
+        logger.debug("Loaded sample %s from %i files.", name, len(files))
+        return sample
+
+
+    @classmethod
+    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
