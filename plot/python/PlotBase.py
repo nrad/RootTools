@@ -11,6 +11,11 @@ from math import sqrt
 # RootTools
 from RootTools.core.TreeVariable import ScalarTreeVariable, TreeVariable
 
+# Can't bind lambdas to loop variable, but rather their value 
+# http://stackoverflow.com/questions/19837486/python-lambda-in-a-loop
+def make_lambda( string_attribute):
+    return lambda event, sample: getattr( event, string_attribute )
+
 class PlotBase( object ):
     __metaclass__ = abc.ABCMeta
 
@@ -44,11 +49,11 @@ class PlotBase( object ):
         fillers = []
         for attribute in self.attributes:
             if type(attribute)==str:
-                fillers.append( lambda event, sample: getattr( event, attribute ) )
+                fillers.append( make_lambda( attribute ) )
             elif hasattr( attribute, '__call__'):
                 fillers.append( attribute )
             elif isinstance( attribute, ScalarTreeVariable ):
-                fillers.append( lambda event, sample: getattr( event, attribute.name ) )
+                fillers.append( make_lambda( attribute.name ) )
             else:
                 raise ValueError( "Don't know what to do with attribute %r" % attribute )
         return fillers
