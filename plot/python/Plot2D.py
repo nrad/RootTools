@@ -39,7 +39,7 @@ class Plot2D( PlotBase ):
         'attributes' list of attributes to draw (same as class Plot) 
         'selectionString' to be used on top of each samples selectionString, a
         'weight' function, a 
-        'hist_class', e.g. ROOT.TH2F or ROOT.TProfile2D
+        'histo_class', e.g. ROOT.TH2F or ROOT.TProfile2D
         'texX', 'texY' labels for x and y axis and a
         ''' 
 
