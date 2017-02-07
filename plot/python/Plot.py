@@ -59,10 +59,17 @@ class Plot( PlotBase ):
         'attribute' Can be string -> getattr( event, attribute),  Variable instance 
         'selectionString' to be used on top of each samples selectionString, 
         'weight' function, 
-        'hist_class', e.g. ROOT.TH1F or ROOT.TProfile1D
+        'histo_class', e.g. ROOT.TH1F or ROOT.TProfile1D
         'texX', 'texY' labels for x and y axis 
         ''' 
 
+        if isinstance(attribute, (list, tuple)):
+            attributes = attribute
+        elif attribute is None:
+            attributes = Plot.defaultAttribute
+        else:
+            attributes = [ attribute ]
+    
         super(Plot, self).__init__( \
             stack           = stack            if stack           is not None else Plot.defaultStack,
             selectionString = selectionString  if selectionString is not None else Plot.defaultSelectionString,
@@ -71,7 +78,7 @@ class Plot( PlotBase ):
             texY            = texY             if texY            is not None else Plot.defaultTexY,
             name            = name             if name            is not None else Plot.defaultName if Plot.defaultName is not None else attribute.name,
             read_variables  = read_variables,
-            attributes      = [ attribute ]    if attribute       is not None else [ Plot.defaultAttribute ]
+            attributes      = attributes 
         )
 
         self.binning         = binning          if binning         is not None else Plot.defaultBinning

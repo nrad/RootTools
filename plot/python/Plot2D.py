@@ -20,10 +20,10 @@ class Plot2D( PlotBase ):
     defaultTexY            = "attribute y"
 
     @staticmethod
-    def setDefaults(stack = None, attributes = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH2F,
+    def setDefaults(stack = None, attribute = None, binning = None, name = None, selectionString = None, weight = None, histo_class = ROOT.TH2F,
                  texX = "", texY = "Number of events"):
         Plot2D.defaultStack           = stack
-        Plot2D.defaultAttributes      = attributes
+        Plot2D.defaultAttributes      = attribute
         Plot2D.defaultBinning         = binning
         Plot2D.defaultName            = name
         Plot2D.defaultSelectionString = selectionString
@@ -32,11 +32,11 @@ class Plot2D( PlotBase ):
         Plot2D.defaultTexX            = texX
         Plot2D.defaultTexY            = texY
 
-    def __init__(self, stack = None, attributes = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
+    def __init__(self, stack = None, attribute = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
                  texX = None, texY = None, read_variables = []):
         ''' A 2D plot needs a
         'stack' of Sample instances, e.g. [[mc1, mc2, ...], [data], [signal1, signal2,...]], a
-        'attributes' list of attributes to draw (same as class Plot) 
+        'attribute' list or tuple of attributes to draw (same as class Plot) 
         'selectionString' to be used on top of each samples selectionString, a
         'weight' function, a 
         'histo_class', e.g. ROOT.TH2F or ROOT.TProfile2D
@@ -44,7 +44,7 @@ class Plot2D( PlotBase ):
         ''' 
 
         try:
-            def_name = "_vs_".join(attribute.name for attribute in attributes)
+            def_name = "_vs_".join(att.name for att in attribute)
         except:
             def_name = None
 
@@ -61,13 +61,13 @@ class Plot2D( PlotBase ):
             read_variables  = read_variables 
         )
 
-        self.attributes      = attributes       if attributes      is not None else Plot2D.defaultAttributes
+        self.attributes      = attribute        if attribute       is not None else Plot2D.defaultAttributes
         self.binning         = binning          if binning         is not None else Plot2D.defaultBinning
         self.histo_class     = histo_class      if histo_class     is not None else Plot2D.defaultHistoClass
 
     @classmethod
     def fromHisto(cls, name, histos, texX = defaultTexX, texY = defaultTexY):
-        res = cls(stack=None, name=name, attributes=None, binning=None, selectionString = None, weight = None, histo_class = None,\
+        res = cls(stack=None, name=name, attribute=None, binning=None, selectionString = None, weight = None, histo_class = None,\
             texX = texX, texY = texY)
         res.histos = histos
         return res
