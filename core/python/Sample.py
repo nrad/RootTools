@@ -135,7 +135,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return self.__weightStrings if type(self.__weightStrings)==type("") else helpers.combineStrings(self.__weightStrings, stringOperator = "*") 
 
     @classmethod
-    def combine(cls, name, samples, texName = None, maxN = None):
+    def combine(cls, name, samples, texName = None, maxN = None, color = 0):
         '''Make new sample from a list of samples.
            Adds normalizations if neither is None
         '''
@@ -158,7 +158,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                    files = files,
                    selectionString = check_equal_([s.selectionString for s in samples]),
                    isData = check_equal_([s.isData for s in samples]),
-                   # color = checkEqual([s.color for s in samples]), # not practical
+                   color = color, 
                    texName = texName
             )
  
