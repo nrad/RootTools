@@ -486,6 +486,7 @@ def draw(plot, \
     del c1
 
 def draw2D(plot, \
+        zRange = None,
         extensions = ["pdf", "png", "root"], 
         plot_directory = ".", 
         logX = False, logY = False, logZ = True, 
@@ -494,6 +495,7 @@ def draw2D(plot, \
         copyIndexPHP = False
         ):
     ''' plot: a Plot2D instance
+        zRange: None ( = ROOT default) or [low, high] 
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True/False(default), logZ: True/False(default)
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
@@ -536,6 +538,8 @@ def draw2D(plot, \
     c1.SetLogz(logZ)
     histo.GetXaxis().SetTitle(plot.texX)
     histo.GetYaxis().SetTitle(plot.texY)
+    if zRange is not None:
+        histo.GetZaxis().SetRangeUser( *zRange )
     # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
     histo.GetXaxis().SetTitleFont(43)
     histo.GetYaxis().SetTitleFont(43)
