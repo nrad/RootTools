@@ -422,6 +422,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     if helpers.checkRootFile(f, checkForObjects=[self.treeName]):
                         self._chain.Add(f)
                         counter+=1
+                    else:
+                        logger.error( "Check of root file failed. Skipping. File: %s", f )
                 except IOError as e:
                     logger.warning( "Could not load file %s", f )
                     raise e
