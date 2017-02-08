@@ -422,9 +422,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     if helpers.checkRootFile(f, checkForObjects=[self.treeName]):
                         self._chain.Add(f)
                         counter+=1
-                except IOError:
-                    pass
+                except IOError as e:
                     logger.warning( "Could not load file %s", f )
+                    raise e
+
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
     # branch information

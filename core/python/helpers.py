@@ -100,7 +100,6 @@ def clone(root_object, new_name = None):
     new.__dict__.update(root_object.__dict__)
     return new 
 
-
 def add_to_sequence( func, sequence ):
     sequence.append( func )
     return func
