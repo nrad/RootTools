@@ -27,7 +27,7 @@ def lineStyle( color, width = None, dotted=False, dashed=False, errors = False):
         return 
     return func
 
-def fillStyle( color, lineColor = ROOT.kBlack):
+def fillStyle( color, lineColor = ROOT.kBlack, errors = False):
     def func( histo ):
         lc = lineColor if lineColor is not None else color
         histo.SetLineColor( lc )
@@ -36,5 +36,6 @@ def fillStyle( color, lineColor = ROOT.kBlack):
         histo.SetMarkerColor( lc )
         histo.SetFillColor( color )
         histo.drawOption = "hist"
+        if errors: histo.drawOption+='E'
         return 
     return func
