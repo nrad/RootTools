@@ -281,8 +281,10 @@ def draw(plot, \
         scaleFacRatioPad = default_widths['y_width']/float( default_widths['y_ratio_width'] )
         y_border = default_widths['y_ratio_width']/float( default_widths['y_width'] )
 
+    # delete canvas if it exists
     if hasattr("ROOT","c1"): 
         del ROOT.c1 
+
     c1 = ROOT.TCanvas(str(uuid.uuid4()).replace('-','_'), "drawHistos",200,10, default_widths['x_width'], default_widths['y_width'])
 
     if ratio is not None:
@@ -427,8 +429,17 @@ def draw(plot, \
     if ratio is not None:
         bottomPad.cd()
         num = histos[ratio['num']][0]
-        h_ratio = helpers.clone(num)
-        h_ratio.Divide(histos[ratio['den']][0])
+
+        h_ratio = helpers.clone( num )
+
+        # For a ratio of profiles, use projection (preserve attributes)
+        if isinstance( h_ratio, ROOT.TProfile ):
+            attrs = h_ratio.__dict__
+            h_ratio = h_ratio.ProjectionX()
+            h_ratio.__dict__.update( attrs )
+            h_ratio.Divide( histos[ratio['den']][0].ProjectionX() )
+        else:
+            h_ratio.Divide( histos[ratio['den']][0] )
 
         if ratio['style'] is not None: ratio['style'](h_ratio) 
 
