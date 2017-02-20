@@ -1,6 +1,10 @@
 import ROOT
 import os
 
+# Logging
+import logging
+logger = logging.getLogger(__name__)
+
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
     '''
