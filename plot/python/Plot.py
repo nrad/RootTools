@@ -45,7 +45,7 @@ class Plot( PlotBase ):
         Plot.defaultBinning         = binning
         Plot.defaultName            = name
         Plot.defaultSelectionString = selectionString
-        Plot.defaultWeight          = staticmethod(weight)
+        Plot.defaultWeight          = staticmethod(weight) if not isinstance( weight, (list, tuple)) else [ [map(staticmethod, w) for w2 in weight ] ]
         Plot.defaultHistoClass      = histo_class
         Plot.defaultTexX            = texX
         Plot.defaultTexY            = texY
@@ -69,7 +69,7 @@ class Plot( PlotBase ):
             attributes = Plot.defaultAttribute
         else:
             attributes = [ attribute ]
-    
+   
         super(Plot, self).__init__( \
             stack           = stack            if stack           is not None else Plot.defaultStack,
             selectionString = selectionString  if selectionString is not None else Plot.defaultSelectionString,

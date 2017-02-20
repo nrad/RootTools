@@ -56,6 +56,7 @@ def fill(plots, read_variables = [], sequence=[] ):
         # Find all samples we have to loop over
         samples = list(set(sum([p.stack.samples for p in plots_for_selection], [])))
         logger.info( "Found %i different samples for this selectionString."%len(samples) )
+        logger.debug("The samples are: %s", ",".join([s.name for s in samples]))        
 
         # Give histos to plot
         for p in plots_for_selection:
@@ -68,8 +69,25 @@ def fill(plots, read_variables = [], sequence=[] ):
 
             # find the positions (indices)  of the stack in each plot
             for plot in plots_for_sample:
-                plot.sample_indices = plot.stack.getSampleIndicesInStack(sample)
+                plot.sample_indices = plot.stack.getSampleIndicesInStack( sample )
 
+                # Weight can be global, or, if it is a list, it is per sample, that is : [[w1, w2, ...],[w3, ...], ...]
+                # test the structure
+                if isinstance( plot.weight, (tuple, list)):
+                    if not len( plot.weight ) == len( plot.stack ):
+                        raise RuntimeError( "Length of plot.weight (%i) and plot.stack (%i) not identical for plot %s" % (len(plot.weight), len(plot.stack), plot.name) )
+                    for si, s in enumerate(plot.stack):
+                        if not len( plot.weight[si] ) == len( plot.stack[si] ):
+                            raise RuntimeError( "Plot {plotname} at pos {pos} in stack: plot.weight[{pos}] has len {lenposw} and plot.stack[{pos}] has len {lenposs}.".format(
+                                plotname = plot.name,
+                                pos = str(si), 
+                                lenposw = str(len(plot.weight[si])), 
+                                lenposs = str(len(plot.stack[si])) ) 
+                            )
+                    plot.tmp_weight_ = plot.weight
+                else:
+                    plot.tmp_weight_ = [[plot.weight for s in s2] for s2 in plot.stack ]
+                
             # Make reader
             # Add variables from the plots (if any)
             read_variables_plot = [] 
@@ -106,8 +124,12 @@ def fill(plots, read_variables = [], sequence=[] ):
                         #Get x,y or just x
                         TH_fill_args = [ filler( r.event, sample ) for filler in plot.store_fillers ]
 
+                        # Experimental. Can make a cut by having an attribute return None 
+                        if None in TH_fill_args: continue
+
                         #Get weight
-                        weight  = 1 if plot.weight is None else plot.weight( r.event, sample )
+                        tmp_weight_ = plot.tmp_weight_[index[0]][index[1]]
+                        weight  = 1 if tmp_weight_ is None else tmp_weight_( r.event, sample )
                         if sample.weight is not None: weight *= sample.weight( r.event, sample )
                         TH_fill_args.append( weight*sample_scale_factor )
                         plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
