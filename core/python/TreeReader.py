@@ -91,7 +91,6 @@ class TreeReader( LooperBase ):
         '''
         selectionString = self.selectionString if self.selectionString is not None else "1"
         if self.eList:
-
             # If there is an eList, first restrict it to the event range, then clone
             list_to_copy = ROOT.TEventList("tmp","tmp")
             for i_ev in xrange(*self.eventRange):
@@ -103,7 +102,7 @@ class TreeReader( LooperBase ):
             tmpEventList = self.sample.chain.GetEventList()
             tmpEventList = 0 if not self.sample.chain.GetEventList() else tmpEventList
 
-            # Copy the selected events
+            # Copy only the selected events
             self.sample.chain.SetEventList( list_to_copy ) 
 
             # Create the new tree in a file (if there is one)
@@ -112,10 +111,21 @@ class TreeReader( LooperBase ):
                 logger.debug( "cd to file %r", rootfile )
                 rootfile.cd() 
 
-            res =  self.sample.chain.CopyTree( "(1)", "" )
+            #res =  self.sample.chain.CopyTree( "(1)", "" )
             # Same?
-            # res =  self.sample.chain.CloneTree( 0 )
-            # res.CopyEntries( self.sample.chain )
+            #res =  self.sample.chain.CloneTree( 0 )
+            #res.CopyEntries( self.sample.chain )
+
+            res =  self.sample.chain.CloneTree( 0 )
+            logger.debug("Copying %i events in a loop.", list_to_copy.GetN())
+            for i_event in xrange(list_to_copy.GetN()):
+                self.sample.chain.GetEntry( list_to_copy.GetEntry(i_event) )
+                res.Fill()
+            
+            #logger.debug("list_to_copy %i", list_to_copy.GetN())
+            #logger.debug("before SetEventList: res.GetEntries() %i", res.GetEntries())
+            #res.SetEventList( list_to_copy )
+            #logger.debug("after SetEventList: res.GetEntries() %i", res.GetEntries())
 
             # Change back to previous gDirectory
             tmp_directory.cd()

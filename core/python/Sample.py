@@ -288,9 +288,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
                     with open(skimReportFilename, 'r') as fin:
                       sumW = read_cmg_normalization(fin)
-                    if not sumW:
-                        logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
-                                             chunkDirectory, skimReportFilename )
+                      if not sumW:
+                          logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
+                                               chunkDirectory, skimReportFilename )
             # Find treefile
             treeFile = None
             for root, subFolders, filenames in os.walk( chunkDirectory ):
@@ -463,6 +463,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return
 
     def reduceFiles( self, factor = 1, to = None ):
+        ''' Reduce number of files in the sample
+        '''
         len_before = len(self.files)
         norm_before = self.normalization
 
@@ -488,6 +490,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
 
         return
+         
 
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
