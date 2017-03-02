@@ -49,6 +49,12 @@ a:hover { text-decoration: underline; color: #D08504; }
 <h1><form>filter  <input type="text" name="match" size="30" value="<?php if (isset($_GET['match'])) print htmlspecialchars($_GET['match']);  ?>" /><input type="Submit" value="Go" /></form></h1>
 <div>
 <?php
+$parent  = "../";
+print "<h3><a class=\"file\" href=\"$parent\">Parent Directory</a></h3>"
+?>
+</div>
+<div>
+<?php
 $displayed = array();
 if ($_GET['noplots']) {
     print "Plots will not be displayed.\n";
@@ -72,6 +78,7 @@ if ($_GET['noplots']) {
                 if ($ex != '.txt') array_push($displayed, $other_filename);
             }
         }
+        print "<p> Last changed: " . date ("F d Y H:i:s.", filemtime($filename)) . " </p>";
         if ($others) print "<p>Also as ".implode(', ',$others)."</p>";
         print "</div>";
     }
@@ -92,6 +99,7 @@ if ($_GET['noplots']) {
                 if ($ex != '.txt') array_push($displayed, $other_filename);
             }
         }
+        print "<p> Last changed: " . date ("F d Y H:i:s.", filemtime($filename)) . " </p>";
         if ($others) print "<p>Also as ".implode(', ',$others)."</p>";
         print "</div>";
     }
@@ -117,6 +125,12 @@ foreach ($nondirs as $file) {
 }
 ?>
 </ul>
+</div>
+<div>
+<?php
+$parent  = "../";
+print "<h3><a class=\"file\" href=\"$parent\">Parent Directory</a></h3>"
+?>
 </div>
 <h3>a gp production</h3>
 </body>
