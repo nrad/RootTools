@@ -111,21 +111,32 @@ class TreeReader( LooperBase ):
                 logger.debug( "cd to file %r", rootfile )
                 rootfile.cd() 
 
+            # Copying tree
+
+            # 1. causes trouble with few events and few files. 
             #res =  self.sample.chain.CopyTree( "(1)", "" )
-            # Same?
+
+            # 2. Doesn't take into account event list
             #res =  self.sample.chain.CloneTree( 0 )
             #res.CopyEntries( self.sample.chain )
 
-            res =  self.sample.chain.CloneTree( 0 )
+            # 3. Loop (no problems observed)
             logger.debug("Copying %i events in a loop.", list_to_copy.GetN())
+            tree = self.sample.chain.GetTree()
+            res =  self.sample.chain.GetTree().CloneTree( 0 )
             for i_event in xrange(list_to_copy.GetN()):
-                self.sample.chain.GetEntry( list_to_copy.GetEntry(i_event) )
+                tree.GetEntry( list_to_copy.GetEntry(i_event) )
                 res.Fill()
-            
-            #logger.debug("list_to_copy %i", list_to_copy.GetN())
-            #logger.debug("before SetEventList: res.GetEntries() %i", res.GetEntries())
-            #res.SetEventList( list_to_copy )
-            #logger.debug("after SetEventList: res.GetEntries() %i", res.GetEntries())
+            # Needed?
+            res.Write()
+
+            ## 4. Doesn't take into account event list 
+            #tree =  self.sample.chain.GetTree()
+            #tree.SetEventList( tmpEventList )
+            #res = tree.CloneTree( 0 )
+            #res.CopyEntries( tree )
+
+            logger.debug("Number of events: list_to_copy %i res.GetEntries() %i", list_to_copy.GetN(), res.GetEntries())
 
             # Change back to previous gDirectory
             tmp_directory.cd()
