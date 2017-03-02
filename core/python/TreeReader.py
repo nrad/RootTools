@@ -114,7 +114,12 @@ class TreeReader( LooperBase ):
             # Copying tree
 
             # 1. causes trouble with few events and few files. 
-            #res =  self.sample.chain.CopyTree( "(1)", "" )
+            # res =  self.sample.chain.CopyTree( "(1)", "" )
+
+            # 1.5: this seems to give misaligned l1_pt and LepGood_pt???
+            # tree =  self.sample.chain.GetTree()
+            # tree.SetEventList( list_to_copy )
+            # res =  tree.CopyTree( "(1)", "" )
 
             # 2. Doesn't take into account event list
             #res =  self.sample.chain.CloneTree( 0 )
@@ -122,10 +127,10 @@ class TreeReader( LooperBase ):
 
             # 3. Loop (no problems observed)
             logger.debug("Copying %i events in a loop.", list_to_copy.GetN())
-            tree = self.sample.chain.GetTree()
+            #tree = self.sample.chain.GetTree()
             res =  self.sample.chain.GetTree().CloneTree( 0 )
             for i_event in xrange(list_to_copy.GetN()):
-                tree.GetEntry( list_to_copy.GetEntry(i_event) )
+                self.sample.chain.GetEntry( list_to_copy.GetEntry(i_event) )
                 res.Fill()
             # Needed?
             res.Write()
