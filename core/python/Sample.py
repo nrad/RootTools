@@ -430,7 +430,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     else:
                         logger.error( "Check of root file failed. Skipping. File: %s", f )
                 except IOError as e:
-                    logger.warning( "Could not load file %s", f )
+                    logger.error( "Could not load file %s", f )
                     raise e
 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
@@ -525,7 +525,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 self.name, weightString )
             return weightString
 
-    def getEventList(self, selectionString=None, name=None):
+    def getEventList(self, selectionString=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
 
@@ -536,12 +536,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.chain.Draw('>>'+tmp, selectionString_ if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
-        if not name:
-            return elistTMP_t
-        else:
-            elistTMP = elistTMP_t.Clone(name)
-            del elistTMP_t
-            return elistTMP
+        return elistTMP_t
 
     def getYieldFromDraw(self, selectionString = None, weightString = None):
         ''' Get yield from self.chain according to a selectionString and a weightString
