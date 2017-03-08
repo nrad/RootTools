@@ -532,7 +532,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         selectionString_ = self.combineWithSampleSelection( selectionString )
 
         tmp=str(uuid.uuid4())
-        logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString_ )
+        logger.debug( "Making event list for sample %s and selectionString %s", self.name, selectionString_ )
         self.chain.Draw('>>'+tmp, selectionString_ if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
