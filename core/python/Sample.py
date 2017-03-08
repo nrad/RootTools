@@ -195,6 +195,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         import subprocess
         if not directory.startswith("/dpm"): raise ValueError( "DPM directory does not start with /dpm/: %s" % directory )
 
+        # Renew proxy
+        from RootTools.core.helpers import renew_proxy
+        proxy = renew_proxy()
+        logger.info( "Using proxy %s"%proxy )
+
         p = subprocess.Popen(["dpns-ls -l %s" % directory], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         files = []
         for line in p.stdout.readlines():

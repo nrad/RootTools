@@ -1,6 +1,10 @@
 import ROOT
 import os
 
+# Logging
+import logging
+logger = logging.getLogger(__name__)
+
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
     '''
@@ -103,6 +107,21 @@ def clone(root_object, new_name = None):
 def add_to_sequence( func, sequence ):
     sequence.append( func )
     return func
+
+def read_from_subprocess(arglist):
+    ''' Read line by line from subprocess
+    '''
+    import subprocess
+
+    proc = subprocess.Popen(arglist,stdout=subprocess.PIPE)
+    res = []
+    while True:
+        l = proc.stdout.readline()
+        if l !=  '':
+            res.append( l.rstrip() )
+        else:
+            break
+    return res
 
 def renew_proxy( filename = None, rfc = False, request_time = 192, min_time = 0):
     import os, subprocess
