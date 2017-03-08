@@ -276,7 +276,7 @@ class TreeReader( LooperBase ):
         # get entry 
         errorLevel = ROOT.gErrorIgnoreLevel
         ROOT.gErrorIgnoreLevel = 3000
-        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+        self.sample.chain.GetEntry ( self._eList.GetEntry( self.position ) ) if self._eList else self.sample.chain.GetEntry( self.position )
         ROOT.gErrorIgnoreLevel = errorLevel
 
         # sequence
