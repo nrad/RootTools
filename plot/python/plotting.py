@@ -341,6 +341,12 @@ def draw(plot, \
     max_ = max( l[0].GetMaximum() for l in histos )
     min_ = min( l[0].GetMinimum() for l in histos )
 
+    # If legend is in the form (tuple, int) then the number of columns is provided
+    legendColumns = 1
+    if len(legend) == 2:
+       legendColumns = legend[1]
+       legend        = legend[0]
+
     #Calculate legend coordinates in gPad coordinates
     if legend is not None:
         if legend=="auto":
@@ -424,6 +430,7 @@ def draw(plot, \
     # Make the legend
     if legend is not None:
         legend_ = ROOT.TLegend(*legendCoordinates)
+        legend_.SetNColumns(legendColumns)
         legend_.SetFillStyle(0)
 #        legend_.SetFillColor(0)
         legend_.SetShadowColor(ROOT.kWhite)
