@@ -222,9 +222,9 @@ def draw(plot, \
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
         ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
-        scaling: {} (default). Scaling the i-th stach to the j-th is done by scaling = {i:j} with i,j integers
+        scaling: {} (default). Scaling the i-th stack to the j-th is done by scaling = {i:j} with i,j integers
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
-        legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None 
+        legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None. ([<legend_coordinates>], n) divides the legend into n columns. 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
@@ -261,7 +261,6 @@ def draw(plot, \
 	    for s in histos:
 		for p in s:
 		    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
-
 
     for i, l in enumerate(histos):
 
