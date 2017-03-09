@@ -34,7 +34,7 @@ class LooperBase( object ):
 
         # Internal state for running
         self.position = -1
-        self.eList = None
+        self._eList = None
 
         self.classUUIDs = []
 

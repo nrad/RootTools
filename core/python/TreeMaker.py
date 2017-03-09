@@ -33,6 +33,12 @@ class TreeMaker( LooperBase ):
         # function to fill the event 
         self.sequence = sequence
 
+    def debugBranchAddresses( self, prefix = ""):
+        ''' If strings are empty, there is an issue with memory. Only for debugging purposes.
+        '''
+        for b in self.branches:
+            print prefix, b.GetName(), repr(b.GetAddress())
+
     def cloneWithoutCompile(self, externalTree = None):
         ''' make a deep copy of self to e.g. avoid re-compilation of class in a loop. 
             Reset TTree as to not create a memory leak.
@@ -54,6 +60,7 @@ class TreeMaker( LooperBase ):
             res.tree = ROOT.TTree( treeName, treeName )
 
         res.makeBranches()
+        #self.debugBranchAddresses(prefix = "cloneWithoutCompile")
 
         return res
 
@@ -81,7 +88,7 @@ class TreeMaker( LooperBase ):
                 vectorCount+=1
             else:
                 raise ValueError( "Don't know what variable %r is." % s )
-
+        #self.debugBranchAddresses(prefix = "makeBranches")
         logger.debug( "TreeMaker created %i new scalars and %i new vectors.", scalerCount, vectorCount )
 
     def clear(self):
@@ -89,6 +96,7 @@ class TreeMaker( LooperBase ):
 
     def fill(self):
         # Write to TTree
+        #self.debugBranchAddresses( prefix = "Filling")
         if self.treeIsExternal:
             for b in self.branches:
                 b.Fill()
