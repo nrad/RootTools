@@ -200,11 +200,6 @@ class TreeReader( LooperBase ):
     def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None, nJobs = None, minJobs = None):
         '''For convinience: Define splitting of sample according to various criteria
         '''
-        def chunks(l, n):
-            """Yield successive n-sized chunks from l."""
-            for i in xrange(0, len(l), n):
-                yield (i, i+n)
-
         if maxFileSizeMB is not None:
             nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
         elif maxNEvents is not None:

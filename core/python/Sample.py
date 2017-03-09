@@ -404,6 +404,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
+    def split( self, n, clear = True):
+        ''' Split sample into n sub-samples
+        '''
+        if not n>=1:
+            raise ValueError( "Can not split into: '%r'" % n )
+       
+        chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
+
+        if clear: self.clear() # Kill yourself.
+
+        return [ Sample( 
+                name            = self.name+"_%i" % n_sample, 
+                treeName        = self.treeName, 
+                files           = chunks[n_sample], 
+                normalization   = self.normalization, 
+                selectionString = self.selectionString, 
+                weightString    = self.weightString, 
+                isData          = self.isData, 
+                color           = self.color, 
+                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        
+
     # Handle loading of chain -> load it when first used 
     @property
     def chain(self):
