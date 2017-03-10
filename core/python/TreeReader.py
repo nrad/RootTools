@@ -45,8 +45,8 @@ class TreeReader( LooperBase ):
         # Whether all branches are to be read or whether that information should come from the variables
         self.allBranchesActive = allBranchesActive
 
-        # Read branch information from the chain
-        self.readLeafInfo()
+        ## Read branch information from the chain -> Will be useful when using auto-type
+        #self.readLeafInfo()
 
         # 'variables' are read from the chain
         super(TreeReader, self).__init__( variables = list(set(variables)) ) 
@@ -59,18 +59,19 @@ class TreeReader( LooperBase ):
 
         # set the addresses of the branches corresponding to 'variables'
         self.setAddresses()
-        
+
         # make eList from cutString
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.activateAllBranches()
-        self.eList = self.sample.getEventList(selectionString = self.selectionString) if self.selectionString is not None else None
+        self._eList = self.sample.getEventList(selectionString = self.selectionString) if self.selectionString is not None else None
         self.activateBranches()
-        self.nEvents = self.eList.GetN() if  self.eList else self.sample.chain.GetEntries()
+        self.nEvents = self._eList.GetN() if  self._eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events in  %s", self.nEvents, self.sample.name)
 
         #  default event range of the reader
         self.eventRange = (0, self.nEvents)
+        
 
     def setAddresses(self):
         ''' Set all the branch addresses to the members in the class instance
@@ -84,27 +85,25 @@ class TreeReader( LooperBase ):
                     self.sample.chain.SetBranchAddress(comp.name, ROOT.AddressOf(self.event, comp.name ))
             else:
                 raise ValueError( "Don't know what variable %r is." % s )
-             
  
     def cloneTree(self, branchList = [], newTreename = None, rootfile = None):
         '''Clone tree after preselection and event range
         '''
         selectionString = self.selectionString if self.selectionString is not None else "1"
-        if self.eList:
-
+        if self._eList:
             # If there is an eList, first restrict it to the event range, then clone
+            import uuid
+            name = str(uuid.uuid4())
             list_to_copy = ROOT.TEventList("tmp","tmp")
             for i_ev in xrange(*self.eventRange):
-                list_to_copy.Enter(self.eList.GetEntry(i_ev))
+                list_to_copy.Enter(self._eList.GetEntry(i_ev))
+
+            self.sample.chain.GetEntry(list_to_copy.GetEntry(0)) #This is needed to keep branch addresses when running over a few events and >=1 file
 
             # activate branches that we want to copy, disable the ones we only need for reading
             self.activateBranches( turnOnReadBranches = False, branchList = branchList )
-            # preserving current event list
-            tmpEventList = self.sample.chain.GetEventList()
-            tmpEventList = 0 if not self.sample.chain.GetEventList() else tmpEventList
 
-            # Copy the selected events
-            self.sample.chain.SetEventList( list_to_copy ) 
+            # Copy only the selected events
 
             # Create the new tree in a file (if there is one)
             tmp_directory = ROOT.gDirectory
@@ -112,16 +111,20 @@ class TreeReader( LooperBase ):
                 logger.debug( "cd to file %r", rootfile )
                 rootfile.cd() 
 
-            res =  self.sample.chain.CopyTree( "(1)", "" )
-            # Same?
-            # res =  self.sample.chain.CloneTree( 0 )
-            # res.CopyEntries( self.sample.chain )
+            # Copying tree
+
+            logger.debug("Copying %i events in a loop.", list_to_copy.GetN())
+            res = self.sample.chain.GetTree().CloneTree( 0 )
+            for i_event in xrange(list_to_copy.GetN()):
+                self.sample.chain.GetEntry( list_to_copy.GetEntry(i_event) )
+                res.Fill()
+
+            res.Write()
+
+            logger.debug("Number of events: list_to_copy %i res.GetEntries() %i", list_to_copy.GetN(), res.GetEntries())
 
             # Change back to previous gDirectory
             tmp_directory.cd()
-
-            # restoring event list
-            self.sample.chain.SetEventList( tmpEventList ) 
 
             # activate what we read, don't activate the ones we just copied
             self.activateBranches( turnOnReadBranches = True, branchList = [] )
@@ -171,37 +174,32 @@ class TreeReader( LooperBase ):
         '''
         self.sample.chain.SetBranchStatus("*", 1)
 
-    def readLeafInfo(self):
-        ''' Read information on the leaves from the chain and store in dict
-            FIXME: Pretty sure this doesn't yet work for fixed sized vectors
-        '''
-        leafInfo = []
-        for s in self.sample.chain.GetListOfLeaves():
-            leaf = {'type':shortTypeDict[s.GetTypeName()], 'name':s.GetName()}
-            countval = array.array('i',[-9999])
-            pointer = s.GetLeafCounter(countval)
-            leaf['dim'] = 'scalar'
-            if pointer:
-                # Vector
-                # GetLeafCounter returns countval==1 if a counter leaf was found and pointer points to that leaf
-                # https://root.cern.ch/doc/master/classTLeaf.html#a062bd89a11fd1f922c096e66d2601ab6
-                if countval[0]==1:
-                    leaf['counterInt'] = pointer.GetName()
-                leaf['dim'] = 'vector'
-            else:
-                # For fixed size arrays, the pointer is zero and the countval is the size of the array
-                leaf['nMax'] = countval[0]
-            leafInfo.append(leaf)
-        return leafInfo
+#    def readLeafInfo(self):
+#        ''' Read information on the leaves from the chain and store in dict
+#            FIXME: Pretty sure this doesn't yet work for fixed sized vectors
+#        '''
+#        leafInfo = []
+#        for s in self.sample.chain.GetListOfLeaves():
+#            leaf = {'type':shortTypeDict[s.GetTypeName()], 'name':s.GetName()}
+#            countval = array.array('i',[-9999])
+#            pointer = s.GetLeafCounter(countval)
+#            leaf['dim'] = 'scalar'
+#            if pointer:
+#                # Vector
+#                # GetLeafCounter returns countval==1 if a counter leaf was found and pointer points to that leaf
+#                # https://root.cern.ch/doc/master/classTLeaf.html#a062bd89a11fd1f922c096e66d2601ab6
+#                if countval[0]==1:
+#                    leaf['counterInt'] = pointer.GetName()
+#                leaf['dim'] = 'vector'
+#            else:
+#                # For fixed size arrays, the pointer is zero and the countval is the size of the array
+#                leaf['nMax'] = countval[0]
+#            leafInfo.append(leaf)
+#        return leafInfo
 
     def getEventRanges(self, maxFileSizeMB = None, maxNEvents = None, nJobs = None, minJobs = None):
         '''For convinience: Define splitting of sample according to various criteria
         '''
-        def chunks(l, n):
-            """Yield successive n-sized chunks from l."""
-            for i in xrange(0, len(l), n):
-                yield (i, i+n)
-
         if maxFileSizeMB is not None:
             nSplit = sum( os.path.getsize(f) for f in self.sample.files ) / ( 1024**2*maxFileSizeMB )
         elif maxNEvents is not None:
@@ -226,14 +224,14 @@ class TreeReader( LooperBase ):
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
         logger.debug( "[setEventRange] Set eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
 
-    def setEventList( self, evtList ):
-        ''' Specify an event list that the reader will run over. 
-        '''
-        self.sample.chain.SetEventList( evtList ) 
-        self.eList = evtList 
-        self.nEvents = self.eList.GetN()
-        self.eventRange = (0, self.nEvents)
-        logger.debug( "[setEventList] Set eventRange %r for reader of sample %s", self.eventRange, self.sample.name )
+    #def setEventList( self, evtList ):
+    #    ''' Specify an event list that the reader will run over. 
+    #    '''
+    #    self.sample.chain.SetEventList( evtList ) 
+    #    self.eList = evtList 
+    #    self.nEvents = self.eList.GetN()
+    #    self.eventRange = (0, self.nEvents)
+    #    logger.debug( "[setEventList] Set eventRange %r for reader of sample %s", self.eventRange, self.sample.name )
     
     def reduceEventRange( self, reduction_factor ):
         ''' Reduce event range by a given factor. 
@@ -273,7 +271,7 @@ class TreeReader( LooperBase ):
         # get entry 
         errorLevel = ROOT.gErrorIgnoreLevel
         ROOT.gErrorIgnoreLevel = 3000
-        self.sample.chain.GetEntry ( self.eList.GetEntry( self.position ) ) if self.eList else self.sample.chain.GetEntry( self.position )
+        self.sample.chain.GetEntry ( self._eList.GetEntry( self.position ) ) if self._eList else self.sample.chain.GetEntry( self.position )
         ROOT.gErrorIgnoreLevel = errorLevel
 
         # sequence

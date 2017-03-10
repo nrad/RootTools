@@ -288,9 +288,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     skimReportFilename = os.path.join(root, 'SkimReport.txt')
                     with open(skimReportFilename, 'r') as fin:
                       sumW = read_cmg_normalization(fin)
-                    if not sumW:
-                        logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
-                                             chunkDirectory, skimReportFilename )
+                      if not sumW:
+                          logger.warning( "Read chunk %s and found report '%s' but could not read normalization.",
+                                               chunkDirectory, skimReportFilename )
             # Find treefile
             treeFile = None
             for root, subFolders, filenames in os.walk( chunkDirectory ):
@@ -404,6 +404,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
+    def split( self, n, clear = True):
+        ''' Split sample into n sub-samples
+        '''
+        if not n>=1:
+            raise ValueError( "Can not split into: '%r'" % n )
+       
+        chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
+
+        if clear: self.clear() # Kill yourself.
+
+        return [ Sample( 
+                name            = self.name+"_%i" % n_sample, 
+                treeName        = self.treeName, 
+                files           = chunks[n_sample], 
+                normalization   = self.normalization, 
+                selectionString = self.selectionString, 
+                weightString    = self.weightString, 
+                isData          = self.isData, 
+                color           = self.color, 
+                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        
+
     # Handle loading of chain -> load it when first used 
     @property
     def chain(self):
@@ -430,7 +452,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     else:
                         logger.error( "Check of root file failed. Skipping. File: %s", f )
                 except IOError as e:
-                    logger.warning( "Could not load file %s", f )
+                    logger.error( "Could not load file %s", f )
                     raise e
 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
@@ -463,6 +485,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return
 
     def reduceFiles( self, factor = 1, to = None ):
+        ''' Reduce number of files in the sample
+        '''
         len_before = len(self.files)
         norm_before = self.normalization
 
@@ -488,6 +512,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
 
         return
+         
 
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
@@ -522,23 +547,18 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 self.name, weightString )
             return weightString
 
-    def getEventList(self, selectionString=None, name=None):
+    def getEventList(self, selectionString=None):
         ''' Get a TEventList from a selectionString (combined with self.selectionString, if exists).
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
 
         tmp=str(uuid.uuid4())
-        logger.debug( "Making eList for sample %s and selectionString %s", self.name, selectionString_ )
+        logger.debug( "Making event list for sample %s and selectionString %s", self.name, selectionString_ )
         self.chain.Draw('>>'+tmp, selectionString_ if selectionString else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
-        if not name:
-            return elistTMP_t
-        else:
-            elistTMP = elistTMP_t.Clone(name)
-            del elistTMP_t
-            return elistTMP
+        return elistTMP_t
 
     def getYieldFromDraw(self, selectionString = None, weightString = None):
         ''' Get yield from self.chain according to a selectionString and a weightString
