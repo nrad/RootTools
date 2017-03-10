@@ -51,7 +51,7 @@ s2.scale = 2
 stack = Stack( [ s0, s1], [ s2 ] )
 
 # Let's use a trivial weight. All functions will 
-plot_weight   = lambda data:1
+plot_weight   = lambda event, sample : 1
 
 # Two selection strings
 selectionString = "nJet>0"
