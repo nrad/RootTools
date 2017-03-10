@@ -216,6 +216,7 @@ def draw(plot, \
         drawObjects = [],
         widths = {},
         canvasModifications = [],
+        histModifications = [],
         copyIndexPHP = False
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
@@ -422,6 +423,7 @@ def draw(plot, \
             else:
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
+            for modification in histModifications: modification(h)
             h.Draw(drawOption+same)
             same = "same"
 
