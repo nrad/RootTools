@@ -27,7 +27,7 @@ def new_name():
 
 def check_equal_(vals):
     if not len(set(vals)) == 1:
-        raise ValueError( "These values should be identical but are not: %r"%vals )
+        raise ValueError( "Sample combine check failed on: %r"%vals )
     else:
         return vals[0]
 
