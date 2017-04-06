@@ -498,12 +498,14 @@ def draw(plot, \
         drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
         if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
           graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
+          graph.Set(0)
           for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
             h_ratio.SetBinError(bin, 0.0001)
+            center  = h_ratio.GetBinCenter(bin)
             val     = h_ratio.GetBinContent(bin)
             errUp   = num.GetBinErrorUp(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
             errDown = num.GetBinErrorLow(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
-            graph.SetPoint(bin, bin-0.5, val)
+            graph.SetPoint(bin, center, val)
             graph.SetPointError(bin, 0, 0, errDown, errUp)
           h_ratio.Draw("e0")
           graph.Draw("P0 same")
