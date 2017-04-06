@@ -424,6 +424,7 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
             for modification in histModifications: modification(h)
+            if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
 
@@ -459,7 +460,6 @@ def draw(plot, \
     if ratio is not None:
         bottomPad.cd()
         num = histos[ratio['num']][0]
-
         h_ratio = helpers.clone( num )
 
         # For a ratio of profiles, use projection (preserve attributes)
@@ -496,7 +496,19 @@ def draw(plot, \
         h_ratio.GetYaxis().SetNdivisions(505)
 
         drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
-        h_ratio.Draw(drawOption)
+        if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+          graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
+          for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
+            h_ratio.SetBinError(bin, 0.0001)
+            val     = h_ratio.GetBinContent(bin)
+            errUp   = num.GetBinErrorUp(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
+            errDown = num.GetBinErrorLow(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
+            graph.SetPoint(bin, bin-0.5, val)
+            graph.SetPointError(bin, 0, 0, errDown, errUp)
+          h_ratio.Draw("e0")
+          graph.Draw("P0 same")
+        else:
+          h_ratio.Draw(drawOption)
 
         bottomPad.SetLogx(logX)
         bottomPad.SetLogy(ratio['logY'])
