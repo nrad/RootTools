@@ -32,7 +32,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], sequence=[] ):
+def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
     '''Create histos and fill all plots
     '''
 
@@ -117,6 +117,7 @@ def fill(plots, read_variables = [], sequence=[] ):
                 plot.store_fillers = plot.fillers
 
             r.start()
+            counter = 0
             while r.run():
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
@@ -133,6 +134,12 @@ def fill(plots, read_variables = [], sequence=[] ):
                         if sample.weight is not None: weight *= sample.weight( r.event, sample )
                         TH_fill_args.append( weight*sample_scale_factor )
                         plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
+
+                if max_events > 0: 
+                    counter += 1
+                    if counter > max_events: 
+                        logger.debug( "Stop filling histograms because counter is %i and max_events is %i", counter, max_events )
+                        break
 
             # Clean up
             for plot in plots_for_sample:
