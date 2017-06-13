@@ -535,7 +535,10 @@ def draw(plot, \
                 logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
     if not os.path.exists(plot_directory):
-        os.makedirs(plot_directory)
+        try:
+            os.makedirs(plot_directory)
+        except OSError: # Resolve rare race condition
+            pass
 
     if copyIndexPHP: plot_helpers.copyIndexPHP( plot_directory )
 
