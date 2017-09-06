@@ -32,7 +32,7 @@ def getLegendMaskedArea(legend_coordinates, pad):
         'xUpperEdge':constrain( (legend_coordinates[2] - pad.GetLeftMargin())/(1.-pad.GetLeftMargin()-pad.GetRightMargin()), interval = [0, 1] )
         }
 
-def fill(plots, read_variables = [], sequence=[] ):
+def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
     '''Create histos and fill all plots
     '''
 
@@ -117,6 +117,7 @@ def fill(plots, read_variables = [], sequence=[] ):
                 plot.store_fillers = plot.fillers
 
             r.start()
+            counter = 0
             while r.run():
                 for plot in plots_for_sample:
                     for index in plot.sample_indices:
@@ -133,6 +134,12 @@ def fill(plots, read_variables = [], sequence=[] ):
                         if sample.weight is not None: weight *= sample.weight( r.event, sample )
                         TH_fill_args.append( weight*sample_scale_factor )
                         plot.histos[index[0]][index[1]].Fill( *TH_fill_args )
+
+                if max_events > 0: 
+                    counter += 1
+                    if counter > max_events: 
+                        logger.debug( "Stop filling histograms because counter is %i and max_events is %i", counter, max_events )
+                        break
 
             # Clean up
             for plot in plots_for_sample:
@@ -216,15 +223,16 @@ def draw(plot, \
         drawObjects = [],
         widths = {},
         canvasModifications = [],
+        histModifications = [],
         copyIndexPHP = False
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
         ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
-        scaling: {} (default). Scaling the i-th stach to the j-th is done by scaling = {i:j} with i,j integers
+        scaling: {} (default). Scaling the i-th stack to the j-th is done by scaling = {i:j} with i,j integers
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
-        legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None 
+        legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None. ([<legend_coordinates>], n) divides the legend into n columns. 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
@@ -261,7 +269,6 @@ def draw(plot, \
 	    for s in histos:
 		for p in s:
 		    Plot.addOverFlowBin1D( p, plot.addOverFlowBin )
-
 
     for i, l in enumerate(histos):
 
@@ -341,6 +348,12 @@ def draw(plot, \
     max_ = max( l[0].GetMaximum() for l in histos )
     min_ = min( l[0].GetMinimum() for l in histos )
 
+    # If legend is in the form (tuple, int) then the number of columns is provided
+    legendColumns = 1
+    if len(legend) == 2:
+       legendColumns = legend[1]
+       legend        = legend[0]
+
     #Calculate legend coordinates in gPad coordinates
     if legend is not None:
         if legend=="auto":
@@ -417,6 +430,8 @@ def draw(plot, \
             else:
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
+            for modification in histModifications: modification(h)
+            if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
 
@@ -424,6 +439,7 @@ def draw(plot, \
     # Make the legend
     if legend is not None:
         legend_ = ROOT.TLegend(*legendCoordinates)
+        legend_.SetNColumns(legendColumns)
         legend_.SetFillStyle(0)
 #        legend_.SetFillColor(0)
         legend_.SetShadowColor(ROOT.kWhite)
@@ -451,7 +467,6 @@ def draw(plot, \
     if ratio is not None:
         bottomPad.cd()
         num = histos[ratio['num']][0]
-
         h_ratio = helpers.clone( num )
 
         # For a ratio of profiles, use projection (preserve attributes)
@@ -488,7 +503,21 @@ def draw(plot, \
         h_ratio.GetYaxis().SetNdivisions(505)
 
         drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
-        h_ratio.Draw(drawOption)
+        if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+          graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
+          graph.Set(0)
+          for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
+            h_ratio.SetBinError(bin, 0.0001)
+            center  = h_ratio.GetBinCenter(bin)
+            val     = h_ratio.GetBinContent(bin)
+            errUp   = num.GetBinErrorUp(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
+            errDown = num.GetBinErrorLow(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
+            graph.SetPoint(bin, center, val)
+            graph.SetPointError(bin, 0, 0, errDown, errUp)
+          h_ratio.Draw("e0")
+          graph.Draw("P0 same")
+        else:
+          h_ratio.Draw(drawOption)
 
         bottomPad.SetLogx(logX)
         bottomPad.SetLogy(ratio['logY'])
@@ -506,7 +535,10 @@ def draw(plot, \
                 logger.debug( "ratio['drawObjects'] has something I can't Draw(): %r", o)
 
     if not os.path.exists(plot_directory):
-        os.makedirs(plot_directory)
+        try:
+            os.makedirs(plot_directory)
+        except OSError: # Resolve rare race condition
+            pass
 
     if copyIndexPHP: plot_helpers.copyIndexPHP( plot_directory )
 

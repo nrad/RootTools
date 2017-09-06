@@ -85,11 +85,10 @@ class FWLiteSample ( object ):
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, files = files, color=color, texName = texName)
-        return sample
+        return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', maxN = None):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -119,8 +118,24 @@ class FWLiteSample ( object ):
             line = line.rstrip()
             files.append(prefix+line)
 
-        return cls(name, files=files)
+        return cls(name, files=files, texName = texName)
 
+    @classmethod
+    def combine(cls, name, samples, texName = None, maxN = None, color = 0):
+        '''Make new sample from a list of samples.
+        '''
+        if not (type(samples) in [type([]), type(())]) or len(samples)<1:
+            raise ValueError( "Need non-empty list of samples. Got %r"% samples)
+
+        files = sum([s.files for s in samples], [])
+        maxN = maxN if maxN is not None and maxN>0 else None
+        files = files[:maxN]
+
+        return cls(name = name, \
+                   files = files,
+                   color = color, 
+                   texName = texName
+            )
 
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample

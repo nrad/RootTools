@@ -5,10 +5,18 @@ import os
 import logging
 logger = logging.getLogger(__name__)
 
+# Error handling
 class EmptySampleError(Exception):
     '''Accessing a sample without ROOT files.
     '''
     pass
+
+# List helper
+def partition(lst, n):
+    ''' Partition list into chunks of approximately equal size'''
+    # http://stackoverflow.com/questions/2659900/python-slicing-a-list-into-n-nearly-equal-length-partitions
+    n_division = len(lst) / float(n)
+    return [ lst[int(round(n_division * i)): int(round(n_division * (i + 1)))] for i in xrange(n) ]
 
 # Translation of short types to ROOT C types
 cStringTypeDict = {
@@ -49,7 +57,6 @@ def static_vars(**kwargs):
         return func
     return decorate
 
- 
 def checkRootFile(f, checkForObjects=[] ):
     ''' Checks whether a root file exists, was not recoverd or otherwise broken and
     contains the objects in 'checkForObjects'
