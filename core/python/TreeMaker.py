@@ -10,9 +10,9 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.core.LooperBase import LooperBase
+from RootTools.core.FlatTreeLooperBase import FlatTreeLooperBase
 from RootTools.core.TreeVariable import ScalarTreeVariable, VectorTreeVariable, TreeVariable
-class TreeMaker( LooperBase ):
+class TreeMaker( FlatTreeLooperBase ):
 
     def __init__(self, variables, sequence = [], treeName = "Events"):
         

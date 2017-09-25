@@ -19,6 +19,25 @@ from RootTools.fwlite.FWLiteSample import FWLiteSample
 import RootTools.core.helpers as helpers
 from RootTools.core.helpers import shortTypeDict
 
+class _FWLiteReader__Event(object):
+    ''' Helper class to mimick the behaviour of TreeReader.event.<<branchname>>
+        Implements evt/run/lumi
+    '''
+    def __init__(self, sample, **kwds):
+        self.sample = sample
+        # Add all 'products' as properties to the __Event object
+        self.__dict__.update(kwds)
+
+    @property
+    def run( self ): 
+        return self.sample.events.eventAuxiliary().run()
+    @property
+    def lumi( self ): 
+        return self.sample.events.eventAuxiliary().luminosityBlock()
+    @property
+    def evt( self ): 
+        return self.sample.events.eventAuxiliary().event()
+
 class FWLiteReader( LooperBase ):
 
     def __init__(self, sample, products):
@@ -57,9 +76,13 @@ class FWLiteReader( LooperBase ):
     def getProducts(self):
         ''' Read all products from the event
         '''
+        self.products = {}
         for name in self.__products.keys():
             self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
-        self.products = {name: self.handles[name].product() for name in self.__products.keys()}
+            self.products[name] = self.handles[name].product()
+
+        # For convinience. Mimick TreeReader.event 
+        self.event = __Event(self.sample, **self.products)
 
     def _initialize(self):
         ''' This method is called from the Base class start method.

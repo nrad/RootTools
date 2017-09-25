@@ -12,13 +12,13 @@ import logging
 logger = logging.getLogger(__name__)
 
 # RootTools
-from RootTools.core.LooperBase import LooperBase
+from RootTools.core.FlatTreeLooperBase import FlatTreeLooperBase
 from RootTools.core.Sample import Sample
 import RootTools.core.helpers as helpers
 from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.helpers import shortTypeDict
 
-class TreeReader( LooperBase ):
+class TreeReader( FlatTreeLooperBase ):
 
     def __init__(self, sample, variables=[], sequence = [], selectionString = None, allBranchesActive = False):
 
@@ -71,7 +71,6 @@ class TreeReader( LooperBase ):
 
         #  default event range of the reader
         self.eventRange = (0, self.nEvents)
-        
 
     def setAddresses(self):
         ''' Set all the branch addresses to the members in the class instance
