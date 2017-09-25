@@ -257,7 +257,7 @@ class TreeReader( FlatTreeLooperBase ):
 
         if self.position == self.eventRange[1]: return 0
         if self.position==0:
-            logger.info("TreeReader for sample %s starting at position %i and processing %i events.", 
+            logger.info("TreeReader for sample %s starting at position %i (max: %i events).", 
                 self.sample.name, self.position, self.nEvents)
         elif (self.position % 10000)==0:
             logger.info("TreeReader for sample %s is at position %6i/%6i", 

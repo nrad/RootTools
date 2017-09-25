@@ -1,6 +1,7 @@
 from RootTools.core.Sample import Sample
 from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 from RootTools.core.TreeReader import TreeReader
+from RootTools.core.MultiReader import MultiReader
 from RootTools.core.TreeMaker import TreeMaker
 from RootTools.core.logger import get_logger
 from RootTools.plot.Stack import Stack 
