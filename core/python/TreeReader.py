@@ -4,7 +4,6 @@
 # Standard imports
 import ROOT
 import os
-import array
 import inspect
 
 # Logging

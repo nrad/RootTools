@@ -6,7 +6,6 @@ import abc
 # Standard imports
 import ROOT
 import uuid
-import copy
 import os
 
 # Logging

@@ -17,7 +17,6 @@ logger = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.fwlite.FWLiteSample import FWLiteSample
 import RootTools.core.helpers as helpers
-from RootTools.core.helpers import shortTypeDict
 
 class _FWLiteReader__Event(object):
     ''' Helper class to mimick the behaviour of TreeReader.event.<<branchname>>

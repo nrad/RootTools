@@ -3,19 +3,9 @@
 #Abstract Base Class
 import abc
 
-# Standard imports
-import ROOT
-import uuid
-import copy
-import os
-
 # Logging
 import logging
 logger      = logging.getLogger(__name__)
-
-# RootTools
-from RootTools.core.LooperHelpers import createClassString
-from RootTools.core.TreeVariable import TreeVariable, ScalarTreeVariable, VectorTreeVariable
 
 class LooperBase( object ):
     __metaclass__ = abc.ABCMeta
