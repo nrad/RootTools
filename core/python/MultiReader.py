@@ -29,6 +29,8 @@ class MultiReader( LooperBase ):
             self.readers.append( arg[0] )
             self.keys.append( default_key if len(arg)==1 else arg[1] ) 
 
+        logger.debug( "Created MultiReader from %i samples", len(self.readers) )
+
         super(MultiReader, self).__init__()
 
     def _initialize(self):
@@ -43,7 +45,7 @@ class MultiReader( LooperBase ):
             reader_positions[i_reader] = {}
 
             # Let's at least not read all FWLite arguments if we're running for the first time.
-            kwargs = {'readProducts ': False} if isinstance( reader, FWLiteReader ) else {}
+            kwargs = {'readProducts': False} if isinstance( reader, FWLiteReader ) else {}
 
             reader.start()
             while reader.run( **kwargs ):
