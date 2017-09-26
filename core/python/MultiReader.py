@@ -9,20 +9,25 @@ logger      = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.fwlite.FWLiteReader import FWLiteReader
 
+default_key = lambda event: ( event.run, event.lumi, event.evt )
+
 class MultiReader( LooperBase ):
 
     def __init__(self, *args):
-        ''' Initialize with 'MultiReader( reader1, key1, reader2, key2, ... )'
-            key1, ... should each return '(run, lumi, event)' and in this order for higher speed.
+        ''' Initialize with 'MultiReader( (reader1, key1), (reader2, key2), ... )'
+            key1, ... should each return '(run, lumi, event)' and in this order for higher speed (Note: don't start with event).
             Will run over all common events defined by the return value of keys.
         '''
 
         if not len(args)%2==0 or len(args)==0:
-            logger.error( "Can't initialze MultiReader. Need 'MultiReader( reader1, key1, reader2, key2, ... )', got %s", repr( args ) )
+            logger.error( "Can't initialze MultiReader. Need 'MultiReader( (reader1, key1), (reader2, key2), ... )', got %s", repr( args ) )
             raise ValueError( "Can't create MultiReader instance." )
 
-        self.readers = args[::2]
-        self.keys    = args[1::2]
+        self.readers = []
+        self.keys    = []
+        for i_arg, arg in enumerate( args ):
+            self.readers.append( arg[0] )
+            self.keys.append( default_key if len(arg)==1 else arg[1] ) 
 
         super(MultiReader, self).__init__()
 

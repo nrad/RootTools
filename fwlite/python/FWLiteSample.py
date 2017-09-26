@@ -106,7 +106,7 @@ class FWLiteSample ( object ):
             cache = None
 
         if n_cache_files:
-            logger.info('Found sample in cache, adding %i file', n_cache_files)
+            logger.info('Found sample in cache %s, adding %i file', dbFile, n_cache_files)
             files = [ f["value"] for f in cache.getDicts({'name':name}) ]
         else:
             def _dasPopen(dbs):

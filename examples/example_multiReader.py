@@ -35,8 +35,8 @@ key = lambda event: ( event.run, event.lumi, event.evt )
 
 # Create MultiReader instance according to MultiReader( reader1, key1, reader2, key2, ... )
 r = MultiReader( 
-    r1, key, 
-    r2, key )
+    ( r1, key ), 
+    ( r2, key ) )
 
 r.start()
 while r.run():
