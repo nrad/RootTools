@@ -32,6 +32,13 @@ class Database:
         self.close()
 
     def connect(self):
+
+        # Create database directory if it doesn't exist
+        if not os.path.exists( os.path.dirname( self.database_file ) ):
+            logger.debug( "Created directory for Database file: %s", os.path.dirname( self.database_file) )
+            os.makedirs( os.path.dirname( self.database_file ) )
+
+        # Connect
         self.database = sqlite3.connect(self.database_file)
         self.cursor = self.database.cursor()
 

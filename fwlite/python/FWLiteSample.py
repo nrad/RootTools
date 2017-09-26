@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # RootTools imports
 import RootTools.core.helpers as helpers
-from RootTools.core.Database import Database
+from RootTools.fwlite.Database import Database
 
 @helpers.static_vars(sampleCounter = 0)
 def newName():
