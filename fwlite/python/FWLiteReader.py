@@ -75,17 +75,6 @@ class FWLiteReader( LooperBase ):
         #  default event range of the reader
         self.eventRange = (0, self.nEvents)
 
-    def getProducts(self):
-        ''' Read all products from the event
-        '''
-        self.products = {}
-        for name in self.__products.keys():
-            self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
-            self.products[name] = self.handles[name].product()
-
-        # For convinience. Mimick TreeReader.event 
-        self.event = __Event(self.sample, **self.products)
-
     def _initialize(self):
         ''' This method is called from the Base class start method.
             Initializes the reader, sets position to lower event range.
@@ -114,10 +103,14 @@ class FWLiteReader( LooperBase ):
         self.evt = (eaux.run(), eaux.luminosityBlock(), eaux.event() )
             
         # read all products
+        self.products = {}
         if readProducts:
-            self.getProducts() 
-        else:
-            self.products = None 
+            for name in self.__products.keys():
+                self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
+                self.products[name] = self.handles[name].product()
+
+        # For convinience. Mimick TreeReader.event 
+        self.event = __Event(self.sample, **self.products)
 
         return 1
 

@@ -30,7 +30,6 @@ class LooperBase( object ):
         success = self._execute( **kwargs )
 
         self.position += 1
-
         return success
 
     @abc.abstractmethod
