@@ -41,3 +41,4 @@ r = MultiReader(
 r.start()
 while r.run():
     print r.position, r1.event.evt, r2.event.evt
+    break

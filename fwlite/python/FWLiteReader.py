@@ -61,10 +61,13 @@ class FWLiteReader( LooperBase ):
         # Create Handles for __products
         self.handles={v:Handle(self.__products[v]['type']) for v in self.__products.keys()}
 
-        # Initialize looper, no TTree variables 
-        super(FWLiteReader, self).__init__( variables = [] ) 
+        # Initialize looper
+        super(FWLiteReader, self).__init__( ) 
 
         logger.debug("Initializing FWLiteReader for sample %s", self.sample.name)
+
+        # Loading files into events (FWLite.Events) member
+        self.sample.events = Events(sample.files)
 
         self.nEvents = self.sample.events.size()
         logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)

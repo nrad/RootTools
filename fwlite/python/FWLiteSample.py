@@ -7,7 +7,6 @@ import ROOT
 import os
 
 #FWLite and CMSSW tools
-from DataFormats.FWLite import Events, Handle
 from PhysicsTools.PythonAnalysis import *
 
 # Logging
@@ -42,9 +41,6 @@ class FWLiteSample ( object ):
         self.texName = texName if not texName is None else name
              
         logger.debug("Created new sample %s with %i files.", name, len(self.files))
-
-        # Loading files into events (FWLite.Events) member
-        self.events = Events(files)
 
     @classmethod
     def fromFiles(cls, name, files,  color = 0, texName = None, maxN = None):
