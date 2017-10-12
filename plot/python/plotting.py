@@ -146,7 +146,7 @@ def fill(plots, read_variables = [], sequence=[], max_events = -1 ):
                 del plot.sample_indices
                 del plot.store_fillers
 
-            r.cleanUpTempFiles()
+            r.cleanUpTempFiles() #FIXME improved cleanup logic
 
 def fill_with_draw(plots, weight_string = "(1)"):
     '''Create and fill all plots using Sample.chain.Draw
@@ -468,13 +468,18 @@ def draw(plot, \
 
     for o in drawObjects:
         if o:
-            o.Draw()
+            if type(o) in [ ROOT.TF1 ]:
+                o.Draw('same')
+            else:
+                o.Draw()
         else:
             logger.debug( "drawObjects has something I can't Draw(): %r", o)
     # Make a ratio plot
     if ratio is not None:
         bottomPad.cd()
         num = histos[ratio['num']][0]
+        den = histos[ratio['den']][0]
+
         h_ratio = helpers.clone( num )
 
         # For a ratio of profiles, use projection (preserve attributes)
@@ -482,9 +487,9 @@ def draw(plot, \
             attrs = h_ratio.__dict__
             h_ratio = h_ratio.ProjectionX()
             h_ratio.__dict__.update( attrs )
-            h_ratio.Divide( histos[ratio['den']][0].ProjectionX() )
+            h_ratio.Divide( den.ProjectionX() )
         else:
-            h_ratio.Divide( histos[ratio['den']][0] )
+            h_ratio.Divide( den )
 
         if ratio['style'] is not None: ratio['style'](h_ratio) 
 
@@ -518,8 +523,8 @@ def draw(plot, \
             h_ratio.SetBinError(bin, 0.0001)
             center  = h_ratio.GetBinCenter(bin)
             val     = h_ratio.GetBinContent(bin)
-            errUp   = num.GetBinErrorUp(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
-            errDown = num.GetBinErrorLow(bin)/histos[ratio['den']][0].GetBinContent(bin) if val > 0 else 0
+            errUp   = num.GetBinErrorUp(bin)/den.GetBinContent(bin) if val > 0 else 0
+            errDown = num.GetBinErrorLow(bin)/den.GetBinContent(bin) if val > 0 else 0
             graph.SetPoint(bin, center, val)
             graph.SetPointError(bin, 0, 0, errDown, errUp)
           h_ratio.Draw("e0")

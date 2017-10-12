@@ -5,9 +5,7 @@
 # Standard imports
 import ROOT
 import uuid
-import numbers
 import os
-from math import sqrt
 from array import array
 
 # Logging

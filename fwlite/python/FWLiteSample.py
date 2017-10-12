@@ -7,7 +7,6 @@ import ROOT
 import os
 
 #FWLite and CMSSW tools
-from DataFormats.FWLite import Events, Handle
 from PhysicsTools.PythonAnalysis import *
 
 # Logging
@@ -16,7 +15,7 @@ logger = logging.getLogger(__name__)
 
 # RootTools imports
 import RootTools.core.helpers as helpers
-from RootTools.core.database import database
+from RootTools.fwlite.Database import Database
 
 @helpers.static_vars(sampleCounter = 0)
 def newName():
@@ -36,15 +35,12 @@ class FWLiteSample ( object ):
         self.name = name
         self.files = files
         if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
+           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
  
         self.color = color
         self.texName = texName if not texName is None else name
              
         logger.debug("Created new sample %s with %i files.", name, len(self.files))
-
-        # Loading files into events (FWLite.Events) member
-        self.events = Events(files)
 
     @classmethod
     def fromFiles(cls, name, files,  color = 0, texName = None, maxN = None):
@@ -89,19 +85,25 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbfile="cache.db"):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
 
-        cache = database(dbfile, "fileCache", ["name"])
-        nFiles = cache.contains({'name':name})
-        if nFiles:
-            logger.info('Found sample in cache, adding %i file',nFiles)
-            files = []
-            allFiles = cache.getDicts({'name':name})
-            for f in allFiles:
-                files.append(f["value"])
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        n_cache_files = 0 
+        # Don't use the cache on partial queries
+        if dbFile is not None and maxN<0 or maxN is None:
+            cache = Database(dbFile, "fileCache", ["name"]) 
+            n_cache_files = cache.contains({'name':name})
+        else:
+            cache = None
+
+        if n_cache_files:
+            logger.info('Found sample in cache %s, adding %i file', dbFile, n_cache_files)
+            files = [ f["value"] for f in cache.getDicts({'name':name}) ]
         else:
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
@@ -115,20 +117,18 @@ class FWLiteSample ( object ):
             query, qwhat = sampleName, "dataset"
             if "#" in sampleName: qwhat = "block"
 
-            maxN = maxN if maxN is not None and maxN>0 else None
-            limit = maxN if maxN else 0
-
             dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
             dbsOut = _dasPopen(dbs).readlines()
             
             files = []
             for line in dbsOut:
-                if line.find('/store')==-1:
-                    continue
-                line = line.rstrip()
-                files.append(prefix+line)
-                cache.add({"name":name}, prefix+line, save=True)
+                if line.startswith('/store/'):
+                    line = line.rstrip()
+                    files.append(prefix+line)
+                    if cache is not None:
+                        cache.add({"name":name}, prefix+line, save=True)
 
+        if limit>0: files=files[:limit]
         return cls(name, files=files, texName = texName)
 
     @classmethod

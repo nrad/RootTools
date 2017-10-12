@@ -33,4 +33,4 @@ logger = get_logger(args.logLevel, None)
 #s1 = FWLiteSample.fromFiles("test", files = os.path.expanduser(filename) )
 
 ## from DAS
-s2 = FWLiteSample.fromDAS("hltPhysics", "/HLTPhysics/CMSSW_7_4_14-2015_10_20_reference_74X_dataRun2_HLT_v2-v1/RECO", instance = 'global', prefix='root://xrootd.unl.edu/')
+s2 = FWLiteSample.fromDAS("hltPhysics", "/HLTPhysics/CMSSW_7_4_14-2015_10_20_reference_74X_dataRun2_HLT_v2-v1/RECO", instance = 'global', prefix='root://xrootd.unl.edu/', dbFile='/tmp/cache.db', maxN=1)

@@ -17,7 +17,25 @@ logger = logging.getLogger(__name__)
 from RootTools.core.LooperBase import LooperBase
 from RootTools.fwlite.FWLiteSample import FWLiteSample
 import RootTools.core.helpers as helpers
-from RootTools.core.helpers import shortTypeDict
+
+class _FWLiteReader__Event(object):
+    ''' Helper class to mimick the behaviour of TreeReader.event.<<branchname>>
+        Implements evt/run/lumi
+    '''
+    def __init__(self, sample, **kwds):
+        self.sample = sample
+        # Add all 'products' as properties to the __Event object
+        self.__dict__.update(kwds)
+
+    @property
+    def run( self ): 
+        return self.sample.events.eventAuxiliary().run()
+    @property
+    def lumi( self ): 
+        return self.sample.events.eventAuxiliary().luminosityBlock()
+    @property
+    def evt( self ): 
+        return self.sample.events.eventAuxiliary().event()
 
 class FWLiteReader( LooperBase ):
 
@@ -43,23 +61,19 @@ class FWLiteReader( LooperBase ):
         # Create Handles for __products
         self.handles={v:Handle(self.__products[v]['type']) for v in self.__products.keys()}
 
-        # Initialize looper, no TTree variables 
-        super(FWLiteReader, self).__init__( variables = [] ) 
+        # Initialize looper
+        super(FWLiteReader, self).__init__( ) 
 
         logger.debug("Initializing FWLiteReader for sample %s", self.sample.name)
+
+        # Loading files into events (FWLite.Events) member
+        self.sample.events = Events(sample.files)
 
         self.nEvents = self.sample.events.size()
         logger.debug("Found %i events to in  %s", self.nEvents, self.sample.name)
 
         #  default event range of the reader
         self.eventRange = (0, self.nEvents)
-
-    def getProducts(self):
-        ''' Read all products from the event
-        '''
-        for name in self.__products.keys():
-            self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
-        self.products = {name: self.handles[name].product() for name in self.__products.keys()}
 
     def _initialize(self):
         ''' This method is called from the Base class start method.
@@ -75,7 +89,7 @@ class FWLiteReader( LooperBase ):
         '''
         if self.position == self.eventRange[1]: return 0
         if self.position==0:
-            logger.info("FWLiteReader for sample %s starting at position %i and processing %i events.", 
+            logger.info("FWLiteReader for sample %s starting at position %i (max: %i events).", 
                 self.sample.name, self.position, self.eventRange[1] - self.eventRange[0])
         elif (self.position % 10000)==0:
             logger.info("FWLiteReader for sample %s is at position %6i/%6i", 
@@ -89,10 +103,14 @@ class FWLiteReader( LooperBase ):
         self.evt = (eaux.run(), eaux.luminosityBlock(), eaux.event() )
             
         # read all products
+        self.products = {}
         if readProducts:
-            self.getProducts() 
-        else:
-            self.products = None 
+            for name in self.__products.keys():
+                self.sample.events.getByLabel(self.__products[name]['label'], self.handles[name])
+                self.products[name] = self.handles[name].product()
+
+        # For convinience. Mimick TreeReader.event 
+        self.event = __Event(self.sample, **self.products)
 
         return 1
 

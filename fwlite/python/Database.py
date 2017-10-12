@@ -11,7 +11,7 @@ import sqlite3
 import logging
 logger = logging.getLogger(__name__)
 
-class database:
+class Database:
     def __init__(self, database, tableName, columns):
         '''
         Will create a table with name tableName, with the provided columns (as a list) and two additional columns: value and time_stamp
@@ -32,6 +32,13 @@ class database:
         self.close()
 
     def connect(self):
+
+        # Create database directory if it doesn't exist
+        if not os.path.exists( os.path.dirname( self.database_file ) ):
+            logger.debug( "Created directory for Database file: %s", os.path.dirname( self.database_file) )
+            os.makedirs( os.path.dirname( self.database_file ) )
+
+        # Connect
         self.database = sqlite3.connect(self.database_file)
         self.cursor = self.database.cursor()
 
@@ -60,7 +67,7 @@ class database:
                 return objs
 
             except sqlite3.DatabaseError as e:
-                logger.info( "There seems to be an issue with the database, trying to read again." )
+                logger.error( "There seems to be an issue with the database, trying to read again." )
                 logger.info( "Attempt no %i", i )
                 self.close()
                 self.connect()
@@ -105,16 +112,16 @@ class database:
             try:
                 self.cursor.execute(selectionString)
                 self.database.commit()
-                logger.info("Added value %s to database",value)
+                logger.debug("Added value %s to database",value)
                 self.close()
                 return
 
             except sqlite3.OperationalError as e:
-                logger.info( "Database locked, waiting." )
+                logger.warning( "Database locked, waiting." )
                 time.sleep(1.0)
 
             except sqlite3.DatabaseError as e:
-                logger.info( "There seems to be an issue with the database, trying to write again." )
+                logger.error( "There seems to be an issue with the database, trying to write again." )
                 logger.info( "Attempt no %i", i )
                 self.close()
                 self.connect()
