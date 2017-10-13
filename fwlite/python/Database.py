@@ -34,9 +34,10 @@ class Database:
     def connect(self):
 
         # Create database directory if it doesn't exist
-        if not os.path.exists( os.path.dirname( self.database_file ) ):
-            logger.debug( "Created directory for Database file: %s", os.path.dirname( self.database_file) )
-            os.makedirs( os.path.dirname( self.database_file ) )
+        path = os.path.abspath( os.path.dirname( self.database_file ) )
+        if not os.path.exists( path ):
+            os.makedirs( path )
+            logger.debug( "Created directory for Database file: %s", path )
 
         # Connect
         self.database = sqlite3.connect("%s::memory:?cache=shared"%self.database_file)
