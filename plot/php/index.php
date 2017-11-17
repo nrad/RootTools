@@ -108,7 +108,7 @@ if ($_GET['noplots']) {
 </div>
 <div class="list">
 <ul>
-<?
+<?php
 $nondirs = array();
 foreach (glob("*") as $filename) {
     if ($_GET['noplots'] || !in_array($filename, $displayed)) {
