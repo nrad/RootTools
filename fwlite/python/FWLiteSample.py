@@ -32,8 +32,16 @@ class FWLiteSample ( object ):
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
-        self.name = name
-        self.files = files
+        self.name  = name
+        self.files = []
+        for f in files:
+            try:
+                if helpers.checkRootFile(f):
+                    self.files.append(f)
+            except IOError:
+                logger.warning( "IOError for file %s", f )
+                continue
+
         if not len(self.files)>0:
            raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
  
