@@ -431,7 +431,7 @@ def draw(plot, \
                 h.GetYaxis().SetTitleOffset( 1.6 )
 
             for modification in histModifications: modification(h)
-            if drawOption=="e1": dataHist = h
+            #if drawOption=="e1": dataHist = h
             h.Draw(drawOption+same)
             same = "same"
 
@@ -512,7 +512,7 @@ def draw(plot, \
 
             drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
             if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
-              graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
+              graph = ROOT.TGraphAsymmErrors(h_ratio)       # cloning in order to get layout
               graph.Set(0)
               for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
                 h_ratio.SetBinError(bin, 0.0001)
@@ -524,6 +524,7 @@ def draw(plot, \
                 graph.SetPointError(bin, 0, 0, errDown, errUp)
               h_ratio.Draw("e0"+same)
               graph.Draw("P0 same")
+              stuff.append( graph )
             else:
               h_ratio.Draw(drawOption+same)
             same = 'same'
