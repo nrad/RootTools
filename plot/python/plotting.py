@@ -229,7 +229,7 @@ def draw(plot, \
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
         logX: True/False (default), logY: True(default)/False
-        ratio: 'auto'(default) corresponds to {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
+        ratio: 'auto'(default) corresponds to {'histos':[(1,0)], 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects': []}
         scaling: {} (default). Scaling the i-th stack to the j-th is done by scaling = {i:j} with i,j integers
         sorting: True/False(default) Whether or not to sort the components of a stack wrt Integral
         legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None. ([<legend_coordinates>], n) divides the legend into n columns. 
@@ -241,7 +241,7 @@ def draw(plot, \
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
     ROOT.setTDRStyle()
-    defaultRatioStyle = {'num':1, 'den':0, 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects':[]}
+    defaultRatioStyle = {'histos':[(1,0)], 'logY':False, 'style':None, 'texY': 'Data / MC', 'yRange': (0.5, 1.5), 'drawObjects':[]}
 
     if ratio is not None and not type(ratio)==type({}):
         raise ValueError( "'ratio' must be dict (default: {}). General form is '%r'." % defaultRatioStyle)
@@ -469,60 +469,68 @@ def draw(plot, \
     # Make a ratio plot
     if ratio is not None:
         bottomPad.cd()
-        num = histos[ratio['num']][0]
-        den = histos[ratio['den']][0]
+        # Make all the ratio histograms
+        same=''
+        stuff=[]
+        for i_num, i_den in ratio['histos']:
+            num = histos[i_num][0]
+            den = histos[i_den][0]
+            #print i_num, i_den, histos[i_num][0], histos[i_den][0]
+            h_ratio = helpers.clone( num )
+            stuff.append(h_ratio)
+            # For a ratio of profiles, use projection (preserve attributes)
+            if isinstance( h_ratio, ROOT.TProfile ):
+                attrs = h_ratio.__dict__
+                h_ratio = h_ratio.ProjectionX()
+                h_ratio.__dict__.update( attrs )
+                h_ratio.Divide( den.ProjectionX() )
+            else:
+                h_ratio.Divide( den )
 
-        h_ratio = helpers.clone( num )
+            #if ratio['style'] is not None: ratio['style'](h_ratio) 
 
-        # For a ratio of profiles, use projection (preserve attributes)
-        if isinstance( h_ratio, ROOT.TProfile ):
-            attrs = h_ratio.__dict__
-            h_ratio = h_ratio.ProjectionX()
-            h_ratio.__dict__.update( attrs )
-            h_ratio.Divide( den.ProjectionX() )
-        else:
-            h_ratio.Divide( den )
+            h_ratio.GetXaxis().SetTitle(plot.texX)
+            h_ratio.GetYaxis().SetTitle(ratio['texY'])
 
-        if ratio['style'] is not None: ratio['style'](h_ratio) 
+            h_ratio.GetXaxis().SetTitleFont(43)
+            h_ratio.GetYaxis().SetTitleFont(43)
+            h_ratio.GetXaxis().SetLabelFont(43)
+            h_ratio.GetYaxis().SetLabelFont(43)
+            h_ratio.GetXaxis().SetTitleSize(24)
+            h_ratio.GetYaxis().SetTitleSize(24)
+            h_ratio.GetXaxis().SetLabelSize(20)
+            h_ratio.GetYaxis().SetLabelSize(20)
 
-        h_ratio.GetXaxis().SetTitle(plot.texX)
-        h_ratio.GetYaxis().SetTitle(ratio['texY'])
+            h_ratio.GetXaxis().SetTitleOffset( 3.2 )
+            h_ratio.GetYaxis().SetTitleOffset( 1.6 )
 
-        h_ratio.GetXaxis().SetTitleFont(43)
-        h_ratio.GetYaxis().SetTitleFont(43)
-        h_ratio.GetXaxis().SetLabelFont(43)
-        h_ratio.GetYaxis().SetLabelFont(43)
-        h_ratio.GetXaxis().SetTitleSize(24)
-        h_ratio.GetYaxis().SetTitleSize(24)
-        h_ratio.GetXaxis().SetLabelSize(20)
-        h_ratio.GetYaxis().SetLabelSize(20)
-
-        h_ratio.GetXaxis().SetTitleOffset( 3.2 )
-        h_ratio.GetYaxis().SetTitleOffset( 1.6 )
-
-        h_ratio.GetXaxis().SetTickLength( 0.03*3 )
-        h_ratio.GetYaxis().SetTickLength( 0.03*2 )
+            h_ratio.GetXaxis().SetTickLength( 0.03*3 )
+            h_ratio.GetYaxis().SetTickLength( 0.03*2 )
 
 
-        h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
-        h_ratio.GetYaxis().SetNdivisions(505)
+            h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
+            h_ratio.GetYaxis().SetNdivisions(505)
 
-        drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
-        if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
-          graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
-          graph.Set(0)
-          for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
-            h_ratio.SetBinError(bin, 0.0001)
-            center  = h_ratio.GetBinCenter(bin)
-            val     = h_ratio.GetBinContent(bin)
-            errUp   = num.GetBinErrorUp(bin)/den.GetBinContent(bin) if val > 0 else 0
-            errDown = num.GetBinErrorLow(bin)/den.GetBinContent(bin) if val > 0 else 0
-            graph.SetPoint(bin, center, val)
-            graph.SetPointError(bin, 0, 0, errDown, errUp)
-          h_ratio.Draw("e0")
-          graph.Draw("P0 same")
-        else:
-          h_ratio.Draw(drawOption)
+            drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
+            if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
+              graph = ROOT.TGraphAsymmErrors(dataHist)      # cloning from datahist in order to get layout
+              graph.Set(0)
+              for bin in range(1, h_ratio.GetNbinsX()+1):   # do not show error bars on hist
+                h_ratio.SetBinError(bin, 0.0001)
+                center  = h_ratio.GetBinCenter(bin)
+                val     = h_ratio.GetBinContent(bin)
+                errUp   = num.GetBinErrorUp(bin)/den.GetBinContent(bin) if val > 0 else 0
+                errDown = num.GetBinErrorLow(bin)/den.GetBinContent(bin) if val > 0 else 0
+                graph.SetPoint(bin, center, val)
+                graph.SetPointError(bin, 0, 0, errDown, errUp)
+              h_ratio.Draw("e0"+same)
+              #print "h_ratio", "e0"+same
+              graph.Draw("P0 same")
+              #print "graph", "P0 same"
+            else:
+              h_ratio.Draw(drawOption+same)
+              #print "X h_ratio", drawOption+same
+            same = 'same'
 
         bottomPad.SetLogx(logX)
         bottomPad.SetLogy(ratio['logY'])
