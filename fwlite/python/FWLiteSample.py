@@ -39,7 +39,7 @@ class FWLiteSample ( object ):
                 if helpers.checkRootFile(f):
                     self.files.append(f)
             except IOError:
-                logger.warning( "IOError for file %s", f )
+                logger.warning( "IOError for file %s. Skipping.", f )
                 continue
 
         if not len(self.files)>0:
