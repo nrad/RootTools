@@ -475,7 +475,6 @@ def draw(plot, \
         for i_num, i_den in ratio['histos']:
             num = histos[i_num][0]
             den = histos[i_den][0]
-            #print i_num, i_den, histos[i_num][0], histos[i_den][0]
             h_ratio = helpers.clone( num )
             stuff.append(h_ratio)
             # For a ratio of profiles, use projection (preserve attributes)
@@ -524,12 +523,9 @@ def draw(plot, \
                 graph.SetPoint(bin, center, val)
                 graph.SetPointError(bin, 0, 0, errDown, errUp)
               h_ratio.Draw("e0"+same)
-              #print "h_ratio", "e0"+same
               graph.Draw("P0 same")
-              #print "graph", "P0 same"
             else:
               h_ratio.Draw(drawOption+same)
-              #print "X h_ratio", drawOption+same
             same = 'same'
 
         bottomPad.SetLogx(logX)
