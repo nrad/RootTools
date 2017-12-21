@@ -405,9 +405,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     def split( self, n, clear = True):
         ''' Split sample into n sub-samples
         '''
+
+        if n==1: return self
+
         if not n>=1:
             raise ValueError( "Can not split into: '%r'" % n )
-       
+
         chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
 
         if clear: self.clear() # Kill yourself.
