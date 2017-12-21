@@ -33,14 +33,7 @@ class FWLiteSample ( object ):
         '''
 
         self.name  = name
-        self.files = []
-        for f in files:
-            try:
-                if helpers.checkRootFile(f):
-                    self.files.append(f)
-            except IOError:
-                logger.warning( "IOError for file %s. Skipping.", f )
-                continue
+        self.files = files
 
         if not len(self.files)>0:
            raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -110,8 +103,8 @@ class FWLiteSample ( object ):
             cache = None
 
         if n_cache_files:
-            logger.info('Found sample in cache %s, adding %i file', dbFile, n_cache_files)
             files = [ f["value"] for f in cache.getDicts({'name':name}) ]
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
         else:
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
@@ -132,9 +125,15 @@ class FWLiteSample ( object ):
             for line in dbsOut:
                 if line.startswith('/store/'):
                     line = line.rstrip()
-                    files.append(prefix+line)
+                    filename = prefix+line
+                    try:
+                        if helpers.checkRootFile(filename):
+                            files.append(filename)
+                    except IOError:
+                        logger.warning( "IOError for file %s. Skipping.", filename )
+
                     if cache is not None:
-                        cache.add({"name":name}, prefix+line, save=True)
+                        cache.add({"name":name}, filename, save=True)
 
         if limit>0: files=files[:limit]
         return cls(name, files=files, texName = texName)
