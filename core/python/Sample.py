@@ -454,7 +454,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         logger.error( "Check of root file failed. Skipping. File: %s", f )
                 except IOError as e:
                     logger.error( "Could not load file %s", f )
-                    raise e
+                    #raise e
 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
