@@ -85,7 +85,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.__selectionStrings = []
         else:
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
-
+        logger.debug("Sample now has selectionString: %s", self.selectionString)
         self.clear()
 
     def addSelectionString(self, selectionString):
@@ -109,7 +109,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.__weightStrings = []
         else:
             raise ValueError( "Don't know what to do with weightString %r"%weightString )
-
+        logger.debug("Sample now has weightString: %s", self.weightString)
         self.clear()
 
     def addWeightString(self, weightString):
