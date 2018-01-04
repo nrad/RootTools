@@ -40,7 +40,7 @@ class Database:
             logger.debug( "Created directory for Database file: %s", path )
 
         # Connect
-        self.database = sqlite3.connect(self.database_file)
+        self.database = sqlite3.connect("%s::memory:?cache=shared"%self.database_file)
         self.cursor = self.database.cursor()
 
     def close(self):

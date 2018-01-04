@@ -63,7 +63,7 @@ class TreeReader( FlatTreeLooperBase ):
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.activateAllBranches()
-        self._eList = self.sample.getEventList(selectionString = self.selectionString) if self.selectionString is not None else None
+        self._eList = self.sample.getEventList(selectionString = self.selectionString)
         self.activateBranches()
         self.nEvents = self._eList.GetN() if  self._eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events in  %s", self.nEvents, self.sample.name)

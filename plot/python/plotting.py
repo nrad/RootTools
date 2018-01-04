@@ -224,7 +224,8 @@ def draw(plot, \
         widths = {},
         canvasModifications = [],
         histModifications = [],
-        copyIndexPHP = False
+        copyIndexPHP = False,
+        normalize = False,
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
@@ -237,6 +238,7 @@ def draw(plot, \
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         canvasModifications = [] could be used to pass on lambdas to modify the canvas
         copyIndexPHP: whether or not to copy index.php to the plot directory
+        normalize: whether or not to scale all histograms to 1
     '''
     # FIXME -> Introduces CMSSW dependence
     ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/tdrstyle.C")
@@ -302,6 +304,12 @@ def draw(plot, \
         factor = histos[target][0].Integral()/source_yield
         for h in histos[source]:
             h.Scale( factor )
+
+    # normalize any histogram to 1
+    if normalize:
+        for hists in histos:
+            for h in hists:
+                h.Scale(1/h.Integral())
         
     # Make canvas and if there is a ratio plot adjust the size of the pads
 
