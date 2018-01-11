@@ -86,7 +86,7 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -102,10 +102,13 @@ class FWLiteSample ( object ):
         else:
             cache = None
 
-        if n_cache_files:
+        if n_cache_files and not overwrite:
             files = [ f["value"] for f in cache.getDicts({'name':name}) ]
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
         else:
+            if overwrite:
+                cache.removeObjects({"name":name})
+
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
                     raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
