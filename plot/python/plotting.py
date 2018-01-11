@@ -567,7 +567,9 @@ def draw2D(plot, \
         logX = False, logY = False, logZ = True, 
         drawObjects = [],
         widths = {},
-        copyIndexPHP = False
+        copyIndexPHP = False,
+        optimizeLogZ = False,
+        textPrecision = False
         ):
     ''' plot: a Plot2D instance
         zRange: None ( = ROOT default) or [low, high] 
@@ -576,6 +578,8 @@ def draw2D(plot, \
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
         copyIndexPHP: whether or not to copy index.php to the plot directory
+        optimizeLogZ: set more labels on the log z axis if range is small, also don't use exponents
+        textPrecision: if the text drawOption is used, use a string to define the precision, e.g. 2.2f 
     '''
 
     # FIXME -> Introduces CMSSW dependence
@@ -615,6 +619,9 @@ def draw2D(plot, \
     histo.GetYaxis().SetTitle(plot.texY)
     if zRange is not None:
         histo.GetZaxis().SetRangeUser( *zRange )
+    if optimizeLogZ:
+        histo.GetZaxis().SetMoreLogLabels()
+        histo.GetZaxis().SetNoExponent()
     # precision 3 fonts. see https://root.cern.ch/root/htmldoc//TAttText.html#T5
     histo.GetXaxis().SetTitleFont(43)
     histo.GetYaxis().SetTitleFont(43)
@@ -626,8 +633,12 @@ def draw2D(plot, \
     histo.GetYaxis().SetLabelSize(20)
 
     # should probably go into a styler
-    ROOT.gStyle.SetPalette(1)
+    ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/niceColorPalette.C")
+    ROOT.niceColorPalette(255)
+    #ROOT.gStyle.SetPalette(1)
     ROOT.gPad.SetRightMargin(0.15)
+    if textPrecision:
+        ROOT.gStyle.SetPaintTextFormat(textPrecision)
 
     histo.Draw(drawOption)
 
