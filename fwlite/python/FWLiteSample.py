@@ -113,11 +113,24 @@ class FWLiteSample ( object ):
             logger.info('Found sample in cache %s, adding %i file', dbFile, n_cache_files)
             files = [ f["value"] for f in cache.getDicts({'name':name}) ]
         else:
+#            def _dasPopen(dbs):
+#                if 'LSB_JOBID' in os.environ:
+#                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+#                if 'X509_USER_PROXY' in os.environ:
+#                    dbs += " --key {0} --cert {0}".format(os.environ['X509_USER_PROXY'])
+#                logger.info('DAS query\t: %s',  dbs)
+#                return os.popen(dbs)
+#
+#            sampleName = dataset.rstrip('/')
+#            query, qwhat = sampleName, "dataset"
+#            if "#" in sampleName: qwhat = "block"
+#
+#            dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+#            dbsOut = _dasPopen(dbs).readlines()
+            
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
                     raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
-                if 'X509_USER_PROXY' in os.environ:
-                    dbs += " --key {0} --cert {0}".format(os.environ['X509_USER_PROXY'])
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
@@ -125,7 +138,7 @@ class FWLiteSample ( object ):
             query, qwhat = sampleName, "dataset"
             if "#" in sampleName: qwhat = "block"
 
-            dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+            dbs='dasgoclient -query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
             dbsOut = _dasPopen(dbs).readlines()
             
             files = []
