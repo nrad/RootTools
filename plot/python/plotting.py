@@ -224,7 +224,7 @@ def draw(plot, \
         widths = {},
         canvasModifications = [],
         histModifications = [],
-        copyIndexPHP = False
+        copyIndexPHP = False,
         ):
     ''' yRange: 'auto' (default) or [low, high] where low/high can be 'auto'
         extensions: ["pdf", "png", "root"] (default)
@@ -235,7 +235,7 @@ def draw(plot, \
         legend: "auto" (default) or [x_low, y_low, x_high, y_high] or None. ([<legend_coordinates>], n) divides the legend into n columns. 
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
-        canvasModifications = [] could be used to pass on lambdas to modify the canvas
+        canvasModifications = [] could be used to pass on lambdas to modify the canvas. histModifications similar for histos.
         copyIndexPHP: whether or not to copy index.php to the plot directory
     '''
     # FIXME -> Introduces CMSSW dependence
@@ -302,7 +302,7 @@ def draw(plot, \
         factor = histos[target][0].Integral()/source_yield
         for h in histos[source]:
             h.Scale( factor )
-        
+
     # Make canvas and if there is a ratio plot adjust the size of the pads
 
     if ratio is not None:
@@ -567,7 +567,9 @@ def draw2D(plot, \
         logX = False, logY = False, logZ = True, 
         drawObjects = [],
         widths = {},
-        copyIndexPHP = False
+        canvasModifications = [],
+        histModifications = [],
+        copyIndexPHP = False,
         ):
     ''' plot: a Plot2D instance
         zRange: None ( = ROOT default) or [low, high] 
@@ -575,6 +577,7 @@ def draw2D(plot, \
         logX: True/False (default), logY: True/False(default), logZ: True/False(default)
         drawObjects = [] Additional ROOT objects that are called by .Draw() 
         widths = {} (default) to update the widths. Values are {'y_width':500, 'x_width':500, 'y_ratio_width':200}
+        canvasModifications = [] could be used to pass on lambdas to modify the canvas. histModifications similar for histos.
         copyIndexPHP: whether or not to copy index.php to the plot directory
     '''
 
@@ -606,6 +609,8 @@ def draw2D(plot, \
     c1.SetTopMargin(0.07)
     c1.SetRightMargin(0.05)
 
+    for modification in canvasModifications: modification(c1)
+
     drawOption = plot.drawOption if hasattr(plot, "drawOption") else "COLZ"
 
     c1.SetLogx(logX)
@@ -626,8 +631,12 @@ def draw2D(plot, \
     histo.GetYaxis().SetLabelSize(20)
 
     # should probably go into a styler
-    ROOT.gStyle.SetPalette(1)
+    ROOT.gROOT.LoadMacro("$CMSSW_BASE/src/RootTools/plot/scripts/niceColorPalette.C")
+    ROOT.niceColorPalette(255)
+    #ROOT.gStyle.SetPalette(1)
     ROOT.gPad.SetRightMargin(0.15)
+
+    for modification in histModifications: modification(histo)
 
     histo.Draw(drawOption)
 

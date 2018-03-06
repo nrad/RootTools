@@ -63,7 +63,7 @@ class TreeReader( FlatTreeLooperBase ):
         # Turn on everything for flexibility with the selectionString
         logger.debug("Initializing TreeReader for sample %s", self.sample.name)
         self.activateAllBranches()
-        self._eList = self.sample.getEventList(selectionString = self.selectionString) if self.selectionString is not None else None
+        self._eList = self.sample.getEventList(selectionString = self.selectionString)
         self.activateBranches()
         self.nEvents = self._eList.GetN() if  self._eList else self.sample.chain.GetEntries()
         logger.debug("Found %i events in  %s", self.nEvents, self.sample.name)
@@ -221,22 +221,13 @@ class TreeReader( FlatTreeLooperBase ):
         old_eventRange = self.eventRange
         self.eventRange = ( max(0, evtRange[0]), min( self.nEvents, evtRange[1]) ) 
         logger.debug( "[setEventRange] Set eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
-
-    #def setEventList( self, evtList ):
-    #    ''' Specify an event list that the reader will run over. 
-    #    '''
-    #    self.sample.chain.SetEventList( evtList ) 
-    #    self.eList = evtList 
-    #    self.nEvents = self.eList.GetN()
-    #    self.eventRange = (0, self.nEvents)
-    #    logger.debug( "[setEventList] Set eventRange %r for reader of sample %s", self.eventRange, self.sample.name )
     
-    def reduceEventRange( self, reduction_factor ):
-        ''' Reduce event range by a given factor. 
-        '''
-        old_eventRange = self.eventRange if hasattr(self, "eventRange") else None
-        self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/reduction_factor ) 
-        logger.debug( "[reduceEventRange] Set new eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
+    #def reduceEventRange( self, reduction_factor ):
+    #    ''' Reduce event range by a given factor. 
+    #    '''
+    #    old_eventRange = self.eventRange if hasattr(self, "eventRange") else None
+    #    self.eventRange = ( self.eventRange[0], self.eventRange[0] + (self.eventRange[1] - self.eventRange[0])/reduction_factor ) 
+    #    logger.debug( "[reduceEventRange] Set new eventRange %r (was: %r) for reader of sample %s", self.eventRange, old_eventRange, self.sample.name )
 
     def _initialize(self):
         ''' This method is called from the Base class start method.

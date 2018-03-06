@@ -85,7 +85,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.__selectionStrings = []
         else:
             raise ValueError( "Don't know what to do with selectionString %r"%selectionString )
-
+        logger.debug("Sample now has selectionString: %s", self.selectionString)
         self.clear()
 
     def addSelectionString(self, selectionString):
@@ -109,7 +109,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             self.__weightStrings = []
         else:
             raise ValueError( "Don't know what to do with weightString %r"%weightString )
-
+        logger.debug("Sample now has weightString: %s", self.weightString)
         self.clear()
 
     def addWeightString(self, weightString):
@@ -405,9 +405,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     def split( self, n, clear = True):
         ''' Split sample into n sub-samples
         '''
+
+        if n==1: return self
+
         if not n>=1:
             raise ValueError( "Can not split into: '%r'" % n )
-       
+
         chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
 
         if clear: self.clear() # Kill yourself.
@@ -451,7 +454,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         logger.error( "Check of root file failed. Skipping. File: %s", f )
                 except IOError as e:
                     logger.error( "Could not load file %s", f )
-                    raise e
+                    #raise e
 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
@@ -553,7 +556,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         tmp=str(uuid.uuid4())
         logger.debug( "Making event list for sample %s and selectionString %s", self.name, selectionString_ )
-        self.chain.Draw('>>'+tmp, selectionString_ if selectionString else "(1)")
+        self.chain.Draw('>>'+tmp, selectionString_ if selectionString_ else "(1)")
         elistTMP_t = ROOT.gDirectory.Get(tmp)
 
         return elistTMP_t

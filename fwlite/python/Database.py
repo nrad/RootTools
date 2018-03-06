@@ -40,7 +40,7 @@ class Database:
             logger.debug( "Created directory for Database file: %s", path )
 
         # Connect
-        self.database = sqlite3.connect(self.database_file)
+        self.database = sqlite3.connect("%s::memory:?cache=shared"%self.database_file)
         self.cursor = self.database.cursor()
 
     def close(self):
@@ -97,8 +97,9 @@ class Database:
 
     def add(self, key, value, save, overwriteOldest=False):
         '''
-        new DB structure. key needs to be a python dictionary
+        new DB structure. key needs to be a python dictionary. Save doesn't do anything here
         '''
+        
         columns = key.keys()+["value", "time_stamp"]
         values  = key.values()+[str(value), time.time()]
         
@@ -130,6 +131,34 @@ class Database:
         
         self.close()
         raise e
+    
+    def removeObjects(self, key):
+        '''
+        Remove entries matching the key. Careful when not all columns are specified!
+        '''
+        selection = " AND ".join([ "%s = '%s'"%(k, key[k]) for k in key.keys() ])
+
+        selectionString = "DELETE FROM {} ".format(self.tableName) + " WHERE {} ".format(selection)
+        self.connect()
+        
+        for i in range(60):
+
+            try:
+                self.cursor.execute(selectionString)
+                self.database.commit()
+                self.close()
+                return
+
+            except sqlite3.DatabaseError as e:
+                logger.info( "There seems to be an issue with the database, trying again." )
+                logger.info( "Attempt no %i", i )
+                self.close()
+                self.connect()
+                time.sleep(1.0)
+
+        self.close()
+        raise e
+
 
     def resetDatabase(self):
         if os.path.isfile(self.database_file):

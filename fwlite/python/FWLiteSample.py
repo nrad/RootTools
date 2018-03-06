@@ -33,14 +33,7 @@ class FWLiteSample ( object ):
         '''
 
         self.name  = name
-        self.files = []
-        for f in files:
-            try:
-                if helpers.checkRootFile(f):
-                    self.files.append(f)
-            except IOError:
-                logger.warning( "IOError for file %s. Skipping.", f )
-                continue
+        self.files = files
 
         if not len(self.files)>0:
            raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -93,7 +86,7 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -109,9 +102,9 @@ class FWLiteSample ( object ):
         else:
             cache = None
 
-        if n_cache_files:
-            logger.info('Found sample in cache %s, adding %i file', dbFile, n_cache_files)
+        if n_cache_files and not overwrite:
             files = [ f["value"] for f in cache.getDicts({'name':name}) ]
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
         else:
 #            def _dasPopen(dbs):
 #                if 'LSB_JOBID' in os.environ:
@@ -128,6 +121,9 @@ class FWLiteSample ( object ):
 #            dbs='das_client --query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
 #            dbsOut = _dasPopen(dbs).readlines()
             
+            if overwrite:
+                cache.removeObjects({"name":name})
+
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
                     raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
@@ -145,9 +141,15 @@ class FWLiteSample ( object ):
             for line in dbsOut:
                 if line.startswith('/store/'):
                     line = line.rstrip()
-                    files.append(prefix+line)
+                    filename = prefix+line
+                    try:
+                        if helpers.checkRootFile(filename):
+                            files.append(filename)
+                    except IOError:
+                        logger.warning( "IOError for file %s. Skipping.", filename )
+
                     if cache is not None:
-                        cache.add({"name":name}, prefix+line, save=True)
+                        cache.add({"name":name}, filename, save=True)
 
         if limit>0: files=files[:limit]
         return cls(name, files=files, texName = texName)
@@ -168,6 +170,23 @@ class FWLiteSample ( object ):
                    color = color, 
                    texName = texName
             )
+
+    def split( self, n):
+        ''' Split sample into n sub-samples
+        '''
+
+        if n==1: return self
+
+        if not n>=1:
+            raise ValueError( "Can not split into: '%r'" % n )
+       
+        chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
+
+        return [ FWLiteSample( 
+                name            = self.name+"_%i" % n_sample, 
+                files           = chunks[n_sample], 
+                color           = self.color, 
+                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
 
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample
