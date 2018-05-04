@@ -402,10 +402,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
-    def split( self, n, clear = True):
+    def split( self, n, nSub=None, clear = True):
         ''' Split sample into n sub-samples
         '''
-
+        
         if n==1: return self
 
         if not n>=1:
@@ -415,16 +415,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         if clear: self.clear() # Kill yourself.
 
-        return [ Sample( 
-                name            = self.name+"_%i" % n_sample, 
-                treeName        = self.treeName, 
-                files           = chunks[n_sample], 
-                normalization   = self.normalization, 
-                selectionString = self.selectionString, 
-                weightString    = self.weightString, 
-                isData          = self.isData, 
-                color           = self.color, 
-                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        if nSub == None:
+            return [ Sample( 
+                    name            = self.name+"_%i" % n_sample, 
+                    treeName        = self.treeName, 
+                    files           = chunks[n_sample], 
+                    normalization   = self.normalization, 
+                    selectionString = self.selectionString, 
+                    weightString    = self.weightString, 
+                    isData          = self.isData, 
+                    color           = self.color, 
+                    texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        else:
+            return Sample(
+                    name            = self.name,
+                    treeName        = self.treeName,
+                    files           = chunks[nSub],
+                    normalization   = self.normalization,
+                    selectionString = self.selectionString,
+                    weightString    = self.weightString,
+                    isData          = self.isData,
+                    color           = self.color,
+                    texName         = self.texName )
         
 
     # Handle loading of chain -> load it when first used 
