@@ -72,6 +72,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.isData = isData
         self.color = color
         self.texName = texName if not texName is None else name
+
+        # Other samples. Add friend elements (friend, treeName)
+        self.friends = []
              
         logger.debug("Created new sample %s with %i files, treeName %s,  selectionStrings %r and weightStrings %r.", 
             name, len(self.files), treeName, self.__selectionStrings, self.__weightStrings)
@@ -212,7 +215,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
-
 
     @classmethod
     def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, \
@@ -402,10 +404,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
-    def split( self, n, clear = True):
+    def split( self, n, nSub=None, clear = True):
         ''' Split sample into n sub-samples
         '''
-
+        
         if n==1: return self
 
         if not n>=1:
@@ -415,16 +417,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         if clear: self.clear() # Kill yourself.
 
-        return [ Sample( 
-                name            = self.name+"_%i" % n_sample, 
-                treeName        = self.treeName, 
-                files           = chunks[n_sample], 
-                normalization   = self.normalization, 
-                selectionString = self.selectionString, 
-                weightString    = self.weightString, 
-                isData          = self.isData, 
-                color           = self.color, 
-                texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        if nSub == None:
+            return [ Sample( 
+                    name            = self.name+"_%i" % n_sample, 
+                    treeName        = self.treeName, 
+                    files           = chunks[n_sample], 
+                    normalization   = self.normalization, 
+                    selectionString = self.selectionString, 
+                    weightString    = self.weightString, 
+                    isData          = self.isData, 
+                    color           = self.color, 
+                    texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+        else:
+            return Sample(
+                    name            = self.name,
+                    treeName        = self.treeName,
+                    files           = chunks[nSub],
+                    normalization   = self.normalization,
+                    selectionString = self.selectionString,
+                    weightString    = self.weightString,
+                    isData          = self.isData,
+                    color           = self.color,
+                    texName         = self.texName )
         
 
     # Handle loading of chain -> load it when first used 
@@ -458,6 +472,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
+        # Add friends
+        for friend_sample, friend_treeName in self.friends:
+            self.chain.AddFriend(friend_sample.chain, friend_treeName)
+
     # branch information
     @property
     def leaves( self ):
@@ -482,7 +500,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if hasattr(self, "__leaves"):
             del self.__leaves
 
-            
         return
 
     def reduceFiles( self, factor = 1, to = None ):
@@ -513,7 +530,45 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
 
         return
-         
+
+
+    def sortFiles( self, sample, filename_modifier = None):
+        ''' Remake chain from files sorted wrt. to another sample (e.g. for friend trees)
+        '''
+
+        # Check if file lists are identical
+        filenames       = map(os.path.basename, self.files)
+        other_filenames = [ f if filename_modifier is None else filename_modifier(f) for f in map(os.path.basename, sample.files) ]
+
+        # Check if we have the same number of files
+        if len(filenames)!=len(other_filenames):
+            raise RuntimeError( "Can not sort files of sample %s according to sample %s because lengths are different: %i != %i", self.name, sample.name, len(self.files), len(sample.files) ) 
+
+        new_filelist = []
+        for f in other_filenames:
+            # find position of file from other sample
+            try:
+                index = filenames.index(f)
+            except ValueError:
+                logger.error("Can not file %s from sample %s in files of sample %s", f, sample.name, self.name)
+                raise
+
+            new_filelist.append( self.files[index]  )
+
+        # Destroy 
+        self.clear()
+        # Recreate files
+        self.files = new_filelist
+        return self
+
+    def addFriend( self, other_sample, treeName, sortFiles = False):
+        ''' Friend a chain from another sample.
+        '''
+        if sortFiles:
+            other_sample.sortFiles( self )
+
+        # Add Chains 
+        self.friends.append( (other_sample, treeName) )
 
     def treeReader(self, *args, **kwargs):
         ''' Return a Reader class for the sample
