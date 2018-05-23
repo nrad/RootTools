@@ -350,7 +350,7 @@ def draw(plot, \
 
     # If legend is in the form (tuple, int) then the number of columns is provided
     legendColumns = 1
-    if len(legend) == 2:
+    if legend is not None and len(legend) == 2:
        legendColumns = legend[1]
        legend        = legend[0]
 

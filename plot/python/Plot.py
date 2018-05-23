@@ -45,12 +45,12 @@ class Plot( PlotBase ):
         Plot.defaultBinning         = binning
         Plot.defaultName            = name
         Plot.defaultSelectionString = selectionString
-        Plot.defaultWeight          = staticmethod(weight) if not isinstance( weight, (list, tuple)) else [ [map(staticmethod, w) for w2 in weight ] ]
+        #Plot.defaultWeight          = staticmethod(weight) if not isinstance( weight, (list, tuple)) else [map(staticmethod, w2) for w2 in weight ]
+        Plot.defaultWeight          = weight #if not isinstance( weight, (list, tuple)) else [map(staticmethod, w2) for w2 in weight ]
         Plot.defaultHistoClass      = histo_class
         Plot.defaultTexX            = texX
         Plot.defaultTexY            = texY
         Plot.defaultAddOverFlowBin  = addOverFlowBin
-
 
     def __init__(self, stack = None, attribute = None, binning = None, name = None, selectionString = None, weight = None, histo_class = None,
                  texX = None, texY = None, addOverFlowBin = None, read_variables = []):
