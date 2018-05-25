@@ -473,8 +473,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
         # Add friends
-        for friend_sample, friend_treeName in self.friends:
-            self.chain.AddFriend(friend_sample.chain, friend_treeName)
+        if hasattr( self, 'friends'):  # Catch cases where cached samples have no default value for friends attribute
+            for friend_sample, friend_treeName in self.friends:
+                self.chain.AddFriend(friend_sample.chain, friend_treeName)
 
     # branch information
     @property
