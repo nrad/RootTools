@@ -99,7 +99,9 @@ class Database:
         '''
         new DB structure. key needs to be a python dictionary. Save doesn't do anything here
         '''
-        
+        if os.environ['HOSTNAME'].startswith('worker'):
+            raise RuntimeError( "I'm running on the hephy batch. I shall not fill the db file from here." ) 
+
         columns = key.keys()+["value", "time_stamp"]
         values  = key.values()+[str(value), time.time()]
         
