@@ -693,3 +693,31 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
+
+    def get3DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
+        ''' Get TH3D/TProfile3D from draw command using selectionString, weight. If binningIsExplicit is true, 
+            the binning argument (a tuple of two lists) is translated into variable bin widths. 
+        '''
+
+        selectionString_ = self.combineWithSampleSelection( selectionString )
+        weightString_    = self.combineWithSampleWeight( weightString )
+
+        tmp=str(uuid.uuid4())
+        if binningIsExplicit:
+            if not len(binning)==3 and type(binning)==type(()):
+                raise ValueError( "Need a tuple with three lists corresponding to variable bin thresholds for x, y and z axis. Got % s"% binning )
+            binningArgs = (len(binning[0])-1, array('d', binning[0]), len(binning[1])-1, array('d', binning[1]),  len(binning[2])-1, array('d', binning[2]))
+        else:
+            if not len(binning)==9:
+                raise ValueError( "Need binning in standard 3D form: [nBinsx,xLow,xHigh,nBinsy,yLow,yHigh,nBinsz,zLow,zHigh]. Got %s" % binning )
+            binningArgs = binning
+
+        if isProfile:
+            cls = ROOT.TProfile3D 
+        else:
+            cls = ROOT.TH3D
+
+        res = cls(tmp, tmp, *binningArgs)
+        self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
+
+        return res
