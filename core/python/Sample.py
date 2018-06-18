@@ -191,14 +191,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, \
                 selectionString = None, weightString = None,
-                isData = False, color = 0, texName = None, maxN = None):
+                isData = False, color = 0, texName = None, maxN = None, forceProxy=False):
 
         import subprocess
         if not directory.startswith("/dpm"): raise ValueError( "DPM directory does not start with /dpm/: %s" % directory )
 
         # Renew proxy
         from RootTools.core.helpers import renew_proxy
-        proxy = renew_proxy()
+        proxy_path = os.path.expandvars('$HOME/private/.proxy')
+        if not forceProxy:
+            proxy = renew_proxy(proxy_path)
+        else:
+            proxy = proxy_path
+            logger.info("Not checking your proxy. Asuming you know it's still valid.")
         logger.info( "Using proxy %s"%proxy )
 
         p = subprocess.Popen(["dpns-ls -l %s" % directory], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
