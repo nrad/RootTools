@@ -191,7 +191,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, \
                 selectionString = None, weightString = None,
-                isData = False, color = 0, texName = None, maxN = None, forceProxy=False):
+                isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
         import subprocess
         if not directory.startswith("/dpm"): raise ValueError( "DPM directory does not start with /dpm/: %s" % directory )
@@ -199,7 +199,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         # Renew proxy
         from RootTools.core.helpers import renew_proxy
         proxy_path = os.path.expandvars('$HOME/private/.proxy')
-        if not forceProxy:
+        if not noCheckProxy:
             proxy = renew_proxy(proxy_path)
         else:
             proxy = proxy_path
