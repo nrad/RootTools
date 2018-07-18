@@ -15,6 +15,13 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 import RootTools.plot.Plot as Plot
+from RootTools.fwlite.Database import Database
+import subprocess
+
+def xrdcpWrapper( args ):
+    logger.info("Copying file with command '%s'", args)
+    subprocess.call([args], shell = True)
+    return True
 
 # new_name method for sample counting
 @helpers.static_vars( sample_counter = 0 )
@@ -253,6 +260,95 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
+    
+    @classmethod
+    def nanoAODfromDAS(cls, name, DAS, instance = 'global', localDir=None, redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
+            selectionString = None, weightString = None,
+            isData = False, color = 0, texName = None, multithreading=True):
+        '''
+        get nanoAOD from DAS and make a local copy on afs 
+        '''
+        from multiprocessing import Pool
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        n_cache_files = 0 
+        # Don't use the cache on partial queries
+        if dbFile is not None and ( maxN<0 or maxN is None ):
+            cache = Database(dbFile, "fileCache", ["name", "DAS"]) 
+            n_cache_files = cache.contains({'name':name, 'DAS':DAS})
+        else:
+            cache = None
+
+        download = True if localDir is not None else False
+
+        if n_cache_files and not overwrite:
+            files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DAS}) ]
+            
+            # if a local dir is set, and the files in the db are not local, download the files. Otherwise don't download
+            if localDir is not None:
+                if localDir in files[0]: download = False
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
+
+        else:
+            if overwrite:
+                cache.removeObjects({"name":name})
+
+            def _dasPopen(dbs):
+                if 'LSB_JOBID' in os.environ:
+                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                logger.info('DAS query\t: %s',  dbs)
+                return os.popen(dbs)
+
+            sampleName = DAS.rstrip('/')
+            query, qwhat = sampleName, "dataset"
+            if "#" in sampleName: qwhat = "block"
+
+            dbs='dasgoclient -query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+            dbsOut = _dasPopen(dbs).readlines()
+            
+            files = []
+            for line in dbsOut:
+                if line.startswith('/store/'):
+                    line = line.rstrip()
+                    filename = redirector+'/'+line
+                    files.append(filename)
+
+        if download:
+            localFiles = []
+            jobs = []
+            # check for localDir
+            downloadDir = os.path.join(localDir, name)
+            if not os.path.isdir(downloadDir):
+                os.makedirs(downloadDir)
+            for f in files:
+                cmd = "xrdcp -f %s %s/%s/"%(f, localDir, name)
+                jobs.append(cmd)
+                filename = f.split('/')[-1]
+                logger.info("File %s will be copied", filename)
+                localFile = '%s/%s/%s'%(localDir, name, filename)
+                localFiles.append(localFile)
+                if cache is not None:
+                    cache.add({"name":name, 'DAS':DAS}, localFile, save=True)
+
+            if multithreading:
+                pool = Pool(processes=6)
+                all_jobs = pool.map(xrdcpWrapper, jobs)
+                pool.close()
+                pool.join()
+            else:
+                all_jobs = map(xrdcpWrapper, jobs)
+            files = localFiles
+        elif overwrite:
+            for f in files:
+                if cache is not None:
+                    cache.add({"name":name, 'DAS':DAS}, f, save=True)
+            
+        if limit>0: files=files[:limit]
+        sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+            isData = isData, color=color, texName = texName)
+        return sample
+        
 
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
