@@ -44,7 +44,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             files = [], 
             normalization = None, 
             selectionString = None, 
-            weightString = None, 
+            weightString = None,
+            xSection = -1,
             isData = False, 
             color = 0, 
             texName = None):
@@ -55,6 +56,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
             'selectionString': sample specific string based selection (can be list of strings)
             'weightString': sample specific string based weight (can be list of strings)
+            'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
@@ -63,6 +65,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.name = name
         self.treeName = treeName
         self.files = files
+        self.xSection = xSection
 
         if not len(self.files)>0:
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -262,32 +265,30 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return sample
     
     @classmethod
-    def nanoAODfromDAS(cls, name, DAS, instance = 'global', localDir=None, redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
-            selectionString = None, weightString = None,
+    def nanoAODfromDAS(cls, name, DAS, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
+            selectionString = None, weightString = None, xSection=-1,
             isData = False, color = 0, texName = None, multithreading=True):
         '''
         get nanoAOD from DAS and make a local copy on afs 
         '''
         from multiprocessing import Pool
+        import json
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
 
         n_cache_files = 0 
         # Don't use the cache on partial queries
         if dbFile is not None and ( maxN<0 or maxN is None ):
-            cache = Database(dbFile, "fileCache", ["name", "DAS"]) 
+            cache = Database(dbFile, "fileCache", ["name", "DAS", "nEvents"]) 
             n_cache_files = cache.contains({'name':name, 'DAS':DAS})
         else:
             cache = None
 
-        download = True if localDir is not None else False
 
         if n_cache_files and not overwrite:
             files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DAS}) ]
+            events = cache.getDicts({'name':name, 'DAS':DAS})[0]["nEvents"]
             
-            # if a local dir is set, and the files in the db are not local, download the files. Otherwise don't download
-            if localDir is not None:
-                if localDir in files[0]: download = False
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
         else:
@@ -313,40 +314,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     line = line.rstrip()
                     filename = redirector+'/'+line
                     files.append(filename)
+            
+            dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+            jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+            events = int(jdata['nevents'])
 
-        if download:
-            localFiles = []
-            jobs = []
-            # check for localDir
-            downloadDir = os.path.join(localDir, name)
-            if not os.path.isdir(downloadDir):
-                os.makedirs(downloadDir)
-            for f in files:
-                cmd = "xrdcp -f %s %s/%s/"%(f, localDir, name)
-                jobs.append(cmd)
-                filename = f.split('/')[-1]
-                logger.info("File %s will be copied", filename)
-                localFile = '%s/%s/%s'%(localDir, name, filename)
-                localFiles.append(localFile)
-                if cache is not None:
-                    cache.add({"name":name, 'DAS':DAS}, localFile, save=True)
-
-            if multithreading:
-                pool = Pool(processes=6)
-                all_jobs = pool.map(xrdcpWrapper, jobs)
-                pool.close()
-                pool.join()
-            else:
-                all_jobs = map(xrdcpWrapper, jobs)
-            files = localFiles
-        elif overwrite:
+        if overwrite or n_cache_files<1:
             for f in files:
                 if cache is not None:
-                    cache.add({"name":name, 'DAS':DAS}, f, save=True)
+                    cache.add({"name":name, 'DAS':DAS, 'nEvents':events}, f, save=True)
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName)
+            isData = isData, color=color, texName = texName, xSection = xSection, normalization=events)
         return sample
         
 
