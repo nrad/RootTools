@@ -48,6 +48,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             xSection = -1,
             isData = False, 
             color = 0, 
+            DAS = None,
             texName = None):
         ''' Handling of sample. Uses a TChain to handle root files with flat trees.
             'name': Name of the sample, 
@@ -59,6 +60,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
+            'DAS': DAS identifier
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
@@ -66,6 +68,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.treeName = treeName
         self.files = files
         self.xSection = xSection
+        self.DAS = DAS
 
         if not len(self.files)>0:
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -267,7 +270,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def nanoAODfromDAS(cls, name, DAS, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight'):
         '''
         get nanoAOD from DAS and make a local copy on afs 
         '''
@@ -279,7 +282,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         n_cache_files = 0 
         # Don't use the cache on partial queries
         if dbFile is not None and ( maxN<0 or maxN is None ):
-            cache = Database(dbFile, "fileCache", ["name", "DAS", "nEvents"]) 
+            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization"]) 
             n_cache_files = cache.contains({'name':name, 'DAS':DAS})
         else:
             cache = None
@@ -287,7 +290,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         if n_cache_files and not overwrite:
             files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DAS}) ]
-            events = cache.getDicts({'name':name, 'DAS':DAS})[0]["nEvents"]
+            normalization = cache.getDicts({'name':name, 'DAS':DAS})[0]["normalization"]
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -315,18 +318,28 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
-            jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
-            events = int(jdata['nevents'])
+            if DAS.count('SIM'):
+                # need to read the proper normalization for MC
+                logger.info("Reading normalization. This is slow, so grab a coffee.")
+                tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+                    isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
+                normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
+                logger.info("Got normalization %s", normalization)
+            else:
+                # for data, we can just use the number of events, although no normalization is needed anyway.
+                dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+                normalization = int(jdata['nevents'])
 
         if overwrite or n_cache_files<1:
             for f in files:
                 if cache is not None:
-                    cache.add({"name":name, 'DAS':DAS, 'nEvents':events}, f, save=True)
+                    cache.add({"name":name, 'DAS':DAS, 'normalization':str(normalization)}, f, save=True)
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName, xSection = xSection, normalization=events)
+            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization), DAS=DAS)
+        
         return sample
         
 
