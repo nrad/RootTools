@@ -6,8 +6,9 @@
 import ROOT
 import uuid
 import os
+import random
 from array import array
-
+from math import sqrt
 # Logging
 import logging
 logger = logging.getLogger(__name__)
@@ -496,7 +497,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
-    def split( self, n, nSub=None, clear = True):
+    def split( self, n, nSub=None, clear = True, shuffle = False):
         ''' Split sample into n sub-samples
         '''
         
@@ -505,7 +506,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if not n>=1:
             raise ValueError( "Can not split into: '%r'" % n )
 
-        chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
+        files = self.files
+        if shuffle: random.shuffle( files ) 
+        chunks = helpers.partition( files, min(n , len(files) ) ) 
 
         if clear: self.clear() # Kill yourself.
 
@@ -709,27 +712,33 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         return elistTMP_t
 
-    def getYieldFromDraw(self, selectionString = None, weightString = None):
+    def getYieldFromDraw(self, selectionString = None, weightString = None, split = 1):
         ''' Get yield from self.chain according to a selectionString and a weightString
         ''' 
 
-        selectionString_ = self.combineWithSampleSelection( selectionString )
-        weightString_    = self.combineWithSampleWeight( weightString )
+        if split > 1:
+            results = [ subsample.getYieldFromDraw( selectionString = selectionString, weightString = weightString) for subsample in self.split( n = split, shuffle = True ) ]
+            return {'val':sum( [r['val'] for r in results], ), 'sigma':sqrt( sum( [r['sigma']**2 for r in results], 0 ) ) }
+        elif split == 1:
+            selectionString_ = self.combineWithSampleSelection( selectionString )
+            weightString_    = self.combineWithSampleWeight( weightString )
 
-        tmp=str(uuid.uuid4())
-        h = ROOT.TH1D(tmp, tmp, 1,0,2)
-        h.Sumw2()
-        #weight = weightString if weightString else "1"
-        logger.debug( "getYieldFromDraw for sample %s with chain %r", self.name, self.chain )
-        self.chain.Draw("1>>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
-        res = h.GetBinContent(1)
-        resErr = h.GetBinError(1)
-        del h
+            tmp=str(uuid.uuid4())
+            h = ROOT.TH1D(tmp, tmp, 1,0,2)
+            h.Sumw2()
+            #weight = weightString if weightString else "1"
+            logger.debug( "getYieldFromDraw for sample %s with chain %r", self.name, self.chain )
+            self.chain.Draw("1>>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
+            res = h.GetBinContent(1)
+            resErr = h.GetBinError(1)
+            del h
 
-        ## Should remove this unecessary dependency
-        #return u_float.u_float( res, resErr )
-        
-        return {'val': res, 'sigma':resErr}        
+            ## Should remove this unecessary dependency
+            #return u_float.u_float( res, resErr )
+            
+            return {'val': res, 'sigma':resErr}
+        else:
+            raise ValueError( "Can't split into %r. Need positive integer." % split )
 
     def get1DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, addOverFlowBin = None, isProfile = False):
         ''' Get TH1D/TProfile1D from draw command using selectionString, weight. If binningIsExplicit is true, 

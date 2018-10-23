@@ -152,7 +152,6 @@ def renew_proxy( filename = None, rfc = False, request_time = 192, min_time = 0)
     except IndexError:
         pass
     except ValueError:
-        print tl
         pass
 
     # Return existing proxy from $X509_USER_PROXY, the default location or filename
