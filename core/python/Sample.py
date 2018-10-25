@@ -523,7 +523,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     color           = self.color, 
                     texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
         else:
-            if nSub>len(chunks):
+            if nSub<len(chunks):
                 return Sample(
                         name            = self.name,
                         treeName        = self.treeName,
