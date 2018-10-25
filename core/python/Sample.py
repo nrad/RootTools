@@ -49,7 +49,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             xSection = -1,
             isData = False, 
             color = 0, 
-            DAS = None,
             texName = None):
         ''' Handling of sample. Uses a TChain to handle root files with flat trees.
             'name': Name of the sample, 
@@ -61,7 +60,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
-            'DAS': DAS identifier
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
@@ -69,7 +67,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         self.treeName = treeName
         self.files = files
         self.xSection = xSection
-        self.DAS = DAS
 
         if not len(self.files)>0:
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
@@ -339,8 +336,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization), DAS=DAS)
-        
+            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
+
+        sample.DAS_name = DAS 
         return sample
         
 
@@ -526,16 +524,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     color           = self.color, 
                     texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
         else:
-            return Sample(
-                    name            = self.name,
-                    treeName        = self.treeName,
-                    files           = chunks[nSub],
-                    normalization   = self.normalization,
-                    selectionString = self.selectionString,
-                    weightString    = self.weightString,
-                    isData          = self.isData,
-                    color           = self.color,
-                    texName         = self.texName )
+            if nSub>len(chunks):
+                return Sample(
+                        name            = self.name,
+                        treeName        = self.treeName,
+                        files           = chunks[nSub],
+                        normalization   = self.normalization,
+                        selectionString = self.selectionString,
+                        weightString    = self.weightString,
+                        isData          = self.isData,
+                        color           = self.color,
+                        texName         = self.texName )
+            else:
+                return None
         
 
     # Handle loading of chain -> load it when first used 
