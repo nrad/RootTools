@@ -12,7 +12,7 @@ def errorStyle( color, markerStyle = 20, markerSize = 1, width = 1):
         return 
     return func
 
-def noStyle ( ):
+def invisibleStyle ( ):
     def func( histo ):
         histo.SetMarkerSize(0)
         histo.SetLineWidth(0)

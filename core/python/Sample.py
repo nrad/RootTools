@@ -266,7 +266,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return sample
     
     @classmethod
-    def nanoAODfromDAS(cls, name, DAS, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
+    def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
             isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight'):
         '''
@@ -281,14 +281,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         # Don't use the cache on partial queries
         if dbFile is not None and ( maxN<0 or maxN is None ):
             cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization"]) 
-            n_cache_files = cache.contains({'name':name, 'DAS':DAS})
+            n_cache_files = cache.contains({'name':name, 'DAS':DASname})
         else:
             cache = None
 
 
         if n_cache_files and not overwrite:
-            files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DAS}) ]
-            normalization = cache.getDicts({'name':name, 'DAS':DAS})[0]["normalization"]
+            files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+            normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -316,7 +316,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if DAS.count('SIM'):
+            if DASname.count('SIM'):
                 # need to read the proper normalization for MC
                 logger.info("Reading normalization. This is slow, so grab a coffee.")
                 tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
@@ -332,13 +332,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         if overwrite or n_cache_files<1:
             for f in files:
                 if cache is not None:
-                    cache.add({"name":name, 'DAS':DAS, 'normalization':str(normalization)}, f, save=True)
+                    cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
-
-        sample.DAS_name = DAS 
+        sample.DAS = DASname
         return sample
         
 
