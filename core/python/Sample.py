@@ -518,7 +518,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         norm_before = self.normalization
 
         if factor!=1:
-            self.files = self.files[:len_before/factor]
+            #self.files = self.files[:len_before/factor]
+            self.files = self.files[0::factor]
             if len(self.files)==0:
                 raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
         elif to is not None:
