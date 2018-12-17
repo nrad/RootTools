@@ -60,7 +60,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
-            'DAS': DAS identifier
             'texName': ROOT TeX string to be used in legends etc.
         '''
 
@@ -525,16 +524,19 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     color           = self.color, 
                     texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
         else:
-            return Sample(
-                    name            = self.name,
-                    treeName        = self.treeName,
-                    files           = chunks[nSub],
-                    normalization   = self.normalization,
-                    selectionString = self.selectionString,
-                    weightString    = self.weightString,
-                    isData          = self.isData,
-                    color           = self.color,
-                    texName         = self.texName )
+            if nSub<len(chunks):
+                return Sample(
+                        name            = self.name,
+                        treeName        = self.treeName,
+                        files           = chunks[nSub],
+                        normalization   = self.normalization,
+                        selectionString = self.selectionString,
+                        weightString    = self.weightString,
+                        isData          = self.isData,
+                        color           = self.color,
+                        texName         = self.texName )
+            else:
+                return None
         
 
     # Handle loading of chain -> load it when first used 
@@ -606,7 +608,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         norm_before = self.normalization
 
         if factor!=1:
-            self.files = self.files[:len_before/factor]
+            #self.files = self.files[:len_before/factor]
+            self.files = self.files[0::factor]
             if len(self.files)==0:
                 raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
         elif to is not None:
