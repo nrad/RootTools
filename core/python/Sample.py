@@ -269,7 +269,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight'):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
         '''
         get nanoAOD from DAS and make a local copy on afs 
         '''
@@ -303,7 +303,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
-            sampleName = DAS.rstrip('/')
+            sampleName = DASname.rstrip('/')
             query, qwhat = sampleName, "dataset"
             if "#" in sampleName: qwhat = "block"
 
@@ -317,7 +317,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if DASname.count('SIM'):
+            if DASname.count('SIM') or DASname.count('powheg') or DASname.count('madgraph') or DASname.count('amcatnlo'):
                 # need to read the proper normalization for MC
                 logger.info("Reading normalization. This is slow, so grab a coffee.")
                 tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
@@ -339,6 +339,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
         sample.DAS = DASname
+        sample.json = json
         return sample
         
 
