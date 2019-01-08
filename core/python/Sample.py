@@ -316,7 +316,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if DASname.count('SIM') or DASname.count('powheg') or DASname.count('madgraph') or DASname.count('amcatnlo'):
+            if DASname.count('SIM') or DASname.lower().count('powheg') or DASname.lower().count('madgraph') or DASname.lower().count('amcatnlo'):
                 # need to read the proper normalization for MC
                 logger.info("Reading normalization. This is slow, so grab a coffee.")
                 tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
