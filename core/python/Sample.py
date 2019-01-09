@@ -294,7 +294,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         else:
             if overwrite:
-                cache.removeObjects({"name":name})
+                cache.removeObjects({"name":name, 'DAS':DASname})
 
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
