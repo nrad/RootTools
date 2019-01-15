@@ -166,6 +166,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         return cls(name = name, \
                    treeName = check_equal_([s.treeName for s in samples]),
+                   xSection = check_equal_([s.xSection for s in samples]),
                    normalization = normalization,
                    files = files,
                    selectionString = check_equal_([s.selectionString for s in samples]),
