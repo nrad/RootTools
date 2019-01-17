@@ -344,7 +344,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
                     normalization = int(jdata['nevents'])
 
-#        if overwrite or n_cache_files<1:
                 for f in files:
                     if cache is not None:
                         cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
