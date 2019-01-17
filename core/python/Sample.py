@@ -325,11 +325,13 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 # if the files didn't change we don't need to read the normalization again (slowest part!)
                 logger.info("File list didn't change. Skipping.")
                 normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+                logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
 
             else:
                 if overwrite:
                     # remove old entry
                     cache.removeObjects({"name":name, 'DAS':DASname})
+                    logger.info("Removed old DB entry.")
 
                 if DASname.endswith('SIM') or not 'Run20' in DASname:
                     # need to read the proper normalization for MC
@@ -347,6 +349,8 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                 for f in files:
                     if cache is not None:
                         cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
+
+                logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
