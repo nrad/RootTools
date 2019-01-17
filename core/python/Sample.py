@@ -288,14 +288,15 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         # first check if there are already files in the cache
         if n_cache_files:
-            filesFromCache = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+            filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+            normalizationFromCache  = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
         else:
             filesFromCache = []
 
         # if we don't want to overwrite, and there's a filelist in the cache we're already done
         if n_cache_files and not overwrite:
-            files = filesFromCache
-            normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+            files           = filesFromCache
+            normalization   = normalizationFromCache
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -321,10 +322,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if sorted(files) == sorted(filesFromCache):
-                # if the files didn't change we don't need to read the normalization again (slowest part!)
+            if sorted(files) == sorted(filesFromCache) and normalizationFromCache>0:
+                # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
                 logger.info("File list didn't change. Skipping.")
-                normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+                normalization = normalizationFromCache
                 logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
 
             else:
