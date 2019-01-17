@@ -286,16 +286,20 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         else:
             cache = None
 
+        # first check if there are already files in the cache
+        if n_cache_files:
+            filesFromCache = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+        else:
+            filesFromCache = []
 
+        # if we don't want to overwrite, and there's a filelist in the cache we're already done
         if n_cache_files and not overwrite:
-            files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+            files = filesFromCache
             normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
         else:
-            if overwrite:
-                cache.removeObjects({"name":name, 'DAS':DASname})
 
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
@@ -317,23 +321,33 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if DASname.endswith('SIM') or not 'Run20' in DASname:
-                # need to read the proper normalization for MC
-                logger.info("Reading normalization. This is slow, so grab a coffee.")
-                tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-                    isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
-                normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
-                logger.info("Got normalization %s", normalization)
-            else:
-                # for data, we can just use the number of events, although no normalization is needed anyway.
-                dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
-                jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
-                normalization = int(jdata['nevents'])
+            if sorted(files) == sorted(filesFromCache):
+                # if the files didn't change we don't need to read the normalization again (slowest part!)
+                logger.info("File list didn't change. Skipping.")
+                normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
 
-        if overwrite or n_cache_files<1:
-            for f in files:
-                if cache is not None:
-                    cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
+            else:
+                if overwrite:
+                    # remove old entry
+                    cache.removeObjects({"name":name, 'DAS':DASname})
+
+                if DASname.endswith('SIM') or not 'Run20' in DASname:
+                    # need to read the proper normalization for MC
+                    logger.info("Reading normalization. This is slow, so grab a coffee.")
+                    tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+                        isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
+                    normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
+                    logger.info("Got normalization %s", normalization)
+                else:
+                    # for data, we can just use the number of events, although no normalization is needed anyway.
+                    dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                    jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+                    normalization = int(jdata['nevents'])
+
+#        if overwrite or n_cache_files<1:
+                for f in files:
+                    if cache is not None:
+                        cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
