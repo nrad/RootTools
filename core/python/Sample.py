@@ -269,7 +269,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
     @classmethod
     def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
             selectionString = None, weightString = None, xSection=-1,
-            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None, localSite='T2_AT_Vienna'):
         '''
         get nanoAOD from DAS and make a local copy on afs 
         '''
@@ -322,9 +322,9 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if sorted(files) == sorted(filesFromCache) and normalizationFromCache>0:
+            if (sorted(files) == sorted(filesFromCache)) and float(normalizationFromCache) > 0.0:
                 # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
-                logger.info("File list didn't change. Skipping.")
+                logger.info("File list for %s didn't change. Skipping.", name)
                 normalization = normalizationFromCache
                 logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
 
@@ -334,13 +334,38 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     cache.removeObjects({"name":name, 'DAS':DASname})
                     logger.info("Removed old DB entry.")
 
+                if instance == 'global':
+                    # check if dataset is available in local site, otherwise don't read a normalization
+                    dbs='dasgoclient -query="site %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                    jdata = json.load(_dasPopen(dbs))
+                    
+                    filesOnLocalT2 = False
+                    for d in jdata['data']:
+                        if d['site'][0]['name'] == localSite and d['site'][0].has_key('replica_fraction'):
+                            fraction = d['site'][0]['replica_fraction']
+                            if float(str(fraction).replace('%','')) < 100.:
+                                filesOnLocalT2 = False
+                                break
+                            else:
+                                filesOnLocalT2 = True
+                else:
+                    # if we produced the samples ourselves we don't need to check this
+                    filesOnLocalT2 = True
+                
+                if filesOnLocalT2:
+                    logger.info("Files are available at %s", localSite)
+
                 if DASname.endswith('SIM') or not 'Run20' in DASname:
                     # need to read the proper normalization for MC
-                    logger.info("Reading normalization. This is slow, so grab a coffee.")
-                    tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-                        isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
-                    normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
-                    logger.info("Got normalization %s", normalization)
+                    if filesOnLocalT2:
+                        logger.info("Reading normalization. This is slow, so grab a coffee.")
+                        tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+                            isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
+                        normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
+                        logger.info("Got normalization %s", normalization)
+                    else:
+                        logger.info("Files only available on the grid. Can't read a normalization.")
+                        normalization = 0
                 else:
                     # for data, we can just use the number of events, although no normalization is needed anyway.
                     dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
@@ -352,6 +377,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
 
                 logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
+
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
