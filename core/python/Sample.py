@@ -16,7 +16,7 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 import RootTools.plot.Plot as Plot
-from RootTools.core.SampleBase import SampleBase
+from   RootTools.core.SampleBase import SampleBase
 
 # new_name method for sample counting
 @helpers.static_vars( sample_counter = 0 )
@@ -39,7 +39,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             files = [], 
             normalization = None, 
             selectionString = None, 
-            weightString = None, 
+            weightString = None,
+            xSection = -1,
             isData = False, 
             color = 0, 
             texName = None):
@@ -50,6 +51,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
             'selectionString': sample specific string based selection (can be list of strings)
             'weightString': sample specific string based weight (can be list of strings)
+            'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
@@ -58,6 +60,16 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         super(Sample, self).__init__( name=name, files=files, normalization=normalization, isData=isData, color=color, texName=texName)
 
         self.treeName = treeName
+<<<<<<< HEAD
+=======
+        self.files = files
+        self.xSection = xSection
+
+        if not len(self.files)>0:
+          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
+
+        self.normalization = normalization
+>>>>>>> 2992fe18b4c5fdb128c2e2b7bc5797b14abcd0d2
         self._chain = None
        
         self.__selectionStrings = [] 
@@ -148,6 +160,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         return cls(name = name, \
                    treeName = check_equal_([s.treeName for s in samples]),
+                   xSection = check_equal_([s.xSection for s in samples]),
                    normalization = normalization,
                    files = files,
                    selectionString = check_equal_([s.selectionString for s in samples]),
@@ -246,6 +259,85 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
+    
+    @classmethod
+    def nanoAODfromDAS(cls, name, DASname, instance = 'global', redirector='root://hephyse.oeaw.ac.at/', dbFile=None, overwrite=False, treeName = "Events", maxN = None, \
+            selectionString = None, weightString = None, xSection=-1,
+            isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None):
+        '''
+        get nanoAOD from DAS and make a local copy on afs 
+        '''
+        from multiprocessing import Pool
+        from RootTools.fwlite.Database import Database
+        import json
+
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        n_cache_files = 0 
+        # Don't use the cache on partial queries
+        if dbFile is not None and ( maxN<0 or maxN is None ):
+            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization"]) 
+            n_cache_files = cache.contains({'name':name, 'DAS':DASname})
+        else:
+            cache = None
+
+
+        if n_cache_files and not overwrite:
+            files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
+            normalization = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+            
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
+
+        else:
+            if overwrite:
+                cache.removeObjects({"name":name, 'DAS':DASname})
+
+            def _dasPopen(dbs):
+                if 'LSB_JOBID' in os.environ:
+                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                logger.info('DAS query\t: %s',  dbs)
+                return os.popen(dbs)
+
+            sampleName = DASname.rstrip('/')
+            query, qwhat = sampleName, "dataset"
+            if "#" in sampleName: qwhat = "block"
+
+            dbs='dasgoclient -query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
+            dbsOut = _dasPopen(dbs).readlines()
+            
+            files = []
+            for line in dbsOut:
+                if line.startswith('/store/'):
+                    line = line.rstrip()
+                    filename = redirector+'/'+line
+                    files.append(filename)
+            
+            if DASname.endswith('SIM') or not 'Run20' in DASname:
+                # need to read the proper normalization for MC
+                logger.info("Reading normalization. This is slow, so grab a coffee.")
+                tmp_sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+                    isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
+                normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
+                logger.info("Got normalization %s", normalization)
+            else:
+                # for data, we can just use the number of events, although no normalization is needed anyway.
+                dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+                normalization = int(jdata['nevents'])
+
+        if overwrite or n_cache_files<1:
+            for f in files:
+                if cache is not None:
+                    cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
+            
+        if limit>0: files=files[:limit]
+        sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
+        sample.DAS = DASname
+        sample.json = json
+        return sample
+        
 
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
@@ -429,16 +521,19 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                     color           = self.color, 
                     texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
         else:
-            return Sample(
-                    name            = self.name,
-                    treeName        = self.treeName,
-                    files           = chunks[nSub],
-                    normalization   = self.normalization,
-                    selectionString = self.selectionString,
-                    weightString    = self.weightString,
-                    isData          = self.isData,
-                    color           = self.color,
-                    texName         = self.texName )
+            if nSub<len(chunks):
+                return Sample(
+                        name            = self.name,
+                        treeName        = self.treeName,
+                        files           = chunks[nSub],
+                        normalization   = self.normalization,
+                        selectionString = self.selectionString,
+                        weightString    = self.weightString,
+                        isData          = self.isData,
+                        color           = self.color,
+                        texName         = self.texName )
+            else:
+                return None
         
 
     # Handle loading of chain -> load it when first used 
