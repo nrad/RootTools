@@ -38,9 +38,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             treeName , 
             files = [], 
             normalization = None, 
+            xSection = -1,
             selectionString = None, 
             weightString = None,
-            xSection = -1,
             isData = False, 
             color = 0, 
             texName = None):
@@ -48,28 +48,18 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
             'normalization': can be set in order to later calculate weights, 
+            'xSection': cross section of the sample
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
             'selectionString': sample specific string based selection (can be list of strings)
             'weightString': sample specific string based weight (can be list of strings)
-            'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
         '''
         
-        super(Sample, self).__init__( name=name, files=files, normalization=normalization, isData=isData, color=color, texName=texName)
+        super(Sample, self).__init__( name=name, files=files, normalization=normalization, xSection=xSection, isData=isData, color=color, texName=texName)
 
         self.treeName = treeName
-<<<<<<< HEAD
-=======
-        self.files = files
-        self.xSection = xSection
-
-        if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
-
-        self.normalization = normalization
->>>>>>> 2992fe18b4c5fdb128c2e2b7bc5797b14abcd0d2
         self._chain = None
        
         self.__selectionStrings = [] 
@@ -171,7 +161,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
  
     @classmethod
     def fromFiles(cls, name, files, 
-        treeName = "Events", normalization = None, 
+        treeName = "Events", normalization = None, xSection = -1, 
         selectionString = None, weightString = None, 
         isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
@@ -187,7 +177,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
                 selectionString = selectionString, weightString = weightString,
                 isData = isData, color=color, texName = texName)
 
@@ -195,7 +185,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return sample
 
     @classmethod
-    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, \
+    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
@@ -221,14 +211,14 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                     files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( directory, filename ) )
                 if maxN is not None and maxN>0 and len(files)>=maxN:
                     break
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, \
+    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
@@ -254,7 +244,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
@@ -281,7 +271,6 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             n_cache_files = cache.contains({'name':name, 'DAS':DASname})
         else:
             cache = None
-
 
         if n_cache_files and not overwrite:
             files = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
@@ -333,7 +322,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
+            isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
         sample.DAS = DASname
         sample.json = json
         return sample
@@ -341,7 +330,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
-            selectionString = None, weightString = None, 
+            selectionString = None, xSection = -1, weightString = None, 
             isData = False, color = 0, texName = None):
         '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
            Expects the presence of the tree root file and the SkimReport.txt
@@ -416,11 +405,11 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             logger.debug( "Failed to load chunk %s", chunk)
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
-            selectionString = selectionString, weightString = weightString,
+            selectionString = selectionString, weightString = weightString, xSection = xSection,
             isData = isData, color = color, texName = texName )
 
     @classmethod
-    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, \
+    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, xSection = -1,\
             selectionString = None, weightString = None,
             isData = False, color = 0, texName = None):
         '''Load a CMG crab output directory
@@ -490,7 +479,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                           name, len(pairs), n_jobs, normalization, len(failedJobs), eff)
 
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
-        return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection, 
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
@@ -515,6 +504,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                     treeName        = self.treeName, 
                     files           = chunks[n_sample], 
                     normalization   = self.normalization, 
+                    xSection        = self.xSection, 
                     selectionString = self.selectionString, 
                     weightString    = self.weightString, 
                     isData          = self.isData, 
@@ -527,6 +517,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                         treeName        = self.treeName,
                         files           = chunks[nSub],
                         normalization   = self.normalization,
+                        xSection        = self.xSection, 
                         selectionString = self.selectionString,
                         weightString    = self.weightString,
                         isData          = self.isData,
@@ -535,7 +526,6 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             else:
                 return None
         
-
     # Handle loading of chain -> load it when first used 
     @property
     def chain(self):

@@ -13,7 +13,7 @@ import RootTools.core.helpers as helpers
 class SampleBase( object ):
     __metaclass__ = abc.ABCMeta
 
-    def __init__(self, name, files, normalization, isData, color, texName):
+    def __init__(self, name, files, normalization, xSection, isData, color, texName):
         self.name = name
         self.files = files
 
@@ -21,6 +21,7 @@ class SampleBase( object ):
           raise helpers.EmptySampleError( "No files for sample %s! Files: %s" % (self.name, self.files) )
 
         self.normalization = normalization
+        self.xSection = xSection
         self.isData = isData
         self.color = color
         self.texName = texName if not texName is None else name
