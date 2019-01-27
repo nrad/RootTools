@@ -16,6 +16,7 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 import RootTools.plot.Plot as Plot
+from RootTools.core.SampleBase import SampleBase
 
 # new_name method for sample counting
 @helpers.static_vars( sample_counter = 0 )
@@ -30,7 +31,7 @@ def check_equal_(vals):
     else:
         return vals[0]
 
-class Sample ( object ): # 'object' argument will disappear in Python 3
+class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
     def __init__(self, 
             name, 
@@ -53,15 +54,10 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
         '''
+        
+        super(Sample, self).__init__( name=name, files=files, normalization=normalization, isData=isData, color=color, texName=texName)
 
-        self.name = name
         self.treeName = treeName
-        self.files = files
-
-        if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
-
-        self.normalization = normalization
         self._chain = None
        
         self.__selectionStrings = [] 
@@ -69,10 +65,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         self.__weightStrings = [] 
         self.setWeightString( weightString )
-
-        self.isData = isData
-        self.color = color
-        self.texName = texName if not texName is None else name
 
         # Other samples. Add friend elements (friend, treeName)
         self.friends = []
@@ -510,37 +502,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             del self.__leaves
 
         return
-
-    def reduceFiles( self, factor = 1, to = None ):
-        ''' Reduce number of files in the sample
-        '''
-        len_before = len(self.files)
-        norm_before = self.normalization
-
-        if factor!=1:
-            #self.files = self.files[:len_before/factor]
-            self.files = self.files[0::factor]
-            if len(self.files)==0:
-                raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
-        elif to is not None:
-            if to>=len(self.files):
-                return
-            self.files = self.files[:to] 
-        else:
-            return
-
-        # Keeping track of reduceFile factors
-        factor = len(self.files)/float(len_before)
-        if hasattr(self, "reduce_files_factor"):
-            self.reduce_files_factor *= factor
-        else:
-            self.reduce_files_factor = factor
-        self.normalization = factor*self.normalization if self.normalization is not None else None
-
-        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
-
-        return
-
 
     def sortFiles( self, sample, filename_modifier = None):
         ''' Remake chain from files sorted wrt. to another sample (e.g. for friend trees)
