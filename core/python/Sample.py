@@ -16,13 +16,7 @@ logger = logging.getLogger(__name__)
 # RootTools imports
 import RootTools.core.helpers as helpers
 import RootTools.plot.Plot as Plot
-from RootTools.fwlite.Database import Database
-import subprocess
-
-def xrdcpWrapper( args ):
-    logger.info("Copying file with command '%s'", args)
-    subprocess.call([args], shell = True)
-    return True
+from   RootTools.core.SampleBase import SampleBase
 
 # new_name method for sample counting
 @helpers.static_vars( sample_counter = 0 )
@@ -37,16 +31,16 @@ def check_equal_(vals):
     else:
         return vals[0]
 
-class Sample ( object ): # 'object' argument will disappear in Python 3
+class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
     def __init__(self, 
             name, 
             treeName , 
             files = [], 
             normalization = None, 
+            xSection = -1,
             selectionString = None, 
             weightString = None,
-            xSection = -1,
             isData = False, 
             color = 0, 
             texName = None):
@@ -54,24 +48,18 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             'name': Name of the sample, 
             'treeName': name of the TTree in the input files
             'normalization': can be set in order to later calculate weights, 
+            'xSection': cross section of the sample
             e.g. to total number of events befor all cuts or the sum of NLO gen weights
             'selectionString': sample specific string based selection (can be list of strings)
             'weightString': sample specific string based weight (can be list of strings)
-            'xSection': cross section of the sample
             'isData': Whether the sample is real data or not (simulation)
             'color': ROOT color to be used in plot scripts
             'texName': ROOT TeX string to be used in legends etc.
         '''
+        
+        super(Sample, self).__init__( name=name, files=files, normalization=normalization, xSection=xSection, isData=isData, color=color, texName=texName)
 
-        self.name = name
         self.treeName = treeName
-        self.files = files
-        self.xSection = xSection
-
-        if not len(self.files)>0:
-          raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
-
-        self.normalization = normalization
         self._chain = None
        
         self.__selectionStrings = [] 
@@ -79,10 +67,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         self.__weightStrings = [] 
         self.setWeightString( weightString )
-
-        self.isData = isData
-        self.color = color
-        self.texName = texName if not texName is None else name
 
         # Other samples. Add friend elements (friend, treeName)
         self.friends = []
@@ -177,7 +161,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
  
     @classmethod
     def fromFiles(cls, name, files, 
-        treeName = "Events", normalization = None, 
+        treeName = "Events", normalization = None, xSection = -1, 
         selectionString = None, weightString = None, 
         isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from files or list of files. If the name is "", enumerate the sample
@@ -193,7 +177,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
                 selectionString = selectionString, weightString = weightString,
                 isData = isData, color=color, texName = texName)
 
@@ -201,7 +185,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         return sample
 
     @classmethod
-    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, \
+    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
@@ -227,14 +211,14 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( directory, filename ) )
                 if maxN is not None and maxN>0 and len(files)>=maxN:
                     break
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
         return sample
 
     @classmethod
-    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, \
+    def fromDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None):
         '''Load sample from directory or list of directories. If the name is "", enumerate the sample
@@ -260,7 +244,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
         maxN = maxN if maxN is not None and maxN>0 else None
         files = files[:maxN]
 
-        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, \
+        sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
         logger.debug("Loaded sample %s from %i files.", name, len(files))
@@ -272,9 +256,12 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             isData = False, color = 0, texName = None, multithreading=True, genWeight='genWeight', json=None, localSite='T2_AT_Vienna'):
         '''
         get nanoAOD from DAS and make a local copy on afs 
+        if overwrite is true, old entries will be overwritten, no matter what the old entry contains. if overwrite=='update', file-list and normalization are checked, and only if they potentially changed the old entry is overwritten.
         '''
         from multiprocessing import Pool
+        from RootTools.fwlite.Database import Database
         import json
+
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
 
@@ -302,7 +289,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
         else:
-
+            # only entered if overwrite is not set or sample not in the cache yet
             def _dasPopen(dbs):
                 if 'LSB_JOBID' in os.environ:
                     raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
@@ -323,7 +310,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     filename = redirector+'/'+line
                     files.append(filename)
             
-            if (sorted(files) == sorted(filesFromCache)) and float(normalizationFromCache) > 0.0:
+            if (sorted(files) == sorted(filesFromCache)) and float(normalizationFromCache) > 0.0 and overwrite=='update':
                 # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
                 logger.info("File list for %s didn't change. Skipping.", name)
                 normalization = normalizationFromCache
@@ -382,7 +369,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
-            isData = isData, color=color, texName = texName, xSection = xSection, normalization=float(normalization))
+            isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
         sample.DAS = DASname
         sample.json = json
         return sample
@@ -390,7 +377,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
-            selectionString = None, weightString = None, 
+            selectionString = None, xSection = -1, weightString = None, 
             isData = False, color = 0, texName = None):
         '''Load a CMG output directory from e.g. unzipped crab output in the 'Chunks' directory structure. 
            Expects the presence of the tree root file and the SkimReport.txt
@@ -465,11 +452,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             logger.debug( "Failed to load chunk %s", chunk)
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
         return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
-            selectionString = selectionString, weightString = weightString,
+            selectionString = selectionString, weightString = weightString, xSection = xSection,
             isData = isData, color = color, texName = texName )
 
     @classmethod
-    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, \
+    def fromCMGCrabDirectory(cls, name, baseDirectory, treeFilename = 'tree.root', treeName = 'tree', maxN = None, xSection = -1,\
             selectionString = None, weightString = None,
             isData = False, color = 0, texName = None):
         '''Load a CMG crab output directory
@@ -539,7 +526,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                           name, len(pairs), n_jobs, normalization, len(failedJobs), eff)
 
         logger.debug( "Read %i chunks and total normalization of %f", len(files), normalization )
-        return cls( name = name, treeName = treeName, files = files, normalization = normalization, 
+        return cls( name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection, 
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
@@ -564,6 +551,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                     treeName        = self.treeName, 
                     files           = chunks[n_sample], 
                     normalization   = self.normalization, 
+                    xSection        = self.xSection, 
                     selectionString = self.selectionString, 
                     weightString    = self.weightString, 
                     isData          = self.isData, 
@@ -576,6 +564,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
                         treeName        = self.treeName,
                         files           = chunks[nSub],
                         normalization   = self.normalization,
+                        xSection        = self.xSection, 
                         selectionString = self.selectionString,
                         weightString    = self.weightString,
                         isData          = self.isData,
@@ -584,7 +573,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             else:
                 return None
         
-
     # Handle loading of chain -> load it when first used 
     @property
     def chain(self):
@@ -646,37 +634,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             del self.__leaves
 
         return
-
-    def reduceFiles( self, factor = 1, to = None ):
-        ''' Reduce number of files in the sample
-        '''
-        len_before = len(self.files)
-        norm_before = self.normalization
-
-        if factor!=1:
-            #self.files = self.files[:len_before/factor]
-            self.files = self.files[0::factor]
-            if len(self.files)==0:
-                raise helpers.EmptySampleError( "No ROOT files for sample %s after reducing by factor %f" % (self.name, factor) )
-        elif to is not None:
-            if to>=len(self.files):
-                return
-            self.files = self.files[:to] 
-        else:
-            return
-
-        # Keeping track of reduceFile factors
-        factor = len(self.files)/float(len_before)
-        if hasattr(self, "reduce_files_factor"):
-            self.reduce_files_factor *= factor
-        else:
-            self.reduce_files_factor = factor
-        self.normalization = factor*self.normalization if self.normalization is not None else None
-
-        logger.info("Sample %s: Reduced number of files from %i to %i. Old normalization: %r. New normalization: %r. factor: %3.3f", self.name, len_before, len(self.files), norm_before, self.normalization, factor) 
-
-        return
-
 
     def sortFiles( self, sample, filename_modifier = None):
         ''' Remake chain from files sorted wrt. to another sample (e.g. for friend trees)
