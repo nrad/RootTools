@@ -287,6 +287,7 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
             cache = None
 
         # first check if there are already files in the cache
+        normalizationFromCache = 0.
         if n_cache_files:
             filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
             normalizationFromCache  = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
