@@ -530,14 +530,14 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 selectionString = selectionString, weightString = weightString, 
                 isData = isData, color = color, texName = texName )
 
-    def split( self, n, nSub=None, clear = True, shuffle = False):
+    def split(self, n, nSub=None, clear = True, shuffle = False):
         ''' Split sample into n sub-samples
         '''
         
         if n==1: return self
 
         if not n>=1:
-            raise ValueError( "Can not split into: '%r'" % n )
+            raise ValueError( "Cannot split into: '%r'" % n )
 
         files = self.files
         if shuffle: random.shuffle( files ) 
@@ -545,31 +545,27 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         if clear: self.clear() # Kill yourself.
 
+        splitSamps = [Sample(
+            name            = self.name + "_%i" % n_sample,
+            treeName        = self.treeName,
+            files           = chunks[n_sample],
+            xSection        = self.xSection,
+            normalization   = self.normalization,
+            selectionString = self.selectionString,
+            weightString    = self.weightString,
+            isData          = self.isData,
+            color           = self.color,
+            texName         = self.texName) for n_sample in xrange(len(chunks))]
+
+        if hasattr(self, 'json'):
+            for s in splitSamps:
+                s.json = self.json
+
         if nSub == None:
-            return [ Sample( 
-                    name            = self.name+"_%i" % n_sample, 
-                    treeName        = self.treeName, 
-                    files           = chunks[n_sample], 
-                    normalization   = self.normalization, 
-                    xSection        = self.xSection, 
-                    selectionString = self.selectionString, 
-                    weightString    = self.weightString, 
-                    isData          = self.isData, 
-                    color           = self.color, 
-                    texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+            return splitSamps 
         else:
             if nSub<len(chunks):
-                return Sample(
-                        name            = self.name,
-                        treeName        = self.treeName,
-                        files           = chunks[nSub],
-                        normalization   = self.normalization,
-                        xSection        = self.xSection, 
-                        selectionString = self.selectionString,
-                        weightString    = self.weightString,
-                        isData          = self.isData,
-                        color           = self.color,
-                        texName         = self.texName )
+                return splitSamps[nSub]
             else:
                 return None
         
