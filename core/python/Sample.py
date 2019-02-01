@@ -72,6 +72,11 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
           raise helpers.EmptySampleError( "No ROOT files for sample %s! Files: %s" % (self.name, self.files) )
 
         self.normalization = normalization
+
+        self.isData = isData
+        self.color = color
+        self.texName = texName if not texName is None else name
+
         self._chain = None
        
         self.__selectionStrings = [] 
@@ -79,10 +84,6 @@ class Sample ( object ): # 'object' argument will disappear in Python 3
 
         self.__weightStrings = [] 
         self.setWeightString( weightString )
-
-        self.isData = isData
-        self.color = color
-        self.texName = texName if not texName is None else name
 
         # Other samples. Add friend elements (friend, treeName)
         self.friends = []
