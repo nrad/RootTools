@@ -546,7 +546,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if clear: self.clear() # Kill yourself.
 
         splitSamps = [Sample(
-            name            = self.name + "_%i" % n_sample if nSub is not None else self.name,
+            name            = self.name + "_%i" % n_sample,
             treeName        = self.treeName,
             files           = chunks[n_sample],
             xSection        = self.xSection,
