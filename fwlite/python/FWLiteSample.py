@@ -152,7 +152,11 @@ class FWLiteSample ( object ):
                         cache.add({"name":name}, filename, save=True)
 
         if limit>0: files=files[:limit]
-        return cls(name, files=files, texName = texName)
+
+        result  = cls(name, files=files, texName = texName)
+        result.DASname = sampleName
+
+        return result
 
     @classmethod
     def combine(cls, name, samples, texName = None, maxN = None, color = 0):
