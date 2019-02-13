@@ -141,7 +141,7 @@ class FWLiteSample ( object ):
             for line in dbsOut:
                 if line.startswith('/store/'):
                     line = line.rstrip()
-                    filename = prefix+line
+                    filename = line
                     try:
                         if skipCheck or helpers.checkRootFile(filename):
                             files.append(filename)
@@ -153,7 +153,7 @@ class FWLiteSample ( object ):
 
         if limit>0: files=files[:limit]
 
-        result = cls(name, files=files, texName = texName)
+        result = cls(name, files=[prefix+file for file in files], texName = texName)
         result.DASname = DASname
         return result
 
