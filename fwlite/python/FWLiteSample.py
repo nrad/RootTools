@@ -86,7 +86,7 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
-    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False):
+    def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
         ''' Make sample from DAS. 
         '''
         # https://github.com/CERN-PH-CMG/cmg-cmssw/blob/0f1d3bf62e7ec91c2e249af1555644b7f414ab50/CMGTools/Production/python/dataset.py#L437
@@ -143,7 +143,7 @@ class FWLiteSample ( object ):
                     line = line.rstrip()
                     filename = prefix+line
                     try:
-                        if helpers.checkRootFile(filename):
+                        if skipCheck or helpers.checkRootFile(filename):
                             files.append(filename)
                     except IOError:
                         logger.warning( "IOError for file %s. Skipping.", filename )
