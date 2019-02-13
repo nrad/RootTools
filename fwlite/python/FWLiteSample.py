@@ -93,6 +93,7 @@ class FWLiteSample ( object ):
 
         maxN = maxN if maxN is not None and maxN>0 else None
         limit = maxN if maxN else 0
+        DASname = dataset.rstrip('/')
 
         n_cache_files = 0 
         # Don't use the cache on partial queries
@@ -130,9 +131,8 @@ class FWLiteSample ( object ):
                 logger.info('DAS query\t: %s',  dbs)
                 return os.popen(dbs)
 
-            sampleName = dataset.rstrip('/')
-            query, qwhat = sampleName, "dataset"
-            if "#" in sampleName: qwhat = "block"
+            query, qwhat = DASname, "dataset"
+            if "#" in DASname: qwhat = "block"
 
             dbs='dasgoclient -query="file %s=%s instance=prod/%s" --limit %i'%(qwhat,query, instance, limit)
             dbsOut = _dasPopen(dbs).readlines()
@@ -153,9 +153,8 @@ class FWLiteSample ( object ):
 
         if limit>0: files=files[:limit]
 
-        result  = cls(name, files=files, texName = texName)
-        result.DASname = sampleName
-
+        result = cls(name, files=files, texName = texName)
+        result.DASname = DASname
         return result
 
     @classmethod
