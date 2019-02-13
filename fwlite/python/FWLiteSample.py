@@ -174,7 +174,7 @@ class FWLiteSample ( object ):
                    texName = texName
             )
 
-    def split( self, n):
+    def split( self, n, nSub = None):
         ''' Split sample into n sub-samples
         '''
 
@@ -185,11 +185,19 @@ class FWLiteSample ( object ):
        
         chunks = helpers.partition( self.files, min(n , len(self.files) ) ) 
 
-        return [ FWLiteSample( 
+        splitSamps = [ FWLiteSample( 
                 name            = self.name+"_%i" % n_sample, 
                 files           = chunks[n_sample], 
                 color           = self.color, 
                 texName         = self.texName ) for n_sample in xrange(len(chunks)) ]
+
+        if nSub == None:
+            return splitSamps
+        else:
+            if nSub<len(chunks):
+                return splitSamps[nSub]
+            else:
+                return None
 
     def fwliteReader(self, **kwargs):
         ''' Return a FWLiteReader class for the sample
