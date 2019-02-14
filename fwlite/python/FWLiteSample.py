@@ -143,7 +143,7 @@ class FWLiteSample ( object ):
                     line = line.rstrip()
                     filename = line
                     try:
-                        if skipCheck or helpers.checkRootFile(filename):
+                        if skipCheck or helpers.checkRootFile(prefix+filename):
                             files.append(filename)
                     except IOError:
                         logger.warning( "IOError for file %s. Skipping.", filename )
