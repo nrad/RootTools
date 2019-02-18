@@ -306,9 +306,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             files = []
             for line in dbsOut:
                 if line.startswith('/store/'):
-                    line = line.rstrip()
-                    filename = redirector+'/'+line
-                    files.append(filename)
+                    #line = line.rstrip()
+                    #filename = redirector+'/'+line
+                    files.append(line.rstrip())
             
             if (sorted(files) == sorted(filesFromCache)) and float(normalizationFromCache) > 0.0 and overwrite=='update':
                 # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
@@ -368,13 +368,12 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
             
         if limit>0: files=files[:limit]
-        sample = cls(name=name, files=files, treeName = treeName, selectionString = selectionString, weightString = weightString,
+        sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
         sample.DAS = DASname
         sample.json = json
         return sample
         
-
     @classmethod
     def fromCMGOutput(cls, name, baseDirectory, treeFilename = 'tree.root', chunkString = None, treeName = 'tree', maxN = None, \
             selectionString = None, xSection = -1, weightString = None, 
