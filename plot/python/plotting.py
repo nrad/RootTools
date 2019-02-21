@@ -462,7 +462,7 @@ def draw(plot, \
 
     for o in drawObjects:
         if o:
-            if type(o) in [ ROOT.TF1 ]:
+            if type(o) in [ ROOT.TF1, ROOT.TGraph ]:
                 o.Draw('same')
             else:
                 o.Draw()
