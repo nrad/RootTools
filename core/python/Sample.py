@@ -742,7 +742,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         ''' Get TH1D/TProfile1D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a list) is translated into variable bin widths. 
             addOverFlowBin can be 'upper', 'lower', 'both' and will add 
-            the corresponding overflow bin to the last bin of a 1D histogram'''
+            the corresponding overflow bin to the last bin of a 1D histogram.
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725'''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
         weightString_    = self.combineWithSampleWeight( weightString )
@@ -753,9 +755,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         else:
             binningArgs = binning
 
-        cls = ROOT.TProfile if isProfile else ROOT.TH1D
-
-        res = cls(tmp, tmp, *binningArgs)
+        if isProfile:
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile(tmp, tmp, *binningArgs)
+        else:
+                res = ROOT.TH1D(tmp, tmp, *binningArgs)
 
         #weight = weightString if weightString else "1"
 
@@ -768,6 +774,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def get2DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
         ''' Get TH2D/TProfile2D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a tuple of two lists) is translated into variable bin widths. 
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
@@ -784,11 +792,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             binningArgs = binning
 
         if isProfile:
-            cls = ROOT.TProfile2D 
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile2D(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile2D(tmp, tmp, *binningArgs)
         else:
-            cls = ROOT.TH2D
+                res = ROOT.TH2D(tmp, tmp, *binningArgs)
 
-        res = cls(tmp, tmp, *binningArgs)
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
@@ -796,6 +806,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def get3DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
         ''' Get TH3D/TProfile3D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a tuple of two lists) is translated into variable bin widths. 
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
@@ -812,11 +824,14 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             binningArgs = binning
 
         if isProfile:
-            cls = ROOT.TProfile3D 
+            logger.warning( "Not sure TTree::Draw into TProfile3D is implemented in ROOT." )
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile3D(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile3D(tmp, tmp, *binningArgs)
         else:
-            cls = ROOT.TH3D
+                res = ROOT.TH3D(tmp, tmp, *binningArgs)
 
-        res = cls(tmp, tmp, *binningArgs)
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
