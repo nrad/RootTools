@@ -189,8 +189,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
-        import subprocess
-        if not directory.startswith("/dpm"): raise ValueError( "DPM directory does not start with /dpm/: %s" % directory )
+        # Work with directories and list of directories
+        directories = [directory] if type(directory)==type("") else directory
+        if not all([d.startswith("/dpm") for d in directories]): raise ValueError( "DPM directories do not start with /dpm/" )
 
         # Renew proxy
         from RootTools.core.helpers import renew_proxy
@@ -202,15 +203,19 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             logger.info("Not checking your proxy. Asuming you know it's still valid.")
         logger.info( "Using proxy %s"%proxy )
 
-        p = subprocess.Popen(["dpns-ls -l %s" % directory], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        import subprocess
+
         files = []
-        for line in p.stdout.readlines():
+        for d in directories:
+            p = subprocess.Popen(["dpns-ls -l %s" % d], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            for line in p.stdout.readlines():
                 line = line[:-1]
                 filename = line.split()[-1] # The filename is the last string of the output of dpns-ls
                 if filename.endswith(".root"):
-                    files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( directory, filename ) )
+                    files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( d, filename ) )
                 if maxN is not None and maxN>0 and len(files)>=maxN:
                     break
+            del p
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
@@ -268,7 +273,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         n_cache_files = 0 
         # Don't use the cache on partial queries
         if dbFile is not None and ( maxN<0 or maxN is None ):
-            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization"]) 
+            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization", "nEvents"]) 
             n_cache_files = cache.contains({'name':name, 'DAS':DASname})
         else:
             cache = None
@@ -278,6 +283,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if n_cache_files:
             filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
             normalizationFromCache  = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+            nEventsFromCache        = cache.getDicts({'name':name, 'DAS':DASname})[0]["nEvents"]
         else:
             filesFromCache = []
 
@@ -285,6 +291,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if n_cache_files and not overwrite:
             files           = filesFromCache
             normalization   = normalizationFromCache
+            nEvents         = nEventsFromCache
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -314,6 +321,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
                 logger.info("File list for %s didn't change. Skipping.", name)
                 normalization = normalizationFromCache
+                nEvents = nEventsFromCache
                 logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
 
             else:
@@ -350,15 +358,20 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                         isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
                     normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
                     logger.info("Got normalization %s", normalization)
+                    # still getting number of events
+                    dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                    jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+                    nEvents = int(jdata['nevents'])
                 else:
                     # for data, we can just use the number of events, although no normalization is needed anyway.
                     dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
                     jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
                     normalization = int(jdata['nevents'])
+                    nEvents = normalization
 
                 for f in files:
                     if cache is not None:
-                        cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
+                        cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization), 'nEvents':nEvents}, f, save=True)
 
                 logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -366,8 +379,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
-        sample.DAS = DASname
-        sample.json = json
+        sample.DAS      = DASname
+        sample.json     = json
+        sample.nEvents  = int(nEvents)
         return sample
         
     @classmethod

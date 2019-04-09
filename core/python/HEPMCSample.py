@@ -33,8 +33,9 @@ class HEPMCSample ( SampleBase ): # 'object' argument will disappear in Python 3
     def __init__(self, 
             name, 
             files = [], 
-            normalization = None, 
-            isData = False, 
+            normalization = None,
+            xSection = -1, 
+            isData = False,
             color = 0, 
             texName = None):
         ''' Handling of sample. Uses a TChain to handle root files with flat trees.
@@ -46,8 +47,7 @@ class HEPMCSample ( SampleBase ): # 'object' argument will disappear in Python 3
             'texName': ROOT TeX string to be used in legends etc.
         '''
         
-        super(HEPMCSample, self).__init__( name=name, files=files, normalization=normalization, isData=isData, color=color, texName=texName)
-
+        super(HEPMCSample, self).__init__( name=name, files=files, normalization=normalization, xSection = xSection, isData=isData, color=color, texName=texName)
         logger.debug("Created new HEPMC Sample %s with %i files.", 
             name, len(self.files))
 
@@ -114,7 +114,7 @@ class HEPMCSample ( SampleBase ): # 'object' argument will disappear in Python 3
         # find all files
         files = [] 
         for d in directories:
-            fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.root') ]
+            fileNames = [ os.path.join(d, f) for f in os.listdir(d) if f.endswith('.hepmc') ]
             if len(fileNames) == 0:
                 raise helpers.EmptySampleError( "No root files found in directory %s." %d )
             files.extend( fileNames )
