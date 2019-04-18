@@ -185,7 +185,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         return sample
 
     @classmethod
-    def fromDPMDirectory(cls, name, directory, treeName = "Events", normalization = None, xSection = -1, \
+    def fromDPMDirectory(cls, name, directory, redirector='root://hephyse.oeaw.ac.at/', treeName = "Events", normalization = None, xSection = -1, \
                 selectionString = None, weightString = None,
                 isData = False, color = 0, texName = None, maxN = None, noCheckProxy=False):
 
@@ -207,15 +207,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
 
         files = []
         for d in directories:
-            p = subprocess.Popen(["dpns-ls -l %s" % d], shell = True , stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-            for line in p.stdout.readlines():
-                line = line[:-1]
-                filename = line.split()[-1] # The filename is the last string of the output of dpns-ls
+            cmd = [ "xrdfs", redirector, "ls", d ]
+            fileList = subprocess.check_output( cmd ).split("\n")[:-1]
+            for filename in fileList:
                 if filename.endswith(".root"):
-                    files.append( "root://hephyse.oeaw.ac.at/" + os.path.join( d, filename ) )
+                    files.append( redirector + os.path.join( d, filename ) )
                 if maxN is not None and maxN>0 and len(files)>=maxN:
                     break
-            del p
         sample =  cls(name = name, treeName = treeName, files = files, normalization = normalization, xSection = xSection,\
             selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName)
