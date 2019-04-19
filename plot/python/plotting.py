@@ -457,12 +457,16 @@ def draw(plot, \
                     legend_text = h.sample.texName if hasattr(h.sample, "texName") else h.sample.name
                 else:
                     continue #legend_text = "No title"   
-                legend_.AddEntry(h, legend_text)
+                if hasattr(h, "legendOption"):
+                    legend_option = h.legendOption
+                    legend_.AddEntry(h, legend_text, legend_option)
+                else:
+                    legend_.AddEntry(h, legend_text)
         legend_.Draw()
 
     for o in drawObjects:
         if o:
-            if type(o) in [ ROOT.TF1, ROOT.TGraph ]:
+            if type(o) in [ ROOT.TF1, ROOT.TGraph, ROOT.TEfficiency ]:
                 o.Draw('same')
             else:
                 o.Draw()
@@ -512,6 +516,8 @@ def draw(plot, \
             h_ratio.GetYaxis().SetRangeUser( *ratio['yRange'] )
             h_ratio.GetYaxis().SetNdivisions(505)
 
+            if ratio.has_key('histModifications'):
+                for modification in ratio['histModifications']: modification(h_ratio)
             drawOption = h_ratio.drawOption if hasattr(h_ratio, "drawOption") else "hist"
             if drawOption == "e1":                          # hacking to show error bars within panel when central value is off scale
               graph = ROOT.TGraphAsymmErrors(h_ratio)       # cloning in order to get layout

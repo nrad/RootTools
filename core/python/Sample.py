@@ -271,7 +271,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         n_cache_files = 0 
         # Don't use the cache on partial queries
         if dbFile is not None and ( maxN<0 or maxN is None ):
-            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization"]) 
+            cache = Database(dbFile, "fileCache", ["name", "DAS", "normalization", "nEvents"]) 
             n_cache_files = cache.contains({'name':name, 'DAS':DASname})
         else:
             cache = None
@@ -281,6 +281,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if n_cache_files:
             filesFromCache          = [ f["value"] for f in cache.getDicts({'name':name, 'DAS':DASname}) ]
             normalizationFromCache  = cache.getDicts({'name':name, 'DAS':DASname})[0]["normalization"]
+            nEventsFromCache        = cache.getDicts({'name':name, 'DAS':DASname})[0]["nEvents"]
         else:
             filesFromCache = []
 
@@ -288,6 +289,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if n_cache_files and not overwrite:
             files           = filesFromCache
             normalization   = normalizationFromCache
+            nEvents         = nEventsFromCache
             
             logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -317,6 +319,7 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 # if the files didn't change we don't need to read the normalization again (slowest part!). If the norm was 0 previously, also get it again.
                 logger.info("File list for %s didn't change. Skipping.", name)
                 normalization = normalizationFromCache
+                nEvents = nEventsFromCache
                 logger.info('Sample %s from cache %s returned %i files.', name, dbFile, len(files))
 
             else:
@@ -353,15 +356,20 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                         isData = isData, color=color, texName = texName, xSection = xSection, normalization=1)
                     normalization = tmp_sample.getYieldFromDraw('(1)', genWeight)['val']
                     logger.info("Got normalization %s", normalization)
+                    # still getting number of events
+                    dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
+                    jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
+                    nEvents = int(jdata['nevents'])
                 else:
                     # for data, we can just use the number of events, although no normalization is needed anyway.
                     dbs='dasgoclient -query="summary %s=%s instance=prod/%s" --format=json'%(qwhat,query, instance)
                     jdata = json.load(_dasPopen(dbs))['data'][0]['summary'][0]
                     normalization = int(jdata['nevents'])
+                    nEvents = normalization
 
                 for f in files:
                     if cache is not None:
-                        cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization)}, f, save=True)
+                        cache.add({"name":name, 'DAS':DASname, 'normalization':str(normalization), 'nEvents':nEvents}, f, save=True)
 
                 logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
 
@@ -369,8 +377,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         if limit>0: files=files[:limit]
         sample = cls(name=name, files=[ redirector+'/'+f for f in files], treeName = treeName, selectionString = selectionString, weightString = weightString,
             isData = isData, color=color, texName = texName, normalization=float(normalization), xSection = xSection)
-        sample.DAS = DASname
-        sample.json = json
+        sample.DAS      = DASname
+        sample.json     = json
+        sample.nEvents  = int(nEvents)
         return sample
         
     @classmethod
@@ -745,7 +754,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         ''' Get TH1D/TProfile1D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a list) is translated into variable bin widths. 
             addOverFlowBin can be 'upper', 'lower', 'both' and will add 
-            the corresponding overflow bin to the last bin of a 1D histogram'''
+            the corresponding overflow bin to the last bin of a 1D histogram.
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725'''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
         weightString_    = self.combineWithSampleWeight( weightString )
@@ -756,9 +767,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         else:
             binningArgs = binning
 
-        cls = ROOT.TProfile if isProfile else ROOT.TH1D
-
-        res = cls(tmp, tmp, *binningArgs)
+        if isProfile:
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile(tmp, tmp, *binningArgs)
+        else:
+                res = ROOT.TH1D(tmp, tmp, *binningArgs)
 
         #weight = weightString if weightString else "1"
 
@@ -771,6 +786,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def get2DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
         ''' Get TH2D/TProfile2D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a tuple of two lists) is translated into variable bin widths. 
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
@@ -787,11 +804,13 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             binningArgs = binning
 
         if isProfile:
-            cls = ROOT.TProfile2D 
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile2D(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile2D(tmp, tmp, *binningArgs)
         else:
-            cls = ROOT.TH2D
+                res = ROOT.TH2D(tmp, tmp, *binningArgs)
 
-        res = cls(tmp, tmp, *binningArgs)
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
@@ -799,6 +818,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
     def get3DHistoFromDraw(self, variableString, binning, selectionString = None, weightString = None, binningIsExplicit = False, isProfile = False):
         ''' Get TH3D/TProfile3D from draw command using selectionString, weight. If binningIsExplicit is true, 
             the binning argument (a tuple of two lists) is translated into variable bin widths. 
+            isProfile can be True (default) or the TProfile build option (e.g. a string 's' ), see
+            https://root.cern.ch/doc/master/classTProfile.html#a1ff9340284c73ce8762ab6e7dc0e6725
         '''
 
         selectionString_ = self.combineWithSampleSelection( selectionString )
@@ -815,11 +836,14 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
             binningArgs = binning
 
         if isProfile:
-            cls = ROOT.TProfile3D 
+            logger.warning( "Not sure TTree::Draw into TProfile3D is implemented in ROOT." )
+            if type(isProfile) == type(""):
+                res = ROOT.TProfile3D(tmp, tmp, *( binningArgs + (isProfile,)) )
+            else:
+                res = ROOT.TProfile3D(tmp, tmp, *binningArgs)
         else:
-            cls = ROOT.TH3D
+                res = ROOT.TH3D(tmp, tmp, *binningArgs)
 
-        res = cls(tmp, tmp, *binningArgs)
         self.chain.Draw(variableString+">>"+tmp, "("+weightString_+")*("+selectionString_+")", 'goff')
 
         return res
