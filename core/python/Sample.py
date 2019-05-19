@@ -193,6 +193,9 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         directories = [directory] if type(directory)==type("") else directory
         if not all([d.startswith("/dpm") for d in directories]): raise ValueError( "DPM directories do not start with /dpm/" )
 
+        # If no name, enumerate them.
+        if not name: name = new_name()
+
         # Renew proxy
         from RootTools.core.helpers import renew_proxy
         proxy_path = os.path.expandvars('$HOME/private/.proxy')
@@ -228,6 +231,11 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
         '''
         # Work with directories and list of directories
         directories = [directory] if type(directory)==type("") else directory 
+
+        # Automatically read from dpm if the directories indicate so
+        if all( d.startswith('/dpm/') for d in directories ):
+            return Sample.fromDPMDirectory( name=name, directory=directory, treeName=treeName, normalization=normalization, xSection=xSection,
+                                            selectionString=selectionString, weightString=weightString, isData=isData, color=color, texName=texName, maxN=maxN) 
 
         # If no name, enumerate them.
         if not name: name = new_name()
