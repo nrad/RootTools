@@ -86,6 +86,57 @@ class FWLiteSample ( object ):
         return cls(name = name, files = files, color=color, texName = texName)
 
     @classmethod
+    def fromDPMDirectory(cls, name, directory, prefix='root://hephyse.oeaw.ac.at/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
+
+        maxN = maxN if maxN is not None and maxN>0 else None
+        limit = maxN if maxN else 0
+
+        n_cache_files = 0 
+        # Don't use the cache on partial queries
+        if dbFile is not None and ( maxN<0 or maxN is None ):
+            cache = Database(dbFile, "fileCache", ["name"]) 
+            n_cache_files = cache.contains({'name':name})
+        else:
+            cache = None
+
+        if n_cache_files and not overwrite:
+            files = [ f["value"] for f in cache.getDicts({'name':name}) ]
+            logger.info('Found sample %s in cache %s, return %i files.', name, dbFile, len(files))
+        else:
+            if overwrite:
+                cache.removeObjects({"name":name})
+
+            def _dasPopen(dbs):
+                if 'LSB_JOBID' in os.environ:
+                    raise RuntimeError, "Trying to do a DAS query while in a LXBatch job (env variable LSB_JOBID defined)\nquery was: %s" % dbs
+                logger.info('DAS query\t: %s',  dbs)
+                return os.popen(dbs)
+
+            files = []
+            dbs='xrdfs %s ls %s'%(prefix,directory)
+            dbsOut = _dasPopen(dbs).readlines()
+            
+            for line in dbsOut:
+                if line.startswith('/store/'):
+                    line = line.rstrip()
+                    filename = line
+                    try:
+                        if skipCheck or helpers.checkRootFile(prefix+filename):
+                            files.append(filename)
+                    except IOError:
+                        logger.warning( "IOError for file %s. Skipping.", filename )
+
+                    if cache is not None:
+                        cache.add({"name":name}, filename, save=True)
+
+        if limit>0: files=files[:limit]
+
+        result = cls(name, files=[prefix+file for file in files], texName = texName)
+        result.DASname = prefix + directory.rstrip("/")
+        return result
+
+
+    @classmethod
     def fromDAS(cls, name, dataset, instance = 'global', prefix='root://cms-xrd-global.cern.ch/', texName = None, maxN = None, dbFile=None, overwrite=False, skipCheck = False):
         ''' Make sample from DAS. 
         '''
