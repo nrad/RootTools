@@ -710,7 +710,8 @@ class Sample ( SampleBase ): # 'object' argument will disappear in Python 3
                 except IOError as e:
                     logger.error( "Could not load file %s", f )
                     #raise e
-
+            if counter==0:
+                raise helpers.EmptySampleError( "No root files for sample %s." %self.name ) 
             logger.debug( "Loaded %i files for sample '%s'.", counter, self.name )
 
         # Add friends
