@@ -45,3 +45,10 @@ def get_logger(logLevel, logFile = None):
 
     sys.excepthook = excepthook
     return logger
+
+def add_fileHandler( logFile, logLevel ):
+    fileHandler = logging.FileHandler(logFile, mode='w')
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    fileHandler.setFormatter(formatter)
+    logger = logging.getLogger('RootTools')
+    logger.addHandler(fileHandler)

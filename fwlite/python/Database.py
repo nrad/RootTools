@@ -68,7 +68,7 @@ class Database:
                 return objs
 
             except sqlite3.DatabaseError as e:
-                logger.error( "There seems to be an issue with the database, trying to read again." )
+                logger.error( "There seems to be an issue with the database, trying to read again from %s.", self.database_file )
                 logger.info( "Attempt no %i", i )
                 self.close()
                 self.connect()
@@ -99,7 +99,9 @@ class Database:
         '''
         new DB structure. key needs to be a python dictionary. Save doesn't do anything here
         '''
-        
+        if os.environ['HOSTNAME'].startswith('worker'):
+            raise RuntimeError( "I'm running on the hephy batch. I shall not fill the db file from here." ) 
+
         columns = key.keys()+["value", "time_stamp"]
         values  = key.values()+[str(value), time.time()]
         
